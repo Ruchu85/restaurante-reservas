@@ -10,12 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { updateAppointment } from "@/actions/appointments";
-import type { Appointment, StaffMember, BusinessHours } from "@/types";
+import type { Appointment } from "@/types";
 
 interface EditAppointmentFormProps {
   appointment: Appointment;
-  staff: StaffMember[];
-  businessHours: BusinessHours[];
 }
 
 const SERVICES = [
@@ -52,7 +50,6 @@ function initFromAppointment(appt: Appointment) {
   const knownDuration = DURATIONS.some((d) => d.value === durationMins);
 
   return {
-    staff_id: appt.staff_id ?? "none",
     customer_name: appt.customer_name,
     service: knownService ? appt.service : "Otro",
     service_custom: knownService ? "" : appt.service,
@@ -63,7 +60,7 @@ function initFromAppointment(appt: Appointment) {
   };
 }
 
-export function EditAppointmentForm({ appointment, staff }: EditAppointmentFormProps) {
+export function EditAppointmentForm({ appointment }: EditAppointmentFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState(() => initFromAppointment(appointment));
@@ -99,7 +96,6 @@ export function EditAppointmentForm({ appointment, staff }: EditAppointmentFormP
 
     startTransition(async () => {
       const result = await updateAppointment(appointment.id, {
-        staff_id: form.staff_id === "none" ? null : form.staff_id,
         customer_name: form.customer_name,
         service: serviceName,
         starts_at: starts.toISOString(),
@@ -152,21 +148,6 @@ export function EditAppointmentForm({ appointment, staff }: EditAppointmentFormP
             required
           />
         )}
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="staff-select">Profesional</Label>
-        <Select value={form.staff_id} onValueChange={(v) => update("staff_id", v)}>
-          <SelectTrigger id="staff-select">
-            <SelectValue placeholder="Sin asignar" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Sin asignar</SelectItem>
-            {staff.map((s) => (
-              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

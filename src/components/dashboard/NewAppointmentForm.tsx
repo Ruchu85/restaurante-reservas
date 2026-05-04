@@ -10,14 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { createAppointment } from "@/actions/appointments";
-import type { StaffMember, BusinessHours } from "@/types";
 
 interface NewAppointmentFormProps {
-  salonId: string;
-  staff: StaffMember[];
-  businessHours: BusinessHours[];
   initialDate?: string;
-  initialStaffId?: string;
 }
 
 const SERVICES = [
@@ -50,19 +45,13 @@ function toLocalDatetimeValue(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function NewAppointmentForm({
-  salonId,
-  staff,
-  initialDate,
-  initialStaffId,
-}: NewAppointmentFormProps) {
+export function NewAppointmentForm({ initialDate }: NewAppointmentFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const defaultStart = roundToQuarter(new Date());
 
   const [form, setForm] = useState({
-    staff_id: initialStaffId ?? (staff[0]?.id ?? ""),
     customer_name: "",
     service: SERVICES[0],
     service_custom: "",
@@ -94,8 +83,6 @@ export function NewAppointmentForm({
 
     startTransition(async () => {
       const result = await createAppointment({
-        salon_id: salonId,
-        staff_id: form.staff_id || null,
         customer_name: form.customer_name,
         service: serviceName,
         starts_at: starts.toISOString(),
@@ -157,21 +144,6 @@ export function NewAppointmentForm({
             required
           />
         )}
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="staff-select">Profesional</Label>
-        <Select value={form.staff_id} onValueChange={(v) => update("staff_id", v)}>
-          <SelectTrigger id="staff-select">
-            <SelectValue placeholder="Sin asignar" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Sin asignar</SelectItem>
-            {staff.map((s) => (
-              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

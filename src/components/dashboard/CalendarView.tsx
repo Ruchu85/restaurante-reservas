@@ -13,19 +13,28 @@ interface CalendarViewProps {
   currentDate: string;
 }
 
-type ViewMode = "day" | "week";
+type ViewMode = "day" | "week" | "month";
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 8:00–20:00
 const DAYS_SHORT = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 function sameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() &&
+  return (
+    a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
+    a.getDate() === b.getDate()
+  );
 }
 
 function toDateString(d: Date) {
   return d.toISOString().split("T")[0];
+}
+
+function apptCountColor(count: number) {
+  if (count === 0) return null;
+  if (count <= 2) return "bg-emerald-100 text-emerald-700";
+  if (count <= 4) return "bg-amber-100 text-amber-700";
+  return "bg-red-100 text-red-700";
 }
 
 export function CalendarView({ appointments, staff, currentDate }: CalendarViewProps) {
@@ -35,7 +44,7 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
 
   const today = new Date();
 
-  // Week start (Sunday)
+  // Week helpers
   const weekStart = new Date(date);
   weekStart.setDate(date.getDate() - date.getDay());
   const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -44,12 +53,31 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
     return d;
   });
 
+  // Month helpers
+  const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+  const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const calStart = new Date(monthStart);
+  calStart.setDate(monthStart.getDate() - monthStart.getDay());
+  const monthWeeks: Date[][] = [];
+  const cur = new Date(calStart);
+  while (cur <= monthEnd || monthWeeks.length < 4) {
+    const week: Date[] = [];
+    for (let i = 0; i < 7; i++) {
+      week.push(new Date(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    monthWeeks.push(week);
+    if (cur > monthEnd && monthWeeks.length >= 4) break;
+  }
+
   function navigate(delta: number) {
     const nd = new Date(date);
     if (view === "day") {
       nd.setDate(date.getDate() + delta);
-    } else {
+    } else if (view === "week") {
       nd.setDate(date.getDate() + delta * 7);
+    } else {
+      nd.setMonth(date.getMonth() + delta);
     }
     setDate(nd);
     router.push(`/dashboard/calendario?date=${toDateString(nd)}`);
@@ -72,9 +100,12 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
     return appointments.filter((a) => sameDay(new Date(a.starts_at), day));
   }
 
-  const headerTitle = view === "day"
-    ? date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })
-    : weekStart.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+  const headerTitle =
+    view === "day"
+      ? date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })
+      : view === "week"
+      ? weekStart.toLocaleDateString("es-ES", { month: "long", year: "numeric" })
+      : date.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
 
   const isToday = sameDay(date, today);
 
@@ -94,13 +125,18 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
           </Button>
         </div>
 
-        <h2 className={cn("text-sm font-medium truncate capitalize", isToday && view === "day" && "text-slate-900")}>
+        <h2
+          className={cn(
+            "text-sm font-medium truncate capitalize",
+            isToday && view === "day" && "text-slate-900"
+          )}
+        >
           {headerTitle}
         </h2>
 
         <div className="flex items-center gap-1">
           <div className="hidden sm:flex rounded-lg border p-0.5 gap-0.5">
-            {(["day", "week"] as ViewMode[]).map((v) => (
+            {(["day", "week", "month"] as ViewMode[]).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -109,7 +145,7 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
                   view === v ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
                 )}
               >
-                {v === "day" ? "Día" : "Semana"}
+                {v === "day" ? "Día" : v === "week" ? "Semana" : "Mes"}
               </button>
             ))}
           </div>
@@ -176,13 +212,18 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
                       "py-2 text-center border-r last:border-r-0 cursor-pointer hover:bg-slate-50",
                       isT && "bg-slate-50"
                     )}
-                    onClick={() => { setDate(new Date(day)); setView("day"); }}
+                    onClick={() => {
+                      setDate(new Date(day));
+                      setView("day");
+                    }}
                   >
                     <div className="text-xs text-muted-foreground">{DAYS_SHORT[day.getDay()]}</div>
-                    <div className={cn(
-                      "mx-auto mt-1 flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium",
-                      isT && "bg-slate-900 text-white",
-                    )}>
+                    <div
+                      className={cn(
+                        "mx-auto mt-1 flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium",
+                        isT && "bg-slate-900 text-white"
+                      )}
+                    >
                       {day.getDate()}
                     </div>
                     {dayAppts.length > 0 && (
@@ -231,30 +272,117 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
         </div>
       )}
 
-      {/* Mobile: day labels */}
-      <div className="sm:hidden border-t px-3 py-2 flex gap-1 overflow-x-auto">
-        {weekDays.map((day, i) => {
-          const isT = sameDay(day, today);
-          const isSelected = sameDay(day, date);
-          const hasAppts = getApptForDay(day).length > 0;
-          return (
-            <button
-              key={i}
-              onClick={() => { setDate(new Date(day)); setView("day"); }}
-              className={cn(
-                "flex flex-col items-center flex-shrink-0 rounded-lg p-1.5 min-w-[36px] transition-colors",
-                isSelected ? "bg-slate-900 text-white" : isT ? "bg-slate-100" : "hover:bg-slate-50"
-              )}
-            >
-              <span className="text-xs">{DAYS_SHORT[day.getDay()]}</span>
-              <span className="text-sm font-semibold">{day.getDate()}</span>
-              {hasAppts && (
-                <div className={cn("mt-0.5 h-1 w-1 rounded-full", isSelected ? "bg-white" : "bg-blue-500")} />
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {/* MONTH VIEW */}
+      {view === "month" && (
+        <div className="p-2">
+          {/* Day-of-week headers */}
+          <div className="grid grid-cols-7 mb-1">
+            {DAYS_SHORT.map((d) => (
+              <div key={d} className="text-center text-xs text-muted-foreground py-1 font-medium">
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Weeks */}
+          {monthWeeks.map((week, wi) => (
+            <div key={wi} className="grid grid-cols-7 gap-0.5 mb-0.5">
+              {week.map((day, di) => {
+                const dayAppts = getApptForDay(day);
+                const count = dayAppts.length;
+                const isT = sameDay(day, today);
+                const isCurrentMonth = day.getMonth() === date.getMonth();
+                const colorClass = apptCountColor(count);
+
+                return (
+                  <div
+                    key={di}
+                    className={cn(
+                      "min-h-[64px] rounded-md border p-1.5 cursor-pointer transition-colors hover:bg-slate-50",
+                      isT && "ring-2 ring-slate-900 ring-inset",
+                      !isCurrentMonth && "opacity-35 bg-slate-50/50"
+                    )}
+                    onClick={() => {
+                      setDate(new Date(day));
+                      setView("day");
+                    }}
+                  >
+                    <div
+                      className={cn(
+                        "text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1",
+                        isT && "bg-slate-900 text-white"
+                      )}
+                    >
+                      {day.getDate()}
+                    </div>
+                    {colorClass && (
+                      <div
+                        className={cn(
+                          "text-xs rounded px-1 py-0.5 text-center font-semibold leading-tight",
+                          colorClass
+                        )}
+                      >
+                        {count}
+                      </div>
+                    )}
+                    {/* First appointment preview on larger screens */}
+                    {dayAppts[0] && (
+                      <div className="hidden sm:block mt-0.5 text-xs text-muted-foreground truncate">
+                        {dayAppts[0].customer_name}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+
+          {/* Legend */}
+          <div className="mt-2 flex items-center gap-3 px-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 rounded-sm bg-emerald-200" /> 1–2 citas
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 rounded-sm bg-amber-200" /> 3–4 citas
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 rounded-sm bg-red-200" /> 5+ citas
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile: week strip (day/week view only) */}
+      {view !== "month" && (
+        <div className="sm:hidden border-t px-3 py-2 flex gap-1 overflow-x-auto">
+          {weekDays.map((day, i) => {
+            const isT = sameDay(day, today);
+            const isSelected = sameDay(day, date);
+            const hasAppts = getApptForDay(day).length > 0;
+            return (
+              <button
+                key={i}
+                onClick={() => {
+                  setDate(new Date(day));
+                  setView("day");
+                }}
+                className={cn(
+                  "flex flex-col items-center flex-shrink-0 rounded-lg p-1.5 min-w-[36px] transition-colors",
+                  isSelected ? "bg-slate-900 text-white" : isT ? "bg-slate-100" : "hover:bg-slate-50"
+                )}
+              >
+                <span className="text-xs">{DAYS_SHORT[day.getDay()]}</span>
+                <span className="text-sm font-semibold">{day.getDate()}</span>
+                {hasAppts && (
+                  <div
+                    className={cn("mt-0.5 h-1 w-1 rounded-full", isSelected ? "bg-white" : "bg-blue-500")}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

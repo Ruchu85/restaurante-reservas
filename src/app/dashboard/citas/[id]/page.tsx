@@ -19,27 +19,12 @@ export default async function EditCitaPage({
     .select("salon_id")
     .single();
 
-  const salonId = profile?.salon_id ?? "";
-
-  const [{ data: appointment }, { data: staff }, { data: businessHours }] = await Promise.all([
-    supabase
-      .from("appointments")
-      .select("*")
-      .eq("id", id)
-      .eq("salon_id", salonId)
-      .single(),
-    supabase
-      .from("staff_members")
-      .select("*")
-      .eq("salon_id", salonId)
-      .eq("active", true)
-      .order("name"),
-    supabase
-      .from("business_hours")
-      .select("*")
-      .eq("salon_id", salonId)
-      .order("day_of_week"),
-  ]);
+  const { data: appointment } = await supabase
+    .from("appointments")
+    .select("*")
+    .eq("id", id)
+    .eq("salon_id", profile?.salon_id ?? "")
+    .single();
 
   if (!appointment) notFound();
 
@@ -54,14 +39,12 @@ export default async function EditCitaPage({
           Volver a citas
         </Link>
         <h1 className="text-2xl font-bold">Editar cita</h1>
-        <p className="text-sm text-muted-foreground">{appointment.customer_name} · {appointment.service}</p>
+        <p className="text-sm text-muted-foreground">
+          {appointment.customer_name} · {appointment.service}
+        </p>
       </div>
 
-      <EditAppointmentForm
-        appointment={appointment}
-        staff={staff ?? []}
-        businessHours={businessHours ?? []}
-      />
+      <EditAppointmentForm appointment={appointment} />
     </div>
   );
 }

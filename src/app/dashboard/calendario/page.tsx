@@ -23,9 +23,9 @@ export default async function CalendarioPage({
   // Fetch ±35 days around the current date for week navigation
   const dateObj = new Date(today + "T12:00:00");
   const rangeStart = new Date(dateObj);
-  rangeStart.setDate(dateObj.getDate() - 35);
+  rangeStart.setDate(dateObj.getDate() - 50);
   const rangeEnd = new Date(dateObj);
-  rangeEnd.setDate(dateObj.getDate() + 35);
+  rangeEnd.setDate(dateObj.getDate() + 50);
 
   const [{ data: appointments }, { data: staff }] = await Promise.all([
     supabase

@@ -4,9 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-const AppointmentSchema = z.object({
-  salon_id: z.string().uuid(),
-  staff_id: z.string().uuid().nullable(),
+const CreateSchema = z.object({
   customer_name: z.string().min(2).max(100),
   service: z.string().min(1).max(100),
   starts_at: z.string().datetime(),
@@ -14,21 +12,31 @@ const AppointmentSchema = z.object({
   notes: z.string().max(500).optional(),
 });
 
-export type AppointmentInput = z.infer<typeof AppointmentSchema>;
+const UpdateSchema = CreateSchema.partial();
 
-export async function createAppointment(input: AppointmentInput) {
-  const parsed = AppointmentSchema.safeParse(input);
+export type CreateAppointmentInput = z.infer<typeof CreateSchema>;
+export type UpdateAppointmentInput = z.infer<typeof UpdateSchema>;
+
+async function getSalonId(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data } = await supabase.from("profiles").select("salon_id").single();
+  return data?.salon_id ?? null;
+}
+
+export async function createAppointment(input: CreateAppointmentInput) {
+  const parsed = CreateSchema.safeParse(input);
   if (!parsed.success) {
     return { error: "Datos inválidos: " + parsed.error.message };
   }
 
   const supabase = await createClient();
+  const salonId = await getSalonId(supabase);
+  if (!salonId) return { error: "No se encontró el salón asociado a tu cuenta." };
 
   const { data, error } = await supabase
     .from("appointments")
     .insert({
-      salon_id: parsed.data.salon_id,
-      staff_id: parsed.data.staff_id,
+      salon_id: salonId,
+      staff_id: null,
       customer_name: parsed.data.customer_name,
       service: parsed.data.service,
       starts_at: parsed.data.starts_at,
@@ -41,7 +49,7 @@ export async function createAppointment(input: AppointmentInput) {
 
   if (error) {
     if (error.code === "23P01") {
-      return { error: "Ese horario ya está ocupado para este profesional." };
+      return { error: "Ese horario ya está ocupado." };
     }
     return { error: "No se pudo crear la cita. Inténtalo de nuevo." };
   }
@@ -51,17 +59,22 @@ export async function createAppointment(input: AppointmentInput) {
   return { data };
 }
 
-export async function updateAppointment(id: string, input: Partial<AppointmentInput>) {
+export async function updateAppointment(id: string, input: UpdateAppointmentInput) {
+  const parsed = UpdateSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: "Datos inválidos: " + parsed.error.message };
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase
     .from("appointments")
-    .update(input)
+    .update(parsed.data)
     .eq("id", id);
 
   if (error) {
     if (error.code === "23P01") {
-      return { error: "Ese horario ya está ocupado para este profesional." };
+      return { error: "Ese horario ya está ocupado." };
     }
     return { error: error.message };
   }
