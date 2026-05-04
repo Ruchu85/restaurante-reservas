@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -17,22 +17,17 @@ const UpdateSchema = CreateSchema.partial();
 export type CreateAppointmentInput = z.infer<typeof CreateSchema>;
 export type UpdateAppointmentInput = z.infer<typeof UpdateSchema>;
 
-async function getSalonId(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data } = await supabase.from("profiles").select("salon_id").single();
-  return data?.salon_id ?? null;
-}
-
 export async function createAppointment(input: CreateAppointmentInput) {
   const parsed = CreateSchema.safeParse(input);
   if (!parsed.success) {
     return { error: "Datos inválidos: " + parsed.error.message };
   }
 
-  const supabase = await createClient();
-  const salonId = await getSalonId(supabase);
-  if (!salonId) return { error: "No se encontró el salón asociado a tu cuenta." };
+  const admin = createAdminClient();
+  const salonId = await getSalonId();
+  if (!salonId) return { error: "No se encontró el salón." };
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from("appointments")
     .insert({
       salon_id: salonId,
@@ -65,9 +60,9 @@ export async function updateAppointment(id: string, input: UpdateAppointmentInpu
     return { error: "Datos inválidos: " + parsed.error.message };
   }
 
-  const supabase = await createClient();
+  const admin = createAdminClient();
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("appointments")
     .update(parsed.data)
     .eq("id", id);
@@ -85,9 +80,9 @@ export async function updateAppointment(id: string, input: UpdateAppointmentInpu
 }
 
 export async function cancelAppointment(id: string) {
-  const supabase = await createClient();
+  const admin = createAdminClient();
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("appointments")
     .update({ status: "cancelled" })
     .eq("id", id);
@@ -97,23 +92,4 @@ export async function cancelAppointment(id: string) {
   revalidatePath("/dashboard/citas");
   revalidatePath("/dashboard/calendario");
   return { success: true };
-}
-
-export async function getAppointmentsByDate(salonId: string, date: string) {
-  const supabase = await createClient();
-
-  const dayStart = `${date}T00:00:00.000Z`;
-  const dayEnd = `${date}T23:59:59.999Z`;
-
-  const { data, error } = await supabase
-    .from("appointments")
-    .select("*, staff:staff_members(id, name)")
-    .eq("salon_id", salonId)
-    .gte("starts_at", dayStart)
-    .lte("starts_at", dayEnd)
-    .eq("status", "active")
-    .order("starts_at");
-
-  if (error) return { error: error.message };
-  return { data };
 }

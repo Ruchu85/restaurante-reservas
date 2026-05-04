@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { EditAppointmentForm } from "@/components/dashboard/EditAppointmentForm";
 import Link from "next/link";
@@ -12,18 +12,14 @@ export default async function EditCitaPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const admin = createAdminClient();
+  const salonId = await getSalonId();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("salon_id")
-    .single();
-
-  const { data: appointment } = await supabase
+  const { data: appointment } = await admin
     .from("appointments")
     .select("*")
     .eq("id", id)
-    .eq("salon_id", profile?.salon_id ?? "")
+    .eq("salon_id", salonId ?? "")
     .single();
 
   if (!appointment) notFound();

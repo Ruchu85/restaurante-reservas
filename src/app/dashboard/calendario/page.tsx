@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
 import { CalendarView } from "@/components/dashboard/CalendarView";
 
 export const metadata = { title: "Calendario — Panel admin" };
@@ -9,18 +9,11 @@ export default async function CalendarioPage({
   searchParams: Promise<{ date?: string }>;
 }) {
   const params = await searchParams;
-  const supabase = await createClient();
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("salon_id")
-    .single();
-
-  const salonId = profile?.salon_id ?? "";
+  const admin = createAdminClient();
+  const salonId = await getSalonId();
 
   const today = params.date ?? new Date().toISOString().split("T")[0];
 
-  // Fetch ±35 days around the current date for week navigation
   const dateObj = new Date(today + "T12:00:00");
   const rangeStart = new Date(dateObj);
   rangeStart.setDate(dateObj.getDate() - 50);
@@ -28,18 +21,18 @@ export default async function CalendarioPage({
   rangeEnd.setDate(dateObj.getDate() + 50);
 
   const [{ data: appointments }, { data: staff }] = await Promise.all([
-    supabase
+    admin
       .from("appointments")
       .select("*, staff:staff_members(id, name)")
-      .eq("salon_id", salonId)
+      .eq("salon_id", salonId ?? "")
       .eq("status", "active")
       .gte("starts_at", rangeStart.toISOString())
       .lte("starts_at", rangeEnd.toISOString())
       .order("starts_at"),
-    supabase
+    admin
       .from("staff_members")
       .select("id, name")
-      .eq("salon_id", salonId)
+      .eq("salon_id", salonId ?? "")
       .eq("active", true)
       .order("name"),
   ]);

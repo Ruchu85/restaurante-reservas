@@ -6,15 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Trash2, Plus, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { addBlockedDay, removeBlockedDay } from "@/actions/schedule";
 import type { BlockedDay } from "@/types";
 
 interface BlockedDayFormProps {
-  salonId: string;
   blockedDays: BlockedDay[];
 }
 
-export function BlockedDayForm({ salonId, blockedDays: initial }: BlockedDayFormProps) {
+export function BlockedDayForm({ blockedDays: initial }: BlockedDayFormProps) {
   const [isPending, startTransition] = useTransition();
   const [days, setDays] = useState<BlockedDay[]>(initial);
   const [date, setDate] = useState("");
@@ -25,34 +24,25 @@ export function BlockedDayForm({ salonId, blockedDays: initial }: BlockedDayForm
     if (!date) return;
 
     startTransition(async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("blocked_days")
-        .insert({ salon_id: salonId, date, reason: reason || null })
-        .select()
-        .single();
-
-      if (error) {
-        if (error.code === "23505") {
-          toast.error("Ya existe un cierre para esa fecha");
-        } else {
-          toast.error("Error: " + error.message);
-        }
-      } else {
+      const result = await addBlockedDay(date, reason || null);
+      if (result.error) {
+        toast.error(result.error);
+      } else if (result.data) {
         toast.success("Día bloqueado añadido");
-        setDays((prev) => [...prev, data as BlockedDay].sort((a, b) => a.date.localeCompare(b.date)));
+        setDays((prev) =>
+          [...prev, result.data as BlockedDay].sort((a, b) => a.date.localeCompare(b.date))
+        );
         setDate("");
         setReason("");
       }
     });
   }
 
-  async function handleDelete(id: string) {
+  function handleDelete(id: string) {
     startTransition(async () => {
-      const supabase = createClient();
-      const { error } = await supabase.from("blocked_days").delete().eq("id", id);
-      if (error) {
-        toast.error("Error al eliminar: " + error.message);
+      const result = await removeBlockedDay(id);
+      if (result.error) {
+        toast.error("Error al eliminar: " + result.error);
       } else {
         toast.success("Cierre eliminado");
         setDays((prev) => prev.filter((d) => d.id !== id));

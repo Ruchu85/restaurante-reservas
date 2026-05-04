@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BusinessHoursForm } from "@/components/dashboard/BusinessHoursForm";
 import { BlockedDayForm } from "@/components/dashboard/BlockedDayForm";
@@ -8,25 +8,19 @@ export const metadata = { title: "Horarios — Panel admin" };
 const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 export default async function HorariosPage() {
-  const supabase = await createClient();
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("salon_id")
-    .single();
-
-  const salonId = profile?.salon_id ?? "";
+  const admin = createAdminClient();
+  const salonId = await getSalonId();
 
   const [{ data: hours }, { data: blockedDays }] = await Promise.all([
-    supabase
+    admin
       .from("business_hours")
       .select("*")
-      .eq("salon_id", salonId)
+      .eq("salon_id", salonId ?? "")
       .order("day_of_week"),
-    supabase
+    admin
       .from("blocked_days")
       .select("*")
-      .eq("salon_id", salonId)
+      .eq("salon_id", salonId ?? "")
       .gte("date", new Date().toISOString().split("T")[0])
       .order("date"),
   ]);
@@ -37,7 +31,6 @@ export default async function HorariosPage() {
     <div className="space-y-6">
       <h1 className="text-xl font-bold md:text-2xl">Horarios</h1>
 
-      {/* Business hours */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Horario semanal</CardTitle>
@@ -47,7 +40,6 @@ export default async function HorariosPage() {
             {DAYS.map((dayName, dayIndex) => (
               <BusinessHoursForm
                 key={dayIndex}
-                salonId={salonId}
                 dayOfWeek={dayIndex}
                 dayName={dayName}
                 existing={hoursMap.get(dayIndex)}
@@ -57,13 +49,12 @@ export default async function HorariosPage() {
         </CardContent>
       </Card>
 
-      {/* Blocked days */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Cierres y días no laborables</CardTitle>
         </CardHeader>
         <CardContent>
-          <BlockedDayForm salonId={salonId} blockedDays={blockedDays ?? []} />
+          <BlockedDayForm blockedDays={blockedDays ?? []} />
         </CardContent>
       </Card>
     </div>

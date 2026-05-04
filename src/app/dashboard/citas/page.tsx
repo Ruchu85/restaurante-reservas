@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,19 +15,13 @@ export default async function CitasPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const params = await searchParams;
-  const supabase = await createClient();
+  const admin = createAdminClient();
+  const salonId = await getSalonId();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("salon_id")
-    .single();
-
-  const salonId = profile?.salon_id ?? "";
-
-  let query = supabase
+  let query = admin
     .from("appointments")
     .select("*, staff:staff_members(id, name)")
-    .eq("salon_id", salonId)
+    .eq("salon_id", salonId ?? "")
     .order("starts_at", { ascending: false })
     .limit(100);
 
@@ -51,7 +45,6 @@ export default async function CitasPage({
         </Button>
       </div>
 
-      {/* Filtro */}
       <div className="mb-4 flex gap-2">
         <Link href="/dashboard/citas">
           <Badge variant={!params.status || params.status === "active" ? "default" : "outline"} className="cursor-pointer">
