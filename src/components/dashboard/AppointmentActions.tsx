@@ -1,9 +1,10 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Pencil } from "lucide-react";
 import { cancelAppointment } from "@/actions/appointments";
 
 interface AppointmentActionsProps {
@@ -12,6 +13,7 @@ interface AppointmentActionsProps {
 }
 
 export function AppointmentActions({ appointmentId, status }: AppointmentActionsProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   if (status === "cancelled") return null;
@@ -24,20 +26,33 @@ export function AppointmentActions({ appointmentId, status }: AppointmentActions
         toast.error("Error: " + result.error);
       } else {
         toast.success("Cita cancelada");
+        router.refresh();
       }
     });
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="text-muted-foreground hover:text-destructive"
-      disabled={isPending}
-      onClick={handleCancel}
-      title="Cancelar cita"
-    >
-      <X className="h-4 w-4" />
-    </Button>
+    <div className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-muted-foreground hover:text-foreground"
+        onClick={() => router.push(`/dashboard/citas/${appointmentId}`)}
+        title="Editar cita"
+        disabled={isPending}
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-muted-foreground hover:text-destructive"
+        disabled={isPending}
+        onClick={handleCancel}
+        title="Cancelar cita"
+      >
+        <X className="h-4 w-4" />
+      </Button>
+    </div>
   );
 }

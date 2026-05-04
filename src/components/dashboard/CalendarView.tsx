@@ -142,7 +142,7 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
                       <div
                         key={appt.id}
                         className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-sm cursor-pointer hover:bg-blue-100 transition-colors"
-                        onClick={() => router.push(`/dashboard/citas/nueva?date=${toDateString(date)}`)}
+                        onClick={() => router.push(`/dashboard/citas/${appt.id}`)}
                       >
                         <div className="font-medium">{appt.customer_name}</div>
                         <div className="text-xs text-muted-foreground">
@@ -216,6 +216,7 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
                           key={appt.id}
                           className="rounded border border-blue-200 bg-blue-50 px-1 py-0.5 text-xs cursor-pointer hover:bg-blue-100 transition-colors truncate"
                           title={`${appt.customer_name} — ${appt.service}`}
+                          onClick={() => router.push(`/dashboard/citas/${appt.id}`)}
                         >
                           <div className="font-medium truncate">{appt.customer_name}</div>
                           <div className="opacity-75 truncate">{formatTime(appt.starts_at)}</div>
