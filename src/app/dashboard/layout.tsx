@@ -16,7 +16,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, full_name, salon_id")
+    .select("role, full_name")
     .eq("id", user.id)
     .single();
 
@@ -26,8 +26,9 @@ export default async function DashboardLayout({
         userName={profile?.full_name ?? user.email ?? "Usuario"}
         userRole={profile?.role ?? "staff"}
       />
-      <main className="flex-1 overflow-auto">
-        <div className="container mx-auto max-w-6xl p-6">{children}</div>
+      {/* pb-16 deja espacio para la bottom nav en móvil */}
+      <main className="flex-1 overflow-auto pb-16 md:pb-0">
+        <div className="mx-auto max-w-5xl p-4 md:p-6">{children}</div>
       </main>
     </div>
   );

@@ -1,233 +1,172 @@
 import { describe, it, expect } from "vitest";
-import { computeAvailableSlots } from "@/lib/availability";
-import type { Service, StaffMember, BusinessHours, Appointment } from "@/types";
+import { computeAvailableSlots, isWithinBusinessHours } from "@/lib/availability";
+import type { BusinessHours, Appointment, BlockedDay } from "@/types";
 
 const SALON_ID = "salon-1";
 const STAFF_ID = "staff-1";
-const SERVICE_ID = "svc-1";
-
-const baseService: Service = {
-  id: SERVICE_ID,
-  salon_id: SALON_ID,
-  name: "Corte",
-  description: null,
-  duration_minutes: 60,
-  buffer_before_minutes: 0,
-  buffer_after_minutes: 0,
-  price_cents: 2500,
-  active: true,
-  created_at: "",
-  updated_at: "",
-};
-
-const baseStaff: StaffMember = {
-  id: STAFF_ID,
-  salon_id: SALON_ID,
-  profile_id: null,
-  display_name: "María",
-  bio: null,
-  avatar_url: null,
-  active: true,
-  created_at: "",
-  updated_at: "",
-};
 
 // Monday 2026-06-01
 const TEST_DATE = "2026-06-01";
+
 const MONDAY_HOURS: BusinessHours = {
   id: "bh-1",
   salon_id: SALON_ID,
-  staff_id: null,
-  day_of_week: 1, // Monday
-  open_time: "09:00",
-  close_time: "18:00",
+  day_of_week: 1,
+  opens_at: "09:00",
+  closes_at: "18:00",
   is_open: true,
 };
+
+function makeAppt(startsAt: string, endsAt: string, staffId = STAFF_ID): Appointment {
+  return {
+    id: crypto.randomUUID(),
+    salon_id: SALON_ID,
+    staff_id: staffId,
+    customer_name: "Test",
+    service: "Corte",
+    starts_at: startsAt,
+    ends_at: endsAt,
+    notes: null,
+    status: "active",
+    created_at: "",
+  };
+}
 
 describe("computeAvailableSlots", () => {
   it("returns slots within business hours", () => {
     const slots = computeAvailableSlots({
       date: TEST_DATE,
-      service: baseService,
+      durationMinutes: 60,
       businessHours: [MONDAY_HOURS],
-      staffMembers: [baseStaff],
       existingAppointments: [],
-      staffTimeOffs: [],
+      blockedDays: [],
     });
 
     expect(slots.length).toBeGreaterThan(0);
-    // All slots should start at or after 09:00
     slots.forEach((slot) => {
       expect(slot.starts_at.getHours()).toBeGreaterThanOrEqual(9);
-    });
-    // No slot should end after 18:00
-    slots.forEach((slot) => {
-      const endH = slot.ends_at.getHours();
-      const endM = slot.ends_at.getMinutes();
-      expect(endH * 60 + endM).toBeLessThanOrEqual(18 * 60);
+      const endTotal = slot.ends_at.getHours() * 60 + slot.ends_at.getMinutes();
+      expect(endTotal).toBeLessThanOrEqual(18 * 60);
     });
   });
 
   it("returns no slots when salon is closed", () => {
-    const closedHours: BusinessHours = { ...MONDAY_HOURS, is_open: false };
+    const closed: BusinessHours = { ...MONDAY_HOURS, is_open: false };
     const slots = computeAvailableSlots({
       date: TEST_DATE,
-      service: baseService,
-      businessHours: [closedHours],
-      staffMembers: [baseStaff],
+      durationMinutes: 60,
+      businessHours: [closed],
       existingAppointments: [],
-      staffTimeOffs: [],
+      blockedDays: [],
     });
     expect(slots).toHaveLength(0);
   });
 
-  it("excludes slots that conflict with existing appointments", () => {
-    const existingStart = new Date(`${TEST_DATE}T10:00:00`);
-    const existingEnd = new Date(`${TEST_DATE}T11:00:00`);
-
-    const existingAppt: Appointment = {
-      id: "appt-1",
+  it("returns no slots for blocked days", () => {
+    const blocked: BlockedDay = {
+      id: "bd-1",
       salon_id: SALON_ID,
-      staff_id: STAFF_ID,
-      service_id: SERVICE_ID,
-      customer_name: "Test",
-      customer_email: "test@test.com",
-      customer_phone: "600000000",
-      starts_at: existingStart.toISOString(),
-      ends_at: existingEnd.toISOString(),
-      status: "confirmed",
-      notes: null,
+      date: TEST_DATE,
+      reason: "Festivo",
       created_at: "",
-      updated_at: "",
     };
-
     const slots = computeAvailableSlots({
       date: TEST_DATE,
-      service: baseService,
+      durationMinutes: 60,
       businessHours: [MONDAY_HOURS],
-      staffMembers: [baseStaff],
-      existingAppointments: [existingAppt],
-      staffTimeOffs: [],
-    });
-
-    // The 10:00 slot should be excluded
-    const conflictingSlot = slots.find(
-      (s) => s.starts_at.getHours() === 10 && s.starts_at.getMinutes() === 0,
-    );
-    expect(conflictingSlot).toBeUndefined();
-  });
-
-  it("excludes slots when staff is on time off", () => {
-    const slots = computeAvailableSlots({
-      date: TEST_DATE,
-      service: baseService,
-      businessHours: [MONDAY_HOURS],
-      staffMembers: [baseStaff],
       existingAppointments: [],
-      staffTimeOffs: [
-        {
-          id: "off-1",
-          staff_id: STAFF_ID,
-          salon_id: SALON_ID,
-          starts_at: `${TEST_DATE}T00:00:00Z`,
-          ends_at: `${TEST_DATE}T23:59:59Z`,
-          reason: "Vacaciones",
-          created_at: "",
-        },
-      ],
+      blockedDays: [blocked],
     });
-
     expect(slots).toHaveLength(0);
   });
 
-  it("respects buffer_after_minutes when calculating conflicts", () => {
-    const serviceWithBuffer: Service = {
-      ...baseService,
-      duration_minutes: 45,
-      buffer_after_minutes: 15,
-    };
-
-    // Existing appointment at 10:00 - 10:45
-    const existingAppt: Appointment = {
-      id: "appt-2",
-      salon_id: SALON_ID,
-      staff_id: STAFF_ID,
-      service_id: SERVICE_ID,
-      customer_name: "Test",
-      customer_email: "test@test.com",
-      customer_phone: "600000000",
-      starts_at: `${TEST_DATE}T10:00:00`,
-      ends_at: `${TEST_DATE}T10:45:00`,
-      status: "confirmed",
-      notes: null,
-      created_at: "",
-      updated_at: "",
-    };
+  it("excludes slots that conflict with active appointments", () => {
+    const appt = makeAppt(`${TEST_DATE}T10:00:00`, `${TEST_DATE}T11:00:00`);
 
     const slots = computeAvailableSlots({
       date: TEST_DATE,
-      service: serviceWithBuffer,
+      durationMinutes: 60,
       businessHours: [MONDAY_HOURS],
-      staffMembers: [baseStaff],
-      existingAppointments: [existingAppt],
-      staffTimeOffs: [],
+      existingAppointments: [appt],
+      blockedDays: [],
+      staffId: STAFF_ID,
     });
 
-    // 10:00 slot should conflict (overlaps with existing)
-    const slot1000 = slots.find(
+    const conflicting = slots.find(
       (s) => s.starts_at.getHours() === 10 && s.starts_at.getMinutes() === 0,
     );
-    expect(slot1000).toBeUndefined();
+    expect(conflicting).toBeUndefined();
+  });
+
+  it("does not exclude slots for cancelled appointments", () => {
+    const appt = { ...makeAppt(`${TEST_DATE}T10:00:00`, `${TEST_DATE}T11:00:00`), status: "cancelled" as const };
+
+    const slots = computeAvailableSlots({
+      date: TEST_DATE,
+      durationMinutes: 60,
+      businessHours: [MONDAY_HOURS],
+      existingAppointments: [appt],
+      blockedDays: [],
+      staffId: STAFF_ID,
+    });
+
+    const slot = slots.find(
+      (s) => s.starts_at.getHours() === 10 && s.starts_at.getMinutes() === 0,
+    );
+    expect(slot).toBeDefined();
   });
 
   it("returns slots at 15-minute intervals by default", () => {
     const slots = computeAvailableSlots({
       date: TEST_DATE,
-      service: { ...baseService, duration_minutes: 30 },
+      durationMinutes: 30,
       businessHours: [MONDAY_HOURS],
-      staffMembers: [baseStaff],
       existingAppointments: [],
-      staffTimeOffs: [],
+      blockedDays: [],
     });
 
-    // Verify intervals are 15 minutes
     for (let i = 1; i < Math.min(slots.length, 5); i++) {
-      const diff =
-        slots[i].starts_at.getTime() - slots[i - 1].starts_at.getTime();
+      const diff = slots[i].starts_at.getTime() - slots[i - 1].starts_at.getTime();
       expect(diff).toBe(15 * 60 * 1000);
     }
   });
 
-  it("only considers pending and confirmed appointments for conflicts", () => {
-    const cancelledAppt: Appointment = {
-      id: "appt-3",
-      salon_id: SALON_ID,
-      staff_id: STAFF_ID,
-      service_id: SERVICE_ID,
-      customer_name: "Test",
-      customer_email: "test@test.com",
-      customer_phone: "600000000",
-      starts_at: `${TEST_DATE}T10:00:00`,
-      ends_at: `${TEST_DATE}T11:00:00`,
-      status: "cancelled",
-      notes: null,
-      created_at: "",
-      updated_at: "",
-    };
+  it("ignores appointments from different staff when staffId is set", () => {
+    const otherStaffAppt = makeAppt(`${TEST_DATE}T10:00:00`, `${TEST_DATE}T11:00:00`, "other-staff");
 
     const slots = computeAvailableSlots({
       date: TEST_DATE,
-      service: baseService,
+      durationMinutes: 60,
       businessHours: [MONDAY_HOURS],
-      staffMembers: [baseStaff],
-      existingAppointments: [cancelledAppt],
-      staffTimeOffs: [],
+      existingAppointments: [otherStaffAppt],
+      blockedDays: [],
+      staffId: STAFF_ID,
     });
 
-    // Cancelled appointment should NOT block the 10:00 slot
-    const slot1000 = slots.find(
+    const slot = slots.find(
       (s) => s.starts_at.getHours() === 10 && s.starts_at.getMinutes() === 0,
     );
-    expect(slot1000).toBeDefined();
+    expect(slot).toBeDefined();
+  });
+});
+
+describe("isWithinBusinessHours", () => {
+  it("returns true for a slot within hours", () => {
+    const starts = new Date(`${TEST_DATE}T10:00:00`);
+    const ends = new Date(`${TEST_DATE}T11:00:00`);
+    expect(isWithinBusinessHours(starts, ends, [MONDAY_HOURS])).toBe(true);
+  });
+
+  it("returns false for a slot outside hours", () => {
+    const starts = new Date(`${TEST_DATE}T07:00:00`);
+    const ends = new Date(`${TEST_DATE}T08:00:00`);
+    expect(isWithinBusinessHours(starts, ends, [MONDAY_HOURS])).toBe(false);
+  });
+
+  it("returns false when salon is closed", () => {
+    const closed: BusinessHours = { ...MONDAY_HOURS, is_open: false };
+    const starts = new Date(`${TEST_DATE}T10:00:00`);
+    const ends = new Date(`${TEST_DATE}T11:00:00`);
+    expect(isWithinBusinessHours(starts, ends, [closed])).toBe(false);
   });
 });

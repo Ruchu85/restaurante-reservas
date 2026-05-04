@@ -1,156 +1,93 @@
-import {
-  addMinutes,
-  roundToInterval,
-} from "@/lib/utils";
-import type {
-  BusinessHours,
-  Service,
-  StaffMember,
-  StaffTimeOff,
-  Appointment,
-  TimeSlot,
-} from "@/types";
+import { addMinutes, roundToInterval } from "@/lib/utils";
+import type { BusinessHours, Appointment, BlockedDay } from "@/types";
 
-export interface AvailabilityInput {
-  date: string; // YYYY-MM-DD in Europe/Madrid
-  service: Service;
+export interface SlotInput {
+  date: string;             // YYYY-MM-DD
+  durationMinutes: number;
   businessHours: BusinessHours[];
-  staffMembers: StaffMember[];
   existingAppointments: Appointment[];
-  staffTimeOffs: StaffTimeOff[];
+  blockedDays: BlockedDay[];
+  staffId?: string;
   slotIntervalMinutes?: number;
-  staffId?: string; // if specified, only check this staff member
 }
 
-export interface StaffSlot {
-  staffId: string;
-  staffName: string;
-  slots: TimeSlot[];
+export interface TimeSlotResult {
+  starts_at: Date;
+  ends_at: Date;
 }
 
-export function computeAvailableSlots(input: AvailabilityInput): TimeSlot[] {
+export function computeAvailableSlots(input: SlotInput): TimeSlotResult[] {
   const {
     date,
-    service,
+    durationMinutes,
     businessHours,
-    staffMembers,
     existingAppointments,
-    staffTimeOffs,
-    slotIntervalMinutes = 15,
+    blockedDays,
     staffId,
+    slotIntervalMinutes = 15,
   } = input;
 
-  const targetStaff = staffId
-    ? staffMembers.filter((s) => s.id === staffId)
-    : staffMembers;
+  // Reject blocked days
+  const isBlocked = blockedDays.some((d) => d.date === date);
+  if (isBlocked) return [];
 
-  if (targetStaff.length === 0) return [];
+  // Find salon hours for this day
+  const dayOfWeek = new Date(date + "T12:00:00").getDay();
+  const hours = businessHours.find((h) => h.day_of_week === dayOfWeek);
+  if (!hours || !hours.is_open) return [];
 
-  const allSlots: TimeSlot[] = [];
+  const openTime = parseTimeOnDate(date, hours.opens_at);
+  const closeTime = parseTimeOnDate(date, hours.closes_at);
+
   const now = new Date();
+  const slots: TimeSlotResult[] = [];
+  let cursor = roundToInterval(openTime, slotIntervalMinutes);
 
-  for (const staff of targetStaff) {
-    const salonHours = getSalonHoursForDate(businessHours, date);
-    if (!salonHours || !salonHours.is_open) continue;
+  while (addMinutes(cursor, durationMinutes) <= closeTime) {
+    const slotEnd = addMinutes(cursor, durationMinutes);
 
-    if (isStaffOnTimeOff(staff.id, date, staffTimeOffs)) continue;
-
-    const openTime = parseTimeOnDate(date, salonHours.open_time);
-    const closeTime = parseTimeOnDate(date, salonHours.close_time);
-
-    const totalDuration =
-      service.buffer_before_minutes +
-      service.duration_minutes +
-      service.buffer_after_minutes;
-
-    let cursor = roundToInterval(openTime, slotIntervalMinutes);
-
-    while (addMinutes(cursor, totalDuration) <= closeTime) {
-      const slotStart = addMinutes(cursor, service.buffer_before_minutes);
-      const slotEnd = addMinutes(slotStart, service.duration_minutes);
-      const effectiveEnd = addMinutes(cursor, totalDuration);
-
-      if (cursor <= now) {
-        cursor = addMinutes(cursor, slotIntervalMinutes);
-        continue;
-      }
-
-      const hasConflict = existingAppointments.some((appt) => {
-        if (appt.staff_id !== staff.id) return false;
-        if (!["pending", "confirmed"].includes(appt.status)) return false;
-        const apptStart = new Date(appt.starts_at);
-        const apptEnd = new Date(appt.ends_at);
-        return cursor < apptEnd && effectiveEnd > apptStart;
-      });
-
-      if (!hasConflict) {
-        allSlots.push({
-          starts_at: slotStart,
-          ends_at: slotEnd,
-          available: true,
-          staff_id: staff.id,
-        });
-      }
-
+    if (cursor <= now) {
       cursor = addMinutes(cursor, slotIntervalMinutes);
+      continue;
     }
+
+    const hasConflict = existingAppointments.some((appt) => {
+      if (staffId && appt.staff_id !== staffId) return false;
+      if (appt.status !== "active") return false;
+      const apptStart = new Date(appt.starts_at);
+      const apptEnd = new Date(appt.ends_at);
+      return cursor < apptEnd && slotEnd > apptStart;
+    });
+
+    if (!hasConflict) {
+      slots.push({ starts_at: cursor, ends_at: slotEnd });
+    }
+
+    cursor = addMinutes(cursor, slotIntervalMinutes);
   }
 
-  // Deduplicate by start time, prefer first available staff (deterministic)
-  const seen = new Set<string>();
-  return allSlots.filter((slot) => {
-    const key = slot.starts_at.toISOString();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return slots;
 }
 
-function getSalonHoursForDate(
-  hours: BusinessHours[],
-  date: string,
-): BusinessHours | undefined {
-  const dayOfWeek = new Date(date + "T12:00:00").getDay();
-  return hours.find(
-    (h) => h.staff_id === null && h.day_of_week === dayOfWeek,
-  );
+export function isWithinBusinessHours(
+  startsAt: Date,
+  endsAt: Date,
+  businessHours: BusinessHours[],
+): boolean {
+  const dayOfWeek = startsAt.getDay();
+  const hours = businessHours.find((h) => h.day_of_week === dayOfWeek);
+  if (!hours || !hours.is_open) return false;
+
+  const date = startsAt.toISOString().split("T")[0];
+  const openTime = parseTimeOnDate(date, hours.opens_at);
+  const closeTime = parseTimeOnDate(date, hours.closes_at);
+
+  return startsAt >= openTime && endsAt <= closeTime;
 }
 
 function parseTimeOnDate(date: string, time: string): Date {
-  const [hours, minutes] = time.split(":").map(Number);
-  // Parse the date in Europe/Madrid timezone
-  const d = new Date(`${date}T${time}:00`);
-  // We work in UTC representation of Madrid time for simplicity
-  // In production, use date-fns-tz for proper timezone handling
-  d.setHours(hours, minutes, 0, 0);
+  const [h, m] = time.split(":").map(Number);
+  const d = new Date(date + "T00:00:00");
+  d.setHours(h, m, 0, 0);
   return d;
-}
-
-function isStaffOnTimeOff(
-  staffId: string,
-  date: string,
-  timeOffs: StaffTimeOff[],
-): boolean {
-  const dayStart = new Date(date + "T00:00:00");
-  const dayEnd = new Date(date + "T23:59:59");
-
-  return timeOffs.some((off) => {
-    if (off.staff_id !== staffId) return false;
-    const offStart = new Date(off.starts_at);
-    const offEnd = new Date(off.ends_at);
-    return offStart <= dayEnd && offEnd >= dayStart;
-  });
-}
-
-export function pickDeterministicStaff(
-  slots: TimeSlot[],
-  targetStartsAt: Date,
-): string | undefined {
-  const matching = slots.filter(
-    (s) => s.starts_at.getTime() === targetStartsAt.getTime() && s.staff_id,
-  );
-  if (matching.length === 0) return undefined;
-  // Sort by staff_id for determinism
-  matching.sort((a, b) => (a.staff_id! < b.staff_id! ? -1 : 1));
-  return matching[0].staff_id;
 }

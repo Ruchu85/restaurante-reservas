@@ -6,9 +6,7 @@ import { z } from "zod";
 
 const StaffSchema = z.object({
   salon_id: z.string().uuid(),
-  display_name: z.string().min(2).max(100),
-  bio: z.string().max(500).optional(),
-  avatar_url: z.string().url().optional(),
+  name: z.string().min(2).max(100),
   active: z.boolean().default(true),
 });
 
@@ -24,7 +22,7 @@ export async function createStaffMember(input: z.infer<typeof StaffSchema>) {
     .single();
 
   if (error) return { error: error.message };
-  revalidatePath("/dashboard/equipo");
+  revalidatePath("/dashboard/horarios");
   return { data };
 }
 
@@ -33,27 +31,12 @@ export async function updateStaffMember(
   input: Partial<z.infer<typeof StaffSchema>>,
 ) {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("staff_members")
     .update(input)
-    .eq("id", id)
-    .select()
-    .single();
+    .eq("id", id);
 
   if (error) return { error: error.message };
-  revalidatePath("/dashboard/equipo");
-  return { data };
-}
-
-export async function getPublicStaff(salonId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("staff_members")
-    .select("id, display_name, bio, avatar_url")
-    .eq("salon_id", salonId)
-    .eq("active", true)
-    .order("display_name");
-
-  if (error) return { error: error.message };
-  return { data };
+  revalidatePath("/dashboard/horarios");
+  return { success: true };
 }
