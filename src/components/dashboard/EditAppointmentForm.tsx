@@ -53,7 +53,7 @@ function initFromAppointment(appt: Appointment) {
     customer_name: appt.customer_name,
     service: knownService ? appt.service : "Otro",
     service_custom: knownService ? "" : appt.service,
-    duration: knownDuration ? durationMins : 60,
+    duration: knownDuration ? durationMins : 30,
     date: local.split("T")[0],
     start_time: local.split("T")[1],
     notes: appt.notes ?? "",
