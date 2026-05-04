@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Calendar, ClipboardList, Clock, LogOut, Scissors } from "lucide-react";
+import { Calendar, ClipboardList, Clock, Home, LogOut, Scissors } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 const navItems = [
+  { href: "/dashboard", label: "Inicio", icon: Home, exact: true },
   { href: "/dashboard/calendario", label: "Calendario", icon: Calendar },
   { href: "/dashboard/citas", label: "Citas", icon: ClipboardList },
   { href: "/dashboard/horarios", label: "Horarios", icon: Clock },
@@ -30,6 +31,11 @@ export function DashboardNav({ userName, userRole }: DashboardNavProps) {
     router.refresh();
   }
 
+  function isActive(href: string, exact?: boolean) {
+    if (exact) return pathname === href;
+    return pathname.startsWith(href);
+  }
+
   return (
     <>
       {/* Sidebar — desktop */}
@@ -40,15 +46,15 @@ export function DashboardNav({ userName, userRole }: DashboardNavProps) {
         </div>
 
         <nav className="flex-1 p-2 space-y-0.5">
-          {navItems.map(({ href, label, icon: Icon }) => (
+          {navItems.map(({ href, label, icon: Icon, exact }) => (
             <Link
               key={href}
               href={href}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
-                pathname.startsWith(href)
+                isActive(href, exact)
                   ? "bg-slate-100 font-medium text-slate-900"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               )}
             >
               <Icon className="h-4 w-4 flex-shrink-0" />
@@ -72,30 +78,21 @@ export function DashboardNav({ userName, userRole }: DashboardNavProps) {
         </div>
       </aside>
 
-      {/* Bottom nav — mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t bg-white md:hidden">
-        {navItems.map(({ href, label, icon: Icon }) => (
+      {/* Bottom nav — mobile (4 tabs: Inicio, Calendario, Citas, Horarios) */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t bg-white md:hidden safe-area-pb">
+        {navItems.map(({ href, label, icon: Icon, exact }) => (
           <Link
             key={href}
             href={href}
             className={cn(
-              "flex flex-1 flex-col items-center gap-1 py-2 text-xs transition-colors",
-              pathname.startsWith(href)
-                ? "text-slate-900 font-medium"
-                : "text-slate-500",
+              "flex flex-1 flex-col items-center gap-0.5 py-2 text-xs transition-colors",
+              isActive(href, exact) ? "text-slate-900 font-medium" : "text-slate-500"
             )}
           >
-            <Icon className="h-5 w-5" />
-            {label}
+            <Icon className={cn("h-5 w-5", isActive(href, exact) ? "stroke-[2.5px]" : "")} />
+            <span>{label}</span>
           </Link>
         ))}
-        <button
-          onClick={handleLogout}
-          className="flex flex-1 flex-col items-center gap-1 py-2 text-xs text-slate-500"
-        >
-          <LogOut className="h-5 w-5" />
-          Salir
-        </button>
       </nav>
     </>
   );

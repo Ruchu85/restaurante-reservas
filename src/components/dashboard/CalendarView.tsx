@@ -100,6 +100,8 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
     return appointments.filter((a) => sameDay(new Date(a.starts_at), day));
   }
 
+  const VIEW_LABELS_MAP = { day: "Día", week: "Semana", month: "Mes" };
+
   const headerTitle =
     view === "day"
       ? date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })
@@ -112,52 +114,58 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
   return (
     <div className="rounded-xl border bg-white overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-2 border-b px-3 py-2.5">
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(1)}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={goToday}>
-            Hoy
+      <div className="border-b">
+        {/* Row 1: navigation + title + new button */}
+        <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
+          <div className="flex items-center gap-0.5">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="sm" className="h-8 text-xs px-2" onClick={goToday}>
+              Hoy
+            </Button>
+          </div>
+
+          <h2
+            className={cn(
+              "flex-1 text-sm font-medium text-center truncate capitalize",
+              isToday && view === "day" && "font-semibold"
+            )}
+          >
+            {headerTitle}
+          </h2>
+
+          <Button
+            size="sm"
+            className="h-8 text-xs px-3 flex-shrink-0"
+            onClick={() => router.push(`/dashboard/citas/nueva?date=${toDateString(date)}`)}
+          >
+            <Plus className="h-3.5 w-3.5 sm:mr-1" />
+            <span className="hidden sm:inline">Nueva cita</span>
           </Button>
         </div>
 
-        <h2
-          className={cn(
-            "text-sm font-medium truncate capitalize",
-            isToday && view === "day" && "text-slate-900"
-          )}
-        >
-          {headerTitle}
-        </h2>
-
-        <div className="flex items-center gap-1">
-          <div className="hidden sm:flex rounded-lg border p-0.5 gap-0.5">
+        {/* Row 2: view switcher — full width pill on mobile */}
+        <div className="px-3 pb-2.5">
+          <div className="flex rounded-lg border bg-slate-50 p-0.5 gap-0.5">
             {(["day", "week", "month"] as ViewMode[]).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
                 className={cn(
-                  "rounded px-2.5 py-1 text-xs transition-colors",
-                  view === v ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
+                  "flex-1 rounded-md py-1.5 text-xs font-medium transition-colors",
+                  view === v
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
                 )}
               >
-                {v === "day" ? "Día" : v === "week" ? "Semana" : "Mes"}
+                {VIEW_LABELS_MAP[v]}
               </button>
             ))}
           </div>
-          <Button
-            size="sm"
-            className="h-8 text-xs"
-            onClick={() => router.push(`/dashboard/citas/nueva?date=${toDateString(date)}`)}
-          >
-            <Plus className="mr-1 h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Nueva cita</span>
-            <span className="sm:hidden">Nueva</span>
-          </Button>
         </div>
       </div>
 
@@ -168,7 +176,7 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
             const hourAppts = getApptForDayHour(date, hour);
             return (
               <div key={hour} className="flex border-b last:border-b-0" style={{ minHeight: "56px" }}>
-                <div className="w-14 flex-shrink-0 border-r py-1 pr-2 text-right text-xs text-muted-foreground">
+                <div className="w-12 flex-shrink-0 border-r py-1 pr-2 text-right text-xs text-muted-foreground">
                   {hour}:00
                 </div>
                 <div className="flex-1 p-1 space-y-1">
@@ -177,7 +185,7 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
                     return (
                       <div
                         key={appt.id}
-                        className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-sm cursor-pointer hover:bg-blue-100 transition-colors"
+                        className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-sm cursor-pointer hover:bg-blue-100 active:bg-blue-200 transition-colors"
                         onClick={() => router.push(`/dashboard/citas/${appt.id}`)}
                       >
                         <div className="font-medium">{appt.customer_name}</div>
@@ -198,9 +206,9 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
       {/* WEEK VIEW */}
       {view === "week" && (
         <div className="overflow-auto">
-          <div className="min-w-[600px]">
+          <div className="min-w-[560px]">
             {/* Day headers */}
-            <div className="grid border-b" style={{ gridTemplateColumns: "48px repeat(7, 1fr)" }}>
+            <div className="grid border-b" style={{ gridTemplateColumns: "40px repeat(7, 1fr)" }}>
               <div className="border-r" />
               {weekDays.map((day, i) => {
                 const isT = sameDay(day, today);
@@ -220,7 +228,7 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
                     <div className="text-xs text-muted-foreground">{DAYS_SHORT[day.getDay()]}</div>
                     <div
                       className={cn(
-                        "mx-auto mt-1 flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium",
+                        "mx-auto mt-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium",
                         isT && "bg-slate-900 text-white"
                       )}
                     >
@@ -239,9 +247,9 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
               <div
                 key={hour}
                 className="grid border-b last:border-b-0"
-                style={{ gridTemplateColumns: "48px repeat(7, 1fr)", minHeight: "52px" }}
+                style={{ gridTemplateColumns: "40px repeat(7, 1fr)", minHeight: "48px" }}
               >
-                <div className="border-r py-1 pr-1.5 text-right text-xs text-muted-foreground">
+                <div className="border-r py-1 pr-1 text-right text-xs text-muted-foreground leading-tight">
                   {hour}:00
                 </div>
                 {weekDays.map((day, i) => {
@@ -298,9 +306,9 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
                   <div
                     key={di}
                     className={cn(
-                      "min-h-[64px] rounded-md border p-1.5 cursor-pointer transition-colors hover:bg-slate-50",
-                      isT && "ring-2 ring-slate-900 ring-inset",
-                      !isCurrentMonth && "opacity-35 bg-slate-50/50"
+                      "min-h-[56px] rounded-md border p-1 cursor-pointer transition-colors active:bg-slate-100",
+                      isT ? "ring-2 ring-slate-900 ring-inset border-transparent" : "hover:bg-slate-50",
+                      !isCurrentMonth && "opacity-30 bg-slate-50/50"
                     )}
                     onClick={() => {
                       setDate(new Date(day));
@@ -309,25 +317,19 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
                   >
                     <div
                       className={cn(
-                        "text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-1",
+                        "text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full mb-0.5",
                         isT && "bg-slate-900 text-white"
                       )}
                     >
                       {day.getDate()}
                     </div>
                     {colorClass && (
-                      <div
-                        className={cn(
-                          "text-xs rounded px-1 py-0.5 text-center font-semibold leading-tight",
-                          colorClass
-                        )}
-                      >
+                      <div className={cn("text-xs rounded px-0.5 text-center font-semibold leading-tight", colorClass)}>
                         {count}
                       </div>
                     )}
-                    {/* First appointment preview on larger screens */}
                     {dayAppts[0] && (
-                      <div className="hidden sm:block mt-0.5 text-xs text-muted-foreground truncate">
+                      <div className="hidden sm:block mt-0.5 text-xs text-muted-foreground truncate leading-tight">
                         {dayAppts[0].customer_name}
                       </div>
                     )}
@@ -337,24 +339,23 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
             </div>
           ))}
 
-          {/* Legend */}
           <div className="mt-2 flex items-center gap-3 px-1 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-sm bg-emerald-200" /> 1–2 citas
+              <span className="inline-block h-2 w-2 rounded-sm bg-emerald-200" /> 1–2
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-sm bg-amber-200" /> 3–4 citas
+              <span className="inline-block h-2 w-2 rounded-sm bg-amber-200" /> 3–4
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-sm bg-red-200" /> 5+ citas
+              <span className="inline-block h-2 w-2 rounded-sm bg-red-200" /> 5+
             </span>
           </div>
         </div>
       )}
 
-      {/* Mobile: week strip (day/week view only) */}
-      {view !== "month" && (
-        <div className="sm:hidden border-t px-3 py-2 flex gap-1 overflow-x-auto">
+      {/* Mobile: week strip below day view */}
+      {view === "day" && (
+        <div className="border-t px-2 py-2 flex gap-1 overflow-x-auto md:hidden">
           {weekDays.map((day, i) => {
             const isT = sameDay(day, today);
             const isSelected = sameDay(day, date);
@@ -364,18 +365,24 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
                 key={i}
                 onClick={() => {
                   setDate(new Date(day));
-                  setView("day");
                 }}
                 className={cn(
-                  "flex flex-col items-center flex-shrink-0 rounded-lg p-1.5 min-w-[36px] transition-colors",
-                  isSelected ? "bg-slate-900 text-white" : isT ? "bg-slate-100" : "hover:bg-slate-50"
+                  "flex flex-col items-center flex-shrink-0 rounded-lg p-1.5 min-w-[38px] transition-colors",
+                  isSelected
+                    ? "bg-slate-900 text-white"
+                    : isT
+                    ? "bg-slate-100"
+                    : "hover:bg-slate-50"
                 )}
               >
                 <span className="text-xs">{DAYS_SHORT[day.getDay()]}</span>
                 <span className="text-sm font-semibold">{day.getDate()}</span>
                 {hasAppts && (
                   <div
-                    className={cn("mt-0.5 h-1 w-1 rounded-full", isSelected ? "bg-white" : "bg-blue-500")}
+                    className={cn(
+                      "mt-0.5 h-1 w-1 rounded-full",
+                      isSelected ? "bg-white" : "bg-blue-500"
+                    )}
                   />
                 )}
               </button>

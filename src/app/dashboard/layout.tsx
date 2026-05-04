@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 
@@ -14,20 +15,21 @@ export default async function DashboardLayout({
 
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
+  const admin = createAdminClient();
+  const { data: profile } = await admin
     .from("profiles")
     .select("role, full_name")
     .eq("id", user.id)
     .single();
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-svh bg-slate-50">
       <DashboardNav
         userName={profile?.full_name ?? user.email ?? "Usuario"}
         userRole={profile?.role ?? "staff"}
       />
-      {/* pb-16 deja espacio para la bottom nav en móvil */}
-      <main className="flex-1 overflow-auto pb-16 md:pb-0">
+      {/* pb-16 + safe-area deja espacio para la bottom nav en móvil */}
+      <main className="flex-1 overflow-auto pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         <div className="mx-auto max-w-5xl p-4 md:p-6">{children}</div>
       </main>
     </div>
