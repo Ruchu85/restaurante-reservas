@@ -3,7 +3,7 @@
   "buildCommand": "pnpm build",
   "installCommand": "pnpm install",
   "outputDirectory": ".next",
-  "regions": ["mad1"],
+  "regions": ["fra1"],
   "headers": [
     {
       "source": "/(.*)",
