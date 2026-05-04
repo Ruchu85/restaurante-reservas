@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, ClipboardList, Clock, LogOut } from "lucide-react";
+import { Calendar, ClipboardList, Clock, LogOut, Plus } from "lucide-react";
 import { signOut } from "@/actions/auth";
 
 const cards = [
@@ -33,6 +33,14 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold tracking-tight">Panel de gestión</h1>
         <p className="text-muted-foreground mt-1 text-sm">¿Qué quieres hacer?</p>
       </div>
+
+      <Link
+        href="/dashboard/citas/nueva"
+        className="mb-6 flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-4 text-white font-semibold text-base w-full max-w-xs transition-all active:scale-95 hover:bg-slate-700"
+      >
+        <Plus className="h-5 w-5" />
+        Nueva cita
+      </Link>
 
       <div className="grid grid-cols-2 gap-4 w-full max-w-xs">
         {cards.map(({ href, icon: Icon, label, bg, fg }) => (

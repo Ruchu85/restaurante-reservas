@@ -59,6 +59,7 @@ export interface Appointment {
   ends_at: string;
   notes: string | null;
   status: AppointmentStatus;
+  ticket_printed: boolean;
   created_at: string;
   // joined
   staff?: Pick<StaffMember, "id" | "name">;

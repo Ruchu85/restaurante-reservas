@@ -1,8 +1,10 @@
 import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { EditAppointmentForm } from "@/components/dashboard/EditAppointmentForm";
+import { PrintButton } from "@/components/dashboard/PrintButton";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import type { Appointment } from "@/types";
 
 export const metadata = { title: "Editar cita — Panel admin" };
 
@@ -24,6 +26,8 @@ export default async function EditCitaPage({
 
   if (!appointment) notFound();
 
+  const appt = appointment as Appointment;
+
   return (
     <div>
       <div className="mb-6">
@@ -34,13 +38,19 @@ export default async function EditCitaPage({
           <ChevronLeft className="h-4 w-4" />
           Volver a citas
         </Link>
-        <h1 className="text-2xl font-bold">Editar cita</h1>
-        <p className="text-sm text-muted-foreground">
-          {appointment.customer_name} · {appointment.service}
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Editar cita</h1>
+            <p className="text-sm text-muted-foreground">
+              {appt.customer_name} · {appt.service}
+              {appt.ticket_printed && <span className="ml-2 text-emerald-600">✓ Ticket impreso</span>}
+            </p>
+          </div>
+          <PrintButton appointments={[appt]} label="Imprimir ticket" />
+        </div>
       </div>
 
-      <EditAppointmentForm appointment={appointment} />
+      <EditAppointmentForm appointment={appt} />
     </div>
   );
 }

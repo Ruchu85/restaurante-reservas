@@ -8,7 +8,7 @@ export const metadata = { title: "Nueva cita — Panel admin" };
 export default async function NuevaCitaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string }>;
+  searchParams: Promise<{ date?: string; time?: string }>;
 }) {
   const params = await searchParams;
   const admin = createAdminClient();
@@ -53,6 +53,7 @@ export default async function NuevaCitaPage({
 
       <NewAppointmentForm
         initialDate={params.date}
+        initialTime={params.time}
         businessHours={businessHours ?? []}
         existingAppointments={appointments ?? []}
       />

@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatTime } from "@/lib/utils";
+import { printTickets } from "@/lib/printTicket";
 import type { Appointment, StaffMember } from "@/types";
 
 interface CalendarViewProps {
@@ -58,7 +59,7 @@ function apptCountColor(n: number) {
 export function CalendarView({ appointments, staff, currentDate }: CalendarViewProps) {
   const router = useRouter();
   const [date, setDate] = useState(new Date(currentDate + "T12:00:00"));
-  const [view, setView] = useState<ViewMode>("day");
+  const [view, setView] = useState<ViewMode>("week");
 
   // Sync when URL param changes (fixes "Hoy" button)
   useEffect(() => {
@@ -116,6 +117,23 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
     });
   }
 
+  function handleFreeSlotClick(day: Date, h: number, m: number) {
+    const time = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    const dateStr = toDateString(day);
+    const ok = window.confirm(`¿Crear cita el ${day.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })} a las ${time}?`);
+    if (ok) router.push(`/dashboard/citas/nueva?date=${dateStr}&time=${time}`);
+  }
+
+  function handlePrintView() {
+    const appts = view === "day"
+      ? getApptForDay(date)
+      : view === "week"
+      ? weekDays.flatMap((d) => getApptForDay(d))
+      : [];
+    if (!appts.length) { window.alert("No hay citas para imprimir."); return; }
+    printTickets(appts);
+  }
+
   const VIEW_LABELS = { day: "Día", week: "Semana", month: "Mes" };
 
   const headerTitle =
@@ -147,6 +165,17 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
           <h2 className={cn("flex-1 text-sm font-medium text-center truncate capitalize", isToday && view === "day" && "font-semibold")}>
             {headerTitle}
           </h2>
+          {view !== "month" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={handlePrintView}
+              title="Imprimir citas del periodo"
+            >
+              <Printer className="h-4 w-4" />
+            </Button>
+          )}
           <Button
             size="sm"
             className="h-8 text-xs px-3 flex-shrink-0"
@@ -186,9 +215,10 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
                 key={label}
                 className={cn(
                   "flex border-b last:border-b-0 transition-colors",
-                  occupied ? "bg-rose-50" : "bg-emerald-50/40"
+                  occupied ? "bg-rose-50" : "bg-emerald-50 hover:bg-emerald-100 cursor-pointer"
                 )}
                 style={{ minHeight: "44px" }}
+                onClick={() => { if (!occupied) handleFreeSlotClick(date, h, m); }}
               >
                 <div className={cn(
                   "w-12 flex-shrink-0 border-r py-1 pr-2 text-right text-xs font-medium",
@@ -259,14 +289,14 @@ export function CalendarView({ appointments, staff, currentDate }: CalendarViewP
                 {weekDays.map((day, i) => {
                   const slotAppts = getApptStartingInSlot(day, h, m);
                   const occupied = slotOccupied(h, m, day, appointments);
-                  const isT = sameDay(day, today);
                   return (
                     <div
                       key={i}
                       className={cn(
                         "border-r last:border-r-0 p-0.5 space-y-0.5 transition-colors",
-                        occupied ? "bg-rose-50" : isT ? "bg-emerald-50/60" : "bg-emerald-50/20"
+                        occupied ? "bg-rose-50" : "bg-emerald-50 hover:bg-emerald-100 cursor-pointer"
                       )}
+                      onClick={() => { if (!occupied) handleFreeSlotClick(day, h, m); }}
                     >
                       {slotAppts.map((appt) => (
                         <div

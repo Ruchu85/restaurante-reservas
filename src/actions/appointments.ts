@@ -93,3 +93,18 @@ export async function cancelAppointment(id: string) {
   revalidatePath("/dashboard/calendario");
   return { success: true };
 }
+
+export async function markTicketPrinted(ids: string[]) {
+  if (!ids.length) return { success: true };
+  const admin = createAdminClient();
+
+  const { error } = await admin
+    .from("appointments")
+    .update({ ticket_printed: true })
+    .in("id", ids);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard/citas");
+  return { success: true };
+}

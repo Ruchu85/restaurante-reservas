@@ -17,6 +17,7 @@ interface ExistingAppt { starts_at: string; ends_at: string }
 
 interface NewAppointmentFormProps {
   initialDate?: string;
+  initialTime?: string;
   businessHours?: BusinessHours[];
   existingAppointments?: ExistingAppt[];
 }
@@ -93,6 +94,7 @@ function computeSlots(
 
 export function NewAppointmentForm({
   initialDate,
+  initialTime,
   businessHours = [],
   existingAppointments = [],
 }: NewAppointmentFormProps) {
@@ -107,7 +109,7 @@ export function NewAppointmentForm({
     service_custom: "",
     duration: 30,
     date: initialDate ?? defaultStart.toISOString().split("T")[0],
-    start_time: `${String(defaultStart.getHours()).padStart(2, "0")}:${String(defaultStart.getMinutes()).padStart(2, "0")}`,
+    start_time: initialTime ?? `${String(defaultStart.getHours()).padStart(2, "0")}:${String(defaultStart.getMinutes()).padStart(2, "0")}`,
     notes: "",
   });
 
