@@ -29,6 +29,7 @@ function makeAppt(startsAt: string, endsAt: string, staffId = STAFF_ID): Appoint
     notes: null,
     status: "active",
     ticket_printed: false,
+    ticket_number: null,
     created_at: "",
   };
 }

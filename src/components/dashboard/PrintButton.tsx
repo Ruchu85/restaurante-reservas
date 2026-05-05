@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { printTickets } from "@/lib/printTicket";
+import { printTickets, type SalonInfo } from "@/lib/printTicket";
 import { markTicketPrinted } from "@/actions/appointments";
 import type { Appointment } from "@/types";
 import { cn } from "@/lib/utils";
@@ -13,25 +13,25 @@ interface PrintButtonProps {
   appointments: Appointment[];
   variant?: "icon" | "default";
   label?: string;
-  salonName?: string;
+  salon?: SalonInfo;
 }
 
 export function PrintButton({
   appointments,
   variant = "default",
   label = "Imprimir tickets",
-  salonName = "Salón",
+  salon,
 }: PrintButtonProps) {
   const [isPending, startTransition] = useTransition();
   const allPrinted = appointments.length > 0 && appointments.every((a) => a.ticket_printed);
 
   function handlePrint() {
     if (!appointments.length) return;
-    printTickets(appointments, salonName);
+    printTickets(appointments, salon);
     const ids = appointments.map((a) => a.id);
     startTransition(async () => {
       const result = await markTicketPrinted(ids);
-      if (result.error) {
+      if ("error" in result && result.error) {
         toast.error("No se pudo marcar como impreso");
       }
     });

@@ -60,6 +60,7 @@ export interface Appointment {
   notes: string | null;
   status: AppointmentStatus;
   ticket_printed: boolean;
+  ticket_number: number | null;
   created_at: string;
   // joined
   staff?: Pick<StaffMember, "id" | "name">;

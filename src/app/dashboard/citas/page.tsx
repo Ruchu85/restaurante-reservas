@@ -20,6 +20,12 @@ export default async function CitasPage({
   const admin = createAdminClient();
   const salonId = await getSalonId();
 
+  const { data: salon } = await admin
+    .from("salons")
+    .select("name, address, phone")
+    .eq("id", salonId ?? "")
+    .single();
+
   let query = admin
     .from("appointments")
     .select("*, staff:staff_members(id, name)")
@@ -34,7 +40,7 @@ export default async function CitasPage({
   }
 
   const { data: appointments } = await query;
-  const appts = (appointments ?? []) as Appointment[];
+  const appts = (appointments ?? []).map((a) => ({ ticket_number: null, ...a })) as Appointment[];
 
   return (
     <div>
@@ -42,7 +48,7 @@ export default async function CitasPage({
         <h1 className="text-xl font-bold md:text-2xl">Citas</h1>
         <div className="flex items-center gap-2">
           {appts.length > 0 && params.status !== "cancelled" && (
-            <PrintButton appointments={appts} label="Imprimir todos" />
+            <PrintButton appointments={appts} label="Imprimir todos" salon={salon ?? undefined} />
           )}
           <Button asChild size="sm">
             <Link href="/dashboard/citas/nueva">
@@ -97,7 +103,7 @@ export default async function CitasPage({
                   <div className="flex flex-shrink-0 items-center gap-1">
                     {appt.status === "active" && (
                       <>
-                        <PrintButton appointments={[appt]} variant="icon" />
+                        <PrintButton appointments={[appt]} variant="icon" salon={salon ?? undefined} />
                         <AppointmentActions appointmentId={appt.id} status={appt.status} />
                       </>
                     )}

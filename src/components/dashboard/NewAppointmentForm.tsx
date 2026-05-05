@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { createAppointment } from "@/actions/appointments";
 import type { BusinessHours } from "@/types";
 
@@ -200,41 +199,37 @@ export function NewAppointmentForm({
         />
       </div>
 
-      {/* Hora de inicio: selector de slots + manual */}
+      {/* Hora de inicio: dropdown de slots disponibles */}
       <div className="space-y-1.5">
-        <Label>Hora de inicio *</Label>
-
-        {slots.length > 0 && (
-          <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
-            {slots.map(({ time, occupied }) => (
-              <button
-                key={time}
-                type="button"
-                disabled={occupied}
-                onClick={() => update("start_time", time)}
-                className={cn(
-                  "rounded-md border px-1.5 py-2 text-xs font-medium transition-colors leading-none",
-                  form.start_time === time
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : occupied
-                    ? "bg-rose-50 text-rose-300 border-rose-100 cursor-not-allowed line-through"
-                    : "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 active:bg-emerald-200"
-                )}
-              >
-                {time}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-center gap-2 pt-1">
+        <Label htmlFor="start-time-select">Hora de inicio *</Label>
+        {slots.length > 0 ? (
+          <Select value={form.start_time} onValueChange={(v) => update("start_time", v)}>
+            <SelectTrigger id="start-time-select">
+              <SelectValue placeholder="Selecciona hora" />
+            </SelectTrigger>
+            <SelectContent>
+              {slots.map(({ time, occupied }) => (
+                <SelectItem
+                  key={time}
+                  value={time}
+                  disabled={occupied}
+                  className={occupied ? "text-rose-400 line-through" : "text-emerald-700"}
+                >
+                  {time}{occupied ? " — ocupado" : " — libre"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
           <Input
-            type="time" step={900} value={form.start_time}
+            id="start-time-select"
+            type="time"
+            step={900}
+            value={form.start_time}
             onChange={(e) => update("start_time", e.target.value)}
-            required className="w-32"
+            required
           />
-          <span className="text-xs text-muted-foreground">o escribe la hora</span>
-        </div>
+        )}
       </div>
 
       {/* Duración y hora de fin */}

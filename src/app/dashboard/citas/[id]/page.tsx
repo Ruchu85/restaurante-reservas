@@ -17,16 +17,19 @@ export default async function EditCitaPage({
   const admin = createAdminClient();
   const salonId = await getSalonId();
 
-  const { data: appointment } = await admin
-    .from("appointments")
-    .select("*")
-    .eq("id", id)
-    .eq("salon_id", salonId ?? "")
-    .single();
+  const [{ data: appointment }, { data: salon }] = await Promise.all([
+    admin
+      .from("appointments")
+      .select("*")
+      .eq("id", id)
+      .eq("salon_id", salonId ?? "")
+      .single(),
+    admin.from("salons").select("name, address, phone").eq("id", salonId ?? "").single(),
+  ]);
 
   if (!appointment) notFound();
 
-  const appt = appointment as Appointment;
+  const appt = { ticket_number: null, ...appointment } as Appointment;
 
   return (
     <div>
@@ -46,7 +49,7 @@ export default async function EditCitaPage({
               {appt.ticket_printed && <span className="ml-2 text-emerald-600">✓ Ticket impreso</span>}
             </p>
           </div>
-          <PrintButton appointments={[appt]} label="Imprimir ticket" />
+          <PrintButton appointments={[appt]} label="Imprimir ticket" salon={salon ?? undefined} />
         </div>
       </div>
 
