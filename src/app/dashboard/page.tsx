@@ -37,7 +37,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100svh-8rem)]">
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Panel de gestión</h1>
+        <h1 className="text-2xl font-bold tracking-tight">PELUQUERIA ALI</h1>
         <p className="text-muted-foreground mt-1 text-sm">¿Qué quieres hacer?</p>
       </div>
 

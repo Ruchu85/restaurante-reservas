@@ -15,18 +15,70 @@ function fmtDateShort(iso: string) {
   return `${d.getDate()}-${d.getMonth() + 1}-${String(d.getFullYear()).slice(2)}`;
 }
 
-export function printTickets(appointments: Appointment[], salon?: SalonInfo) {
-  const salonName = salon?.name ?? "Salón";
-  const salonAddress = salon?.address ?? "";
-  const salonPhone = salon?.phone ?? "";
+const TICKET_STYLES = `
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .ticket {
+    width: 148mm;
+    padding: 6mm 8mm;
+    border-bottom: 3px dashed #999;
+    page-break-inside: avoid;
+    margin-bottom: 4mm;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    background: #fff;
+  }
+  .ticket:last-child { border-bottom: none; margin-bottom: 0; }
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 3mm;
+  }
+  .stamp {
+    border: 2px solid #2255aa;
+    padding: 3mm 4mm;
+    min-width: 60mm;
+  }
+  .stamp-name { font-size: 14px; font-weight: bold; text-align: center; }
+  .stamp-line { font-size: 10px; text-align: center; color: #333; margin-top: 1mm; }
+  .num-block { text-align: right; padding-top: 2mm; }
+  .num-label { font-size: 12px; }
+  .num-val { font-size: 22px; font-weight: bold; margin-left: 2mm; border-bottom: 2px solid #000; padding-bottom: 1mm; }
+  .date-row { margin: 3mm 0 2mm; font-size: 12px; }
+  .client-row { display: flex; align-items: baseline; gap: 3mm; margin-bottom: 3mm; font-size: 12px; }
+  .client-label { font-size: 14px; font-weight: bold; }
+  .client-val { border-bottom: 1px solid #000; flex: 1; min-height: 5mm; }
+  .items { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .items th, .items td {
+    border: 1px solid #555;
+    padding: 1.5mm 2mm;
+    text-align: left;
+    vertical-align: top;
+  }
+  .items thead th {
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 1px;
+    background: #f8f8f8;
+  }
+  .col-qty   { width: 14mm; text-align: center !important; }
+  .col-price { width: 20mm; }
+  .col-total { width: 22mm; }
+  .empty-row td { height: 7mm; }
+`;
 
-  const tickets = appointments
-    .map((appt, idx) => {
-      const num = appt.ticket_number ?? (200 + idx + 1);
-      const dateStr = fmtDateShort(appt.starts_at);
-      const timeStr = `${fmtTime(appt.starts_at)} – ${fmtTime(appt.ends_at)}`;
+function buildTicketHtml(
+  appt: Appointment,
+  idx: number,
+  salonName: string,
+  salonAddress: string,
+  salonPhone: string,
+) {
+  const num = appt.ticket_number ?? (200 + idx + 1);
+  const dateStr = fmtDateShort(appt.starts_at);
+  const timeStr = `${fmtTime(appt.starts_at)} – ${fmtTime(appt.ends_at)}`;
 
-      return `
+  return `
 <div class="ticket">
   <div class="header-row">
     <div class="stamp">
@@ -39,16 +91,13 @@ export function printTickets(appointments: Appointment[], salon?: SalonInfo) {
       <span class="num-val">${num}</span>
     </div>
   </div>
-
   <div class="date-row">
     <span>de&nbsp;&nbsp;<u>&nbsp;${dateStr}&nbsp;</u>&nbsp;&nbsp;de</span>
   </div>
-
   <div class="client-row">
     <span class="client-label">D.</span>
     <span class="client-val">${appt.customer_name}</span>
   </div>
-
   <table class="items">
     <thead>
       <tr>
@@ -72,86 +121,61 @@ export function printTickets(appointments: Appointment[], salon?: SalonInfo) {
     </tbody>
   </table>
 </div>`;
-    })
+}
+
+export async function downloadTicketsPDF(appointments: Appointment[], salon?: SalonInfo) {
+  if (!appointments.length) return;
+
+  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+    import("jspdf"),
+    import("html2canvas"),
+  ]);
+
+  const salonName = salon?.name ?? "Salón";
+  const salonAddress = salon?.address ?? "";
+  const salonPhone = salon?.phone ?? "";
+
+  const ticketsHtml = appointments
+    .map((appt, idx) => buildTicketHtml(appt, idx, salonName, salonAddress, salonPhone))
     .join("");
 
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Tickets</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; font-size: 11px; background: #fff; }
+  const wrapper = document.createElement("div");
+  wrapper.style.cssText =
+    "position:fixed;left:-9999px;top:0;background:white;padding:8mm;width:210mm;";
+  wrapper.innerHTML = `<style>${TICKET_STYLES}</style>${ticketsHtml}`;
+  document.body.appendChild(wrapper);
 
-  .ticket {
-    width: 148mm;
-    padding: 6mm 8mm;
-    border-bottom: 3px dashed #999;
-    page-break-inside: avoid;
-    margin-bottom: 4mm;
+  try {
+    const canvas = await html2canvas(wrapper, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      logging: false,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    // A5 landscape: 210mm × 148mm
+    const pdfW = 210;
+    const pdfH = 148;
+    const imgH = (canvas.height / canvas.width) * pdfW;
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a5" });
+
+    let yPos = 0;
+    let page = 0;
+    while (yPos < imgH) {
+      if (page > 0) doc.addPage([210, 148], "landscape");
+      doc.addImage(imgData, "PNG", 0, -yPos, pdfW, imgH);
+      yPos += pdfH;
+      page++;
+    }
+
+    const dateStr = new Date().toLocaleDateString("es-ES").replace(/\//g, "-");
+    doc.save(`tickets-${dateStr}.pdf`);
+  } finally {
+    document.body.removeChild(wrapper);
   }
-  .ticket:last-child { border-bottom: none; }
-
-  /* Header: stamp box + ticket number */
-  .header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 3mm;
-  }
-  .stamp {
-    border: 2px solid #2255aa;
-    padding: 3mm 4mm;
-    min-width: 60mm;
-  }
-  .stamp-name { font-size: 14px; font-weight: bold; text-align: center; }
-  .stamp-line { font-size: 10px; text-align: center; color: #333; margin-top: 1mm; }
-
-  .num-block { text-align: right; padding-top: 2mm; }
-  .num-label { font-size: 12px; }
-  .num-val { font-size: 22px; font-weight: bold; margin-left: 2mm; border-bottom: 2px solid #000; padding-bottom: 1mm; }
-
-  /* Date and client lines */
-  .date-row { margin: 3mm 0 2mm; font-size: 12px; }
-  .client-row { display: flex; align-items: baseline; gap: 3mm; margin-bottom: 3mm; font-size: 12px; }
-  .client-label { font-size: 14px; font-weight: bold; }
-  .client-val { border-bottom: 1px solid #000; flex: 1; min-height: 5mm; }
-
-  /* Items table */
-  .items { width: 100%; border-collapse: collapse; font-size: 11px; }
-  .items th, .items td {
-    border: 1px solid #555;
-    padding: 1.5mm 2mm;
-    text-align: left;
-    vertical-align: top;
-  }
-  .items thead th {
-    text-align: center;
-    font-size: 10px;
-    letter-spacing: 1px;
-    background: #f8f8f8;
-  }
-  .col-qty   { width: 14mm; text-align: center !important; }
-  .col-price { width: 20mm; }
-  .col-total { width: 22mm; }
-  .col-concept { }
-  .empty-row td { height: 7mm; }
-
-  @media print {
-    @page { size: A5 landscape; margin: 8mm; }
-    body { width: auto; }
-  }
-</style>
-</head>
-<body>
-${tickets}
-<script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
-</body>
-</html>`;
-
-  const win = window.open("", "_blank", "width=700,height=500");
-  if (!win) return;
-  win.document.write(html);
-  win.document.close();
 }
+
+// Keep legacy export alias so existing callers compile without changes
+export const printTickets = downloadTicketsPDF;

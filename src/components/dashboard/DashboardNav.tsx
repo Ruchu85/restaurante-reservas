@@ -43,7 +43,7 @@ export function DashboardNav({ userName, userRole }: DashboardNavProps) {
       <aside className="hidden md:flex w-56 flex-col border-r bg-white">
         <div className="flex h-14 items-center gap-2 border-b px-4">
           <Scissors className="h-5 w-5 flex-shrink-0" />
-          <span className="font-bold truncate">Panel admin</span>
+          <span className="font-bold truncate">PELUQUERIA ALI</span>
         </div>
 
         <nav className="flex-1 p-2 space-y-0.5">
