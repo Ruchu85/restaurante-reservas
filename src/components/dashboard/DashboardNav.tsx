@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Calendar, ClipboardList, Clock, Home, LogOut, Receipt, Scissors } from "lucide-react";
+import {
+  Calendar,
+  ClipboardList,
+  Clock,
+  Home,
+  LogOut,
+  Receipt,
+  Scissors,
+  Settings,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -13,6 +22,7 @@ const navItems = [
   { href: "/dashboard/citas", label: "Citas", icon: ClipboardList },
   { href: "/dashboard/tickets", label: "Tickets", icon: Receipt },
   { href: "/dashboard/horarios", label: "Horarios", icon: Clock },
+  { href: "/dashboard/ajustes", label: "Ajustes", icon: Settings },
 ];
 
 interface DashboardNavProps {
@@ -40,8 +50,8 @@ export function DashboardNav({ userName, userRole }: DashboardNavProps) {
   return (
     <>
       {/* Sidebar — desktop */}
-      <aside className="hidden md:flex w-56 flex-col border-r bg-white">
-        <div className="flex h-14 items-center gap-2 border-b px-4">
+      <aside className="hidden md:flex w-56 flex-col border-r border-border bg-white dark:bg-slate-950">
+        <div className="flex h-14 items-center gap-2 border-b border-border px-4">
           <Scissors className="h-5 w-5 flex-shrink-0" />
           <span className="font-bold truncate">PELUQUERIA ALI</span>
         </div>
@@ -54,8 +64,8 @@ export function DashboardNav({ userName, userRole }: DashboardNavProps) {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                 isActive(href, exact)
-                  ? "bg-slate-100 font-medium text-slate-900"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-slate-100 dark:bg-slate-800 font-medium text-slate-900 dark:text-white"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white",
               )}
             >
               <Icon className="h-4 w-4 flex-shrink-0" />
@@ -64,14 +74,14 @@ export function DashboardNav({ userName, userRole }: DashboardNavProps) {
           ))}
         </nav>
 
-        <div className="border-t p-3 space-y-1">
+        <div className="border-t border-border p-3 space-y-1">
           <div className="px-3 pb-1">
             <div className="text-sm font-medium truncate">{userName}</div>
             <div className="text-xs text-muted-foreground capitalize">{userRole}</div>
           </div>
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <LogOut className="h-4 w-4 flex-shrink-0" />
             Cerrar sesión
@@ -79,18 +89,22 @@ export function DashboardNav({ userName, userRole }: DashboardNavProps) {
         </div>
       </aside>
 
-      {/* Bottom nav — mobile (4 tabs: Inicio, Calendario, Citas, Horarios) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t bg-white md:hidden safe-area-pb">
-        {navItems.map(({ href, label, icon: Icon, exact }) => (
+      {/* Bottom nav — mobile */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t border-border bg-white dark:bg-slate-950 md:hidden safe-area-pb">
+        {navItems.slice(0, 5).map(({ href, label, icon: Icon, exact }) => (
           <Link
             key={href}
             href={href}
             className={cn(
               "flex flex-1 flex-col items-center gap-0.5 py-2 text-xs transition-colors",
-              isActive(href, exact) ? "text-slate-900 font-medium" : "text-slate-500"
+              isActive(href, exact)
+                ? "text-slate-900 dark:text-white font-medium"
+                : "text-slate-500 dark:text-slate-400",
             )}
           >
-            <Icon className={cn("h-5 w-5", isActive(href, exact) ? "stroke-[2.5px]" : "")} />
+            <Icon
+              className={cn("h-5 w-5", isActive(href, exact) ? "stroke-[2.5px]" : "")}
+            />
             <span>{label}</span>
           </Link>
         ))}

@@ -10,6 +10,7 @@ const CreateSchema = z.object({
   starts_at: z.string().datetime(),
   ends_at: z.string().datetime(),
   notes: z.string().max(500).optional(),
+  price: z.number().min(0).max(99999).nullable().optional(),
 });
 
 const UpdateSchema = CreateSchema.partial();
@@ -27,6 +28,33 @@ export async function createAppointment(input: CreateAppointmentInput) {
   const salonId = await getSalonId();
   if (!salonId) return { error: "No se encontró el salón." };
 
+  // Check blocked day
+  const dateStr = parsed.data.starts_at.substring(0, 10);
+  const { data: blocked } = await admin
+    .from("blocked_days")
+    .select("id")
+    .eq("salon_id", salonId)
+    .eq("date", dateStr)
+    .maybeSingle();
+
+  if (blocked) {
+    return { error: "No se pueden crear citas en días bloqueados o de vacaciones." };
+  }
+
+  // Check business hours
+  const startDate = new Date(parsed.data.starts_at);
+  const dayOfWeek = startDate.getUTCDay();
+  const { data: bh } = await admin
+    .from("business_hours")
+    .select("is_open")
+    .eq("salon_id", salonId)
+    .eq("day_of_week", dayOfWeek)
+    .maybeSingle();
+
+  if (bh && !bh.is_open) {
+    return { error: "El salón no abre ese día según el horario configurado." };
+  }
+
   const { data, error } = await admin
     .from("appointments")
     .insert({
@@ -37,6 +65,7 @@ export async function createAppointment(input: CreateAppointmentInput) {
       starts_at: parsed.data.starts_at,
       ends_at: parsed.data.ends_at,
       notes: parsed.data.notes ?? null,
+      price: parsed.data.price ?? null,
       status: "active",
     })
     .select()
@@ -99,7 +128,6 @@ export async function markTicketPrinted(ids: string[]) {
   const admin = createAdminClient();
   const salonId = await getSalonId();
 
-  // Check if ticket_number column exists (migration may not have run yet)
   const { error: colCheck } = await admin
     .from("appointments")
     .select("ticket_number")
@@ -113,7 +141,10 @@ export async function markTicketPrinted(ids: string[]) {
       .select("id, ticket_number")
       .in("id", ids);
 
-    const needsNumber = existing?.filter((a: Record<string, unknown>) => !a.ticket_number).map((a: Record<string, unknown>) => a.id as string) ?? [];
+    const needsNumber =
+      existing
+        ?.filter((a: Record<string, unknown>) => !a.ticket_number)
+        .map((a: Record<string, unknown>) => a.id as string) ?? [];
 
     if (needsNumber.length > 0) {
       const { data: maxRow } = await admin
@@ -140,7 +171,6 @@ export async function markTicketPrinted(ids: string[]) {
       await admin.from("appointments").update({ ticket_printed: true }).in("id", alreadyNumbered);
     }
   } else {
-    // Column not yet created — just mark as printed
     await admin.from("appointments").update({ ticket_printed: true }).in("id", ids);
   }
 

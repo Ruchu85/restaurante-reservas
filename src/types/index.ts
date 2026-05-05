@@ -49,6 +49,16 @@ export interface BlockedDay {
   created_at: string;
 }
 
+export interface Service {
+  id: string;
+  salon_id: string;
+  name: string;
+  price: number | null;
+  duration_minutes: number | null;
+  active: boolean;
+  created_at: string;
+}
+
 export interface Appointment {
   id: string;
   salon_id: string;
@@ -58,6 +68,7 @@ export interface Appointment {
   starts_at: string;
   ends_at: string;
   notes: string | null;
+  price: number | null;
   status: AppointmentStatus;
   ticket_printed: boolean;
   ticket_number: number | null;

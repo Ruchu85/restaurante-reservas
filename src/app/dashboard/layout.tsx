@@ -23,7 +23,7 @@ export default async function DashboardLayout({
     .single();
 
   return (
-    <div className="flex h-svh bg-slate-50">
+    <div className="flex h-svh bg-slate-50 dark:bg-slate-900">
       <DashboardNav
         userName={profile?.full_name ?? user.email ?? "Usuario"}
         userRole={profile?.role ?? "staff"}

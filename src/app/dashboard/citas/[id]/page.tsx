@@ -4,9 +4,9 @@ import { EditAppointmentForm } from "@/components/dashboard/EditAppointmentForm"
 import { PrintButton } from "@/components/dashboard/PrintButton";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import type { Appointment } from "@/types";
+import type { Appointment, Service } from "@/types";
 
-export const metadata = { title: "Editar cita — Panel admin" };
+export const metadata = { title: "Editar cita — PELUQUERIA ALI" };
 
 export default async function EditCitaPage({
   params,
@@ -17,7 +17,7 @@ export default async function EditCitaPage({
   const admin = createAdminClient();
   const salonId = await getSalonId();
 
-  const [{ data: appointment }, { data: salon }] = await Promise.all([
+  const [{ data: appointment }, { data: salon }, { data: services }] = await Promise.all([
     admin
       .from("appointments")
       .select("*")
@@ -25,11 +25,17 @@ export default async function EditCitaPage({
       .eq("salon_id", salonId ?? "")
       .single(),
     admin.from("salons").select("name, address, phone").eq("id", salonId ?? "").single(),
+    admin
+      .from("services")
+      .select("*")
+      .eq("salon_id", salonId ?? "")
+      .eq("active", true)
+      .order("name"),
   ]);
 
   if (!appointment) notFound();
 
-  const appt = { ticket_number: null, ...appointment } as Appointment;
+  const appt = { ticket_number: null, price: null, ...appointment } as Appointment;
 
   return (
     <div>
@@ -46,14 +52,16 @@ export default async function EditCitaPage({
             <h1 className="text-2xl font-bold">Editar cita</h1>
             <p className="text-sm text-muted-foreground">
               {appt.customer_name} · {appt.service}
-              {appt.ticket_printed && <span className="ml-2 text-emerald-600">✓ Ticket impreso</span>}
+              {appt.ticket_printed && (
+                <span className="ml-2 text-emerald-600">✓ Ticket impreso</span>
+              )}
             </p>
           </div>
           <PrintButton appointments={[appt]} label="Imprimir ticket" salon={salon ?? undefined} />
         </div>
       </div>
 
-      <EditAppointmentForm appointment={appt} />
+      <EditAppointmentForm appointment={appt} services={(services as Service[]) ?? []} />
     </div>
   );
 }

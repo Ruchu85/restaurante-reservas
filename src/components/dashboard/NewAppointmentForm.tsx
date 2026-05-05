@@ -10,18 +10,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { createAppointment } from "@/actions/appointments";
-import type { BusinessHours } from "@/types";
+import type { BlockedDay, BusinessHours, Service } from "@/types";
 
-interface ExistingAppt { starts_at: string; ends_at: string }
+interface ExistingAppt {
+  starts_at: string;
+  ends_at: string;
+}
 
 interface NewAppointmentFormProps {
   initialDate?: string;
   initialTime?: string;
   businessHours?: BusinessHours[];
   existingAppointments?: ExistingAppt[];
+  blockedDays?: BlockedDay[];
+  services?: Service[];
 }
 
-const SERVICES = [
+const DEFAULT_SERVICES = [
   "Corte de cabello",
   "Coloración",
   "Mechas / Balayage",
@@ -54,8 +59,12 @@ function toLocalDatetimeValue(date: Date): string {
 function computeSlots(
   date: string,
   businessHours: BusinessHours[],
-  existingAppts: ExistingAppt[]
-): { time: string; occupied: boolean }[] {
+  existingAppts: ExistingAppt[],
+  blockedDays: BlockedDay[],
+): { time: string; occupied: boolean }[] | null {
+  // null = day is blocked or closed
+  if (blockedDays.some((b) => b.date === date)) return null;
+
   const d = new Date(date + "T12:00:00");
   const dayOfWeek = d.getDay();
   const hours = businessHours.find((h) => h.day_of_week === dayOfWeek);
@@ -64,7 +73,7 @@ function computeSlots(
   let closeMin = 20 * 60;
 
   if (hours) {
-    if (!hours.is_open) return [];
+    if (!hours.is_open) return null;
     const [oh, om] = hours.opens_at.split(":").map(Number);
     const [ch, cm] = hours.closes_at.split(":").map(Number);
     openMin = oh * 60 + om;
@@ -96,24 +105,42 @@ export function NewAppointmentForm({
   initialTime,
   businessHours = [],
   existingAppointments = [],
+  blockedDays = [],
+  services = [],
 }: NewAppointmentFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  const serviceNames =
+    services.length > 0 ? [...services.map((s) => s.name), "Otro"] : DEFAULT_SERVICES;
 
   const defaultStart = roundToQuarter(new Date());
 
   const [form, setForm] = useState({
     customer_name: "",
-    service: SERVICES[0],
+    service: serviceNames[0],
     service_custom: "",
     duration: 30,
     date: initialDate ?? defaultStart.toISOString().split("T")[0],
-    start_time: initialTime ?? `${String(defaultStart.getHours()).padStart(2, "0")}:${String(defaultStart.getMinutes()).padStart(2, "0")}`,
+    start_time:
+      initialTime ??
+      `${String(defaultStart.getHours()).padStart(2, "0")}:${String(defaultStart.getMinutes()).padStart(2, "0")}`,
     notes: "",
+    price: "",
   });
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  // Auto-fill price when a known service is selected
+  function handleServiceChange(v: string) {
+    const found = services.find((s) => s.name === v);
+    setForm((f) => ({
+      ...f,
+      service: v,
+      price: found?.price != null ? String(found.price) : f.price,
+    }));
   }
 
   function computeTimes() {
@@ -126,20 +153,37 @@ export function NewAppointmentForm({
     try {
       const { ends } = computeTimes();
       return toLocalDatetimeValue(ends).split("T")[1];
-    } catch { return ""; }
+    } catch {
+      return "";
+    }
   })();
 
-  // Recompute slots when date changes
   const slots = useMemo(
-    () => computeSlots(form.date, businessHours, existingAppointments),
-    [form.date, businessHours, existingAppointments]
+    () => computeSlots(form.date, businessHours, existingAppointments, blockedDays),
+    [form.date, businessHours, existingAppointments, blockedDays],
   );
+
+  const isDayBlocked = blockedDays.some((b) => b.date === form.date);
+  const isDayClosed = slots === null && !isDayBlocked;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isDayBlocked) {
+      toast.error("No se pueden crear citas en días bloqueados o de vacaciones.");
+      return;
+    }
+    if (isDayClosed) {
+      toast.error("El salón no abre ese día según el horario configurado.");
+      return;
+    }
     const { starts, ends } = computeTimes();
     const serviceName = form.service === "Otro" ? form.service_custom.trim() : form.service;
-    if (!serviceName) { toast.error("Indica el nombre del servicio"); return; }
+    if (!serviceName) {
+      toast.error("Indica el nombre del servicio");
+      return;
+    }
+
+    const priceVal = form.price !== "" ? parseFloat(form.price) : null;
 
     startTransition(async () => {
       const result = await createAppointment({
@@ -148,6 +192,7 @@ export function NewAppointmentForm({
         starts_at: starts.toISOString(),
         ends_at: ends.toISOString(),
         notes: form.notes || undefined,
+        price: priceVal,
       });
       if (result.error) {
         toast.error(result.error);
@@ -161,6 +206,18 @@ export function NewAppointmentForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
+      {/* Warning banners */}
+      {isDayBlocked && (
+        <div className="rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+          🚫 Este día está bloqueado (vacaciones/festivo). No se pueden crear citas.
+        </div>
+      )}
+      {isDayClosed && (
+        <div className="rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+          🔒 El salón no abre este día según el horario configurado.
+        </div>
+      )}
+
       {/* Cliente */}
       <div className="space-y-1.5">
         <Label htmlFor="customer">Nombre del cliente *</Label>
@@ -168,41 +225,75 @@ export function NewAppointmentForm({
           id="customer"
           value={form.customer_name}
           onChange={(e) => update("customer_name", e.target.value)}
-          required minLength={2} placeholder="Ana García" autoFocus
+          required
+          minLength={2}
+          placeholder="Ana García"
+          autoFocus
         />
       </div>
 
       {/* Servicio */}
       <div className="space-y-1.5">
         <Label htmlFor="service-select">Servicio *</Label>
-        <Select value={form.service} onValueChange={(v) => update("service", v)}>
-          <SelectTrigger id="service-select"><SelectValue /></SelectTrigger>
+        <Select value={form.service} onValueChange={handleServiceChange}>
+          <SelectTrigger id="service-select">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
-            {SERVICES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            {serviceNames.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         {form.service === "Otro" && (
           <Input
             value={form.service_custom}
             onChange={(e) => update("service_custom", e.target.value)}
-            placeholder="Nombre del servicio" required
+            placeholder="Nombre del servicio"
+            required
           />
         )}
+      </div>
+
+      {/* Precio */}
+      <div className="space-y-1.5">
+        <Label htmlFor="price">Precio (opcional)</Label>
+        <div className="relative">
+          <Input
+            id="price"
+            type="number"
+            min="0"
+            step="0.01"
+            max="9999"
+            value={form.price}
+            onChange={(e) => update("price", e.target.value)}
+            placeholder="0.00"
+            className="pr-8"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+            €
+          </span>
+        </div>
       </div>
 
       {/* Fecha */}
       <div className="space-y-1.5">
         <Label htmlFor="date">Fecha *</Label>
         <Input
-          id="date" type="date" value={form.date}
-          onChange={(e) => update("date", e.target.value)} required
+          id="date"
+          type="date"
+          value={form.date}
+          onChange={(e) => update("date", e.target.value)}
+          required
         />
       </div>
 
-      {/* Hora de inicio: dropdown de slots disponibles */}
+      {/* Hora */}
       <div className="space-y-1.5">
         <Label htmlFor="start-time-select">Hora de inicio *</Label>
-        {slots.length > 0 ? (
+        {slots && slots.length > 0 ? (
           <Select value={form.start_time} onValueChange={(v) => update("start_time", v)}>
             <SelectTrigger id="start-time-select">
               <SelectValue placeholder="Selecciona hora" />
@@ -215,7 +306,8 @@ export function NewAppointmentForm({
                   disabled={occupied}
                   className={occupied ? "text-rose-400 line-through" : "text-emerald-700"}
                 >
-                  {time}{occupied ? " — ocupado" : " — libre"}
+                  {time}
+                  {occupied ? " — ocupado" : " — libre"}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -236,16 +328,25 @@ export function NewAppointmentForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="duration">Duración *</Label>
-          <Select value={String(form.duration)} onValueChange={(v) => update("duration", Number(v))}>
-            <SelectTrigger id="duration"><SelectValue /></SelectTrigger>
+          <Select
+            value={String(form.duration)}
+            onValueChange={(v) => update("duration", Number(v))}
+          >
+            <SelectTrigger id="duration">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              {DURATIONS.map((d) => <SelectItem key={d.value} value={String(d.value)}>{d.label}</SelectItem>)}
+              {DURATIONS.map((d) => (
+                <SelectItem key={d.value} value={String(d.value)}>
+                  {d.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1.5">
           <Label>Hora de fin</Label>
-          <Input value={endTime} readOnly className="bg-slate-50 text-muted-foreground" />
+          <Input value={endTime} readOnly className="bg-slate-50 dark:bg-slate-800 text-muted-foreground" />
         </div>
       </div>
 
@@ -253,17 +354,25 @@ export function NewAppointmentForm({
       <div className="space-y-1.5">
         <Label htmlFor="notes">Notas (opcional)</Label>
         <Textarea
-          id="notes" value={form.notes}
+          id="notes"
+          value={form.notes}
           onChange={(e) => update("notes", e.target.value)}
-          rows={2} maxLength={500} placeholder="Preferencias, alergias, indicaciones…"
+          rows={2}
+          maxLength={500}
+          placeholder="Preferencias, alergias, indicaciones…"
         />
       </div>
 
       <div className="flex gap-3 pt-2">
-        <Button type="button" variant="outline" onClick={() => router.back()} disabled={isPending}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.back()}
+          disabled={isPending}
+        >
           Cancelar
         </Button>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending || isDayBlocked || isDayClosed}>
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Crear cita
         </Button>

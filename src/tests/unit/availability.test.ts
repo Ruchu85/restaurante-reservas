@@ -27,6 +27,7 @@ function makeAppt(startsAt: string, endsAt: string, staffId = STAFF_ID): Appoint
     starts_at: startsAt,
     ends_at: endsAt,
     notes: null,
+    price: null,
     status: "active",
     ticket_printed: false,
     ticket_number: null,

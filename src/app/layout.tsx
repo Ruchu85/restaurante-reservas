@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,10 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Salón Demo — Reserva tu cita",
-  description:
-    "Reserva tu cita en Salón Demo de forma rápida y sencilla. Peluquería y tratamientos capilares en Madrid.",
-  keywords: ["peluquería", "reserva cita", "salón belleza", "Madrid"],
+  title: "PELUQUERIA ALI",
+  description: "Gestión interna de citas — Peluquería Ali",
 };
 
 export default function RootLayout({
@@ -26,10 +25,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
-        <Toaster richColors position="top-right" />
+        <ThemeProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

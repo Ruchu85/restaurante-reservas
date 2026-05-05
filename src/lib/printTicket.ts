@@ -18,16 +18,12 @@ function fmtDateShort(iso: string) {
 const TICKET_STYLES = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
   .ticket {
-    width: 148mm;
-    padding: 6mm 8mm;
-    border-bottom: 3px dashed #999;
-    page-break-inside: avoid;
-    margin-bottom: 4mm;
+    width: 190mm;
+    padding: 8mm 10mm;
     font-family: Arial, sans-serif;
     font-size: 11px;
     background: #fff;
   }
-  .ticket:last-child { border-bottom: none; margin-bottom: 0; }
   .header-row {
     display: flex;
     justify-content: space-between;
@@ -62,8 +58,8 @@ const TICKET_STYLES = `
     background: #f8f8f8;
   }
   .col-qty   { width: 14mm; text-align: center !important; }
-  .col-price { width: 20mm; }
-  .col-total { width: 22mm; }
+  .col-price { width: 22mm; }
+  .col-total { width: 24mm; }
   .empty-row td { height: 7mm; }
 `;
 
@@ -77,6 +73,7 @@ function buildTicketHtml(
   const num = appt.ticket_number ?? (200 + idx + 1);
   const dateStr = fmtDateShort(appt.starts_at);
   const timeStr = `${fmtTime(appt.starts_at)} – ${fmtTime(appt.ends_at)}`;
+  const priceStr = appt.price != null ? `${appt.price.toFixed(2)} €` : "";
 
   return `
 <div class="ticket">
@@ -111,8 +108,8 @@ function buildTicketHtml(
       <tr>
         <td class="col-qty">1</td>
         <td class="col-concept">${appt.service}${appt.notes ? ` – ${appt.notes}` : ""}</td>
-        <td class="col-price"></td>
-        <td class="col-total"></td>
+        <td class="col-price">${priceStr}</td>
+        <td class="col-total">${priceStr}</td>
       </tr>
       <tr><td></td><td>${timeStr}</td><td></td><td></td></tr>
       <tr class="empty-row"><td></td><td></td><td></td><td></td></tr>
@@ -135,47 +132,44 @@ export async function downloadTicketsPDF(appointments: Appointment[], salon?: Sa
   const salonAddress = salon?.address ?? "";
   const salonPhone = salon?.phone ?? "";
 
-  const ticketsHtml = appointments
-    .map((appt, idx) => buildTicketHtml(appt, idx, salonName, salonAddress, salonPhone))
-    .join("");
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a5" });
 
-  const wrapper = document.createElement("div");
-  wrapper.style.cssText =
-    "position:fixed;left:-9999px;top:0;background:white;padding:8mm;width:210mm;";
-  wrapper.innerHTML = `<style>${TICKET_STYLES}</style>${ticketsHtml}`;
-  document.body.appendChild(wrapper);
+  for (let i = 0; i < appointments.length; i++) {
+    const ticketHtml = buildTicketHtml(
+      appointments[i],
+      i,
+      salonName,
+      salonAddress,
+      salonPhone,
+    );
 
-  try {
-    const canvas = await html2canvas(wrapper, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      logging: false,
-    });
+    const wrapper = document.createElement("div");
+    wrapper.style.cssText =
+      "position:fixed;left:-9999px;top:0;background:white;width:210mm;";
+    wrapper.innerHTML = `<style>${TICKET_STYLES}</style>${ticketHtml}`;
+    document.body.appendChild(wrapper);
 
-    const imgData = canvas.toDataURL("image/png");
-    // A5 landscape: 210mm × 148mm
-    const pdfW = 210;
-    const pdfH = 148;
-    const imgH = (canvas.height / canvas.width) * pdfW;
+    try {
+      const canvas = await html2canvas(wrapper, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
 
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a5" });
+      if (i > 0) doc.addPage([210, 148], "landscape");
 
-    let yPos = 0;
-    let page = 0;
-    while (yPos < imgH) {
-      if (page > 0) doc.addPage([210, 148], "landscape");
-      doc.addImage(imgData, "PNG", 0, -yPos, pdfW, imgH);
-      yPos += pdfH;
-      page++;
+      const imgData = canvas.toDataURL("image/png");
+      const pdfW = 210;
+      const imgH = (canvas.height / canvas.width) * pdfW;
+      doc.addImage(imgData, "PNG", 0, 0, pdfW, Math.min(imgH, 148));
+    } finally {
+      document.body.removeChild(wrapper);
     }
-
-    const dateStr = new Date().toLocaleDateString("es-ES").replace(/\//g, "-");
-    doc.save(`tickets-${dateStr}.pdf`);
-  } finally {
-    document.body.removeChild(wrapper);
   }
+
+  const dateStr = new Date().toLocaleDateString("es-ES").replace(/\//g, "-");
+  doc.save(`tickets-${dateStr}.pdf`);
 }
 
-// Keep legacy export alias so existing callers compile without changes
 export const printTickets = downloadTicketsPDF;

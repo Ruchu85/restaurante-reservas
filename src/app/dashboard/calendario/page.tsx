@@ -1,7 +1,7 @@
 import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
 import { CalendarView } from "@/components/dashboard/CalendarView";
 
-export const metadata = { title: "Calendario — Panel admin" };
+export const metadata = { title: "Calendario — PELUQUERIA ALI" };
 
 export default async function CalendarioPage({
   searchParams,
@@ -20,37 +20,54 @@ export default async function CalendarioPage({
   const rangeEnd = new Date(dateObj);
   rangeEnd.setDate(dateObj.getDate() + 60);
 
-  const [{ data: appointments }, { data: staff }, { data: blockedDays }, { data: salon }] =
-    await Promise.all([
-      admin
-        .from("appointments")
-        .select("*, staff:staff_members(id, name)")
-        .eq("salon_id", salonId ?? "")
-        .eq("status", "active")
-        .gte("starts_at", rangeStart.toISOString())
-        .lte("starts_at", rangeEnd.toISOString())
-        .order("starts_at"),
-      admin
-        .from("staff_members")
-        .select("id, name")
-        .eq("salon_id", salonId ?? "")
-        .eq("active", true)
-        .order("name"),
-      admin
-        .from("blocked_days")
-        .select("*")
-        .eq("salon_id", salonId ?? "")
-        .gte("date", rangeStart.toISOString().split("T")[0])
-        .lte("date", rangeEnd.toISOString().split("T")[0]),
-      admin.from("salons").select("name, address, phone").eq("id", salonId ?? "").single(),
-    ]);
+  const [
+    { data: appointments },
+    { data: staff },
+    { data: blockedDays },
+    { data: businessHours },
+    { data: salon },
+  ] = await Promise.all([
+    admin
+      .from("appointments")
+      .select("*, staff:staff_members(id, name)")
+      .eq("salon_id", salonId ?? "")
+      .eq("status", "active")
+      .gte("starts_at", rangeStart.toISOString())
+      .lte("starts_at", rangeEnd.toISOString())
+      .order("starts_at"),
+    admin
+      .from("staff_members")
+      .select("id, name")
+      .eq("salon_id", salonId ?? "")
+      .eq("active", true)
+      .order("name"),
+    admin
+      .from("blocked_days")
+      .select("*")
+      .eq("salon_id", salonId ?? "")
+      .gte("date", rangeStart.toISOString().split("T")[0])
+      .lte("date", rangeEnd.toISOString().split("T")[0]),
+    admin
+      .from("business_hours")
+      .select("*")
+      .eq("salon_id", salonId ?? "")
+      .order("day_of_week"),
+    admin.from("salons").select("name, address, phone").eq("id", salonId ?? "").single(),
+  ]);
 
   return (
     <CalendarView
-      appointments={(appointments ?? []).map((a) => ({ ticket_number: null, ...a })) as Parameters<typeof CalendarView>[0]["appointments"]}
+      appointments={
+        (appointments ?? []).map((a) => ({
+          ticket_number: null,
+          price: null,
+          ...a,
+        })) as Parameters<typeof CalendarView>[0]["appointments"]
+      }
       staff={staff ?? []}
       currentDate={today}
       blockedDays={blockedDays ?? []}
+      businessHours={businessHours ?? []}
       salonInfo={salon ?? undefined}
     />
   );

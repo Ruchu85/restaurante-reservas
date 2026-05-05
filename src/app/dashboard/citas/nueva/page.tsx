@@ -3,7 +3,7 @@ import { NewAppointmentForm } from "@/components/dashboard/NewAppointmentForm";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
-export const metadata = { title: "Nueva cita — Panel admin" };
+export const metadata = { title: "Nueva cita — PELUQUERIA ALI" };
 
 export default async function NuevaCitaPage({
   searchParams,
@@ -17,12 +17,16 @@ export default async function NuevaCitaPage({
   const today = new Date();
   const selectedDate = params.date ?? today.toISOString().split("T")[0];
 
-  // Fetch next 31 days of appointments so the slot picker works when user changes date
   const rangeStart = new Date(selectedDate + "T00:00:00");
   rangeStart.setDate(rangeStart.getDate() - 1);
   const rangeEnd = new Date(today.getTime() + 31 * 24 * 60 * 60 * 1000);
 
-  const [{ data: businessHours }, { data: appointments }] = await Promise.all([
+  const [
+    { data: businessHours },
+    { data: appointments },
+    { data: blockedDays },
+    { data: services },
+  ] = await Promise.all([
     admin
       .from("business_hours")
       .select("*")
@@ -35,6 +39,18 @@ export default async function NuevaCitaPage({
       .eq("status", "active")
       .gte("starts_at", rangeStart.toISOString())
       .lte("starts_at", rangeEnd.toISOString()),
+    admin
+      .from("blocked_days")
+      .select("*")
+      .eq("salon_id", salonId ?? "")
+      .gte("date", rangeStart.toISOString().split("T")[0])
+      .lte("date", rangeEnd.toISOString().split("T")[0]),
+    admin
+      .from("services")
+      .select("*")
+      .eq("salon_id", salonId ?? "")
+      .eq("active", true)
+      .order("name"),
   ]);
 
   return (
@@ -56,6 +72,8 @@ export default async function NuevaCitaPage({
         initialTime={params.time}
         businessHours={businessHours ?? []}
         existingAppointments={appointments ?? []}
+        blockedDays={blockedDays ?? []}
+        services={(services as import("@/types").Service[]) ?? []}
       />
     </div>
   );
