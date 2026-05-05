@@ -10,57 +10,122 @@ function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
 }
 
-function fmtDateShort(iso: string) {
-  const d = new Date(iso);
-  return `${d.getDate()}-${d.getMonth() + 1}-${String(d.getFullYear()).slice(2)}`;
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 const TICKET_STYLES = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #fff; }
   .ticket {
-    width: 190mm;
-    padding: 8mm 10mm;
-    font-family: Arial, sans-serif;
+    width: 130mm;
+    min-height: 190mm;
+    padding: 8mm 8mm 6mm;
+    font-family: 'Arial', sans-serif;
     font-size: 11px;
     background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
   }
-  .header-row {
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    padding-bottom: 4mm;
+    border-bottom: 2px solid #111;
+    margin-bottom: 4mm;
+  }
+  .header-name {
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .header-sub {
+    font-size: 9px;
+    color: #555;
+    margin-top: 1mm;
+    letter-spacing: 0.5px;
+  }
+  /* ── Ticket meta row ── */
+  .meta-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    margin-bottom: 4mm;
+  }
+  .ticket-num-label { font-size: 8px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+  .ticket-num-val   { font-size: 26px; font-weight: 900; color: #111; line-height: 1; }
+  .ticket-date-label { font-size: 8px; color: #888; text-transform: uppercase; letter-spacing: 1px; text-align: right; }
+  .ticket-date-val   { font-size: 12px; font-weight: 700; text-align: right; }
+  /* ── Divider ── */
+  .divider {
+    border: none;
+    border-top: 1px dashed #bbb;
+    margin: 3mm 0;
+  }
+  /* ── Client ── */
+  .client-row {
+    display: flex;
+    gap: 2mm;
+    align-items: baseline;
+    margin-bottom: 4mm;
+  }
+  .client-label { font-size: 8px; color: #888; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+  .client-val   { font-size: 13px; font-weight: 700; flex: 1; border-bottom: 1px solid #bbb; padding-bottom: 0.5mm; }
+  /* ── Items table ── */
+  .items {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
     margin-bottom: 3mm;
   }
-  .stamp {
-    border: 2px solid #2255aa;
-    padding: 3mm 4mm;
-    min-width: 60mm;
+  .items thead tr {
+    border-bottom: 1.5px solid #111;
   }
-  .stamp-name { font-size: 14px; font-weight: bold; text-align: center; }
-  .stamp-line { font-size: 10px; text-align: center; color: #333; margin-top: 1mm; }
-  .num-block { text-align: right; padding-top: 2mm; }
-  .num-label { font-size: 12px; }
-  .num-val { font-size: 22px; font-weight: bold; margin-left: 2mm; border-bottom: 2px solid #000; padding-bottom: 1mm; }
-  .date-row { margin: 3mm 0 2mm; font-size: 12px; }
-  .client-row { display: flex; align-items: baseline; gap: 3mm; margin-bottom: 3mm; font-size: 12px; }
-  .client-label { font-size: 14px; font-weight: bold; }
-  .client-val { border-bottom: 1px solid #000; flex: 1; min-height: 5mm; }
-  .items { width: 100%; border-collapse: collapse; font-size: 11px; }
-  .items th, .items td {
-    border: 1px solid #555;
-    padding: 1.5mm 2mm;
+  .items th {
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #666;
+    padding: 1mm 1.5mm 1.5mm;
     text-align: left;
+  }
+  .items td {
+    padding: 2mm 1.5mm;
     vertical-align: top;
+    border-bottom: 1px solid #eee;
   }
-  .items thead th {
+  .items .col-concept { width: auto; }
+  .items .col-time    { width: 22mm; color: #666; font-size: 9px; }
+  .items .col-price   { width: 18mm; text-align: right; }
+  /* ── Total ── */
+  .total-section {
+    border-top: 2px solid #111;
+    padding-top: 2.5mm;
+    margin-top: 1mm;
+  }
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .total-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+  .total-val   { font-size: 20px; font-weight: 900; color: #111; }
+  /* ── Footer ── */
+  .footer {
+    margin-top: auto;
+    padding-top: 5mm;
     text-align: center;
-    font-size: 10px;
-    letter-spacing: 1px;
-    background: #f8f8f8;
+    font-size: 9px;
+    color: #888;
+    border-top: 1px dashed #bbb;
+    letter-spacing: 0.5px;
   }
-  .col-qty   { width: 14mm; text-align: center !important; }
-  .col-price { width: 22mm; }
-  .col-total { width: 24mm; }
-  .empty-row td { height: 7mm; }
 `;
 
 function buildTicketHtml(
@@ -70,53 +135,66 @@ function buildTicketHtml(
   salonAddress: string,
   salonPhone: string,
 ) {
-  const num = appt.ticket_number ?? (200 + idx + 1);
-  const dateStr = fmtDateShort(appt.starts_at);
+  const num = String(appt.ticket_number ?? 200 + idx + 1).padStart(4, "0");
+  const dateStr = fmtDate(appt.starts_at);
   const timeStr = `${fmtTime(appt.starts_at)} – ${fmtTime(appt.ends_at)}`;
-  const priceStr = appt.price != null ? `${appt.price.toFixed(2)} €` : "";
+  const price = appt.price;
+  const priceStr = price != null ? `${price.toFixed(2)} €` : "—";
+
+  const contactLine = [salonAddress, salonPhone ? `Tel. ${salonPhone}` : ""]
+    .filter(Boolean)
+    .join("  ·  ");
 
   return `
 <div class="ticket">
-  <div class="header-row">
-    <div class="stamp">
-      <div class="stamp-name">${salonName}</div>
-      ${salonAddress ? `<div class="stamp-line">${salonAddress}</div>` : ""}
-      ${salonPhone ? `<div class="stamp-line">Telf.: ${salonPhone}</div>` : ""}
+  <div class="header">
+    <div class="header-name">${salonName}</div>
+    ${contactLine ? `<div class="header-sub">${contactLine}</div>` : ""}
+  </div>
+
+  <div class="meta-row">
+    <div>
+      <div class="ticket-num-label">Ticket nº</div>
+      <div class="ticket-num-val">#${num}</div>
     </div>
-    <div class="num-block">
-      <span class="num-label">Nº.</span>
-      <span class="num-val">${num}</span>
+    <div>
+      <div class="ticket-date-label">Fecha</div>
+      <div class="ticket-date-val">${dateStr}</div>
     </div>
   </div>
-  <div class="date-row">
-    <span>de&nbsp;&nbsp;<u>&nbsp;${dateStr}&nbsp;</u>&nbsp;&nbsp;de</span>
-  </div>
+
   <div class="client-row">
-    <span class="client-label">D.</span>
+    <span class="client-label">Cliente</span>
     <span class="client-val">${appt.customer_name}</span>
   </div>
+
   <table class="items">
     <thead>
       <tr>
-        <th class="col-qty">Cantidad</th>
-        <th class="col-concept">C O N C E P T O</th>
-        <th class="col-price">Precio</th>
-        <th class="col-total">T O T A L</th>
+        <th class="col-concept">Concepto</th>
+        <th class="col-time">Horario</th>
+        <th class="col-price">Importe</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td class="col-qty">1</td>
-        <td class="col-concept">${appt.service}${appt.notes ? ` – ${appt.notes}` : ""}</td>
+        <td class="col-concept">${appt.service}${appt.notes ? `<br><span style="color:#777;font-size:9px">${appt.notes}</span>` : ""}</td>
+        <td class="col-time">${timeStr}</td>
         <td class="col-price">${priceStr}</td>
-        <td class="col-total">${priceStr}</td>
       </tr>
-      <tr><td></td><td>${timeStr}</td><td></td><td></td></tr>
-      <tr class="empty-row"><td></td><td></td><td></td><td></td></tr>
-      <tr class="empty-row"><td></td><td></td><td></td><td></td></tr>
-      <tr class="empty-row"><td></td><td></td><td></td><td></td></tr>
     </tbody>
   </table>
+
+  <div class="total-section">
+    <div class="total-row">
+      <span class="total-label">Total</span>
+      <span class="total-val">${priceStr}</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    ¡Gracias por su visita!<br>Hasta pronto
+  </div>
 </div>`;
 }
 
@@ -132,7 +210,8 @@ export async function downloadTicketsPDF(appointments: Appointment[], salon?: Sa
   const salonAddress = salon?.address ?? "";
   const salonPhone = salon?.phone ?? "";
 
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a5" });
+  // A5 portrait: 148 × 210 mm
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a5" });
 
   for (let i = 0; i < appointments.length; i++) {
     const ticketHtml = buildTicketHtml(
@@ -145,7 +224,7 @@ export async function downloadTicketsPDF(appointments: Appointment[], salon?: Sa
 
     const wrapper = document.createElement("div");
     wrapper.style.cssText =
-      "position:fixed;left:-9999px;top:0;background:white;width:210mm;";
+      "position:fixed;left:-9999px;top:0;background:white;width:130mm;";
     wrapper.innerHTML = `<style>${TICKET_STYLES}</style>${ticketHtml}`;
     document.body.appendChild(wrapper);
 
@@ -157,12 +236,12 @@ export async function downloadTicketsPDF(appointments: Appointment[], salon?: Sa
         logging: false,
       });
 
-      if (i > 0) doc.addPage([210, 148], "landscape");
+      if (i > 0) doc.addPage([148, 210], "portrait");
 
       const imgData = canvas.toDataURL("image/png");
-      const pdfW = 210;
+      const pdfW = 148;
       const imgH = (canvas.height / canvas.width) * pdfW;
-      doc.addImage(imgData, "PNG", 0, 0, pdfW, Math.min(imgH, 148));
+      doc.addImage(imgData, "PNG", 0, 0, pdfW, Math.min(imgH, 210));
     } finally {
       document.body.removeChild(wrapper);
     }

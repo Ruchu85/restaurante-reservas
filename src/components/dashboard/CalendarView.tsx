@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Plus, Printer } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn, formatTime } from "@/lib/utils";
 import { downloadTicketsPDF, type SalonInfo } from "@/lib/printTicket";
@@ -158,10 +159,20 @@ export function CalendarView({
     if (isBlocked(day) || isClosedBySchedule(day)) return;
     const time = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
     const dateStr = toLocalDateString(day);
-    const ok = window.confirm(
-      `¿Crear cita el ${day.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })} a las ${time}?`,
-    );
-    if (ok) router.push(`/dashboard/citas/nueva?date=${dateStr}&time=${time}`);
+    const dayLabel = day.toLocaleDateString("es-ES", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+    toast(`${dayLabel} · ${time}`, {
+      description: "¿Crear nueva cita en este horario?",
+      action: {
+        label: "Crear cita",
+        onClick: () => router.push(`/dashboard/citas/nueva?date=${dateStr}&time=${time}`),
+      },
+      cancel: { label: "Cancelar", onClick: () => {} },
+      duration: 8000,
+    });
   }
 
   async function handlePrintView() {
@@ -195,6 +206,7 @@ export function CalendarView({
   const isToday = sameDay(date, today);
 
   return (
+    <>
     <div className="rounded-xl border border-border bg-white overflow-hidden">
       {/* Toolbar */}
       <div className="border-b border-border">
@@ -625,5 +637,15 @@ export function CalendarView({
         </div>
       )}
     </div>
+
+    {/* Mobile FAB — visible only on small screens, floats above bottom nav */}
+    <button
+      className="fixed bottom-[72px] right-4 z-40 md:hidden flex items-center gap-2 rounded-full bg-slate-900 px-4 py-3 text-white font-semibold text-sm shadow-lg active:scale-95 transition-transform"
+      onClick={() => router.push(`/dashboard/citas/nueva?date=${toLocalDateString(date)}`)}
+    >
+      <Plus className="h-4 w-4" />
+      Nueva cita
+    </button>
+    </>
   );
 }
