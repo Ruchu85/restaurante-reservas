@@ -245,7 +245,7 @@ export function EditAppointmentForm({ appointment, services = [] }: EditAppointm
           <Input
             value={endTime}
             readOnly
-            className="bg-slate-50 dark:bg-slate-800 text-muted-foreground"
+            className="bg-slate-50 text-muted-foreground"
           />
         </div>
       </div>

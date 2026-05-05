@@ -23,12 +23,11 @@ export default async function DashboardLayout({
     .single();
 
   return (
-    <div className="flex h-svh bg-slate-50 dark:bg-slate-900">
+    <div className="flex h-svh bg-slate-50">
       <DashboardNav
         userName={profile?.full_name ?? user.email ?? "Usuario"}
         userRole={profile?.role ?? "staff"}
       />
-      {/* pb-16 + safe-area deja espacio para la bottom nav en móvil */}
       <main className="flex-1 overflow-auto pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         <div className="mx-auto max-w-5xl p-4 md:p-6">{children}</div>
       </main>

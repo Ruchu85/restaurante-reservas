@@ -55,9 +55,9 @@ function slotOccupied(slotH: number, slotM: number, day: Date, appts: Appointmen
 
 function apptCountColor(n: number) {
   if (n === 0) return null;
-  if (n <= 2) return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300";
-  if (n <= 4) return "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300";
-  return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
+  if (n <= 2) return "bg-emerald-100 text-emerald-700";
+  if (n <= 4) return "bg-amber-100 text-amber-700";
+  return "bg-red-100 text-red-700";
 }
 
 export function CalendarView({
@@ -195,7 +195,7 @@ export function CalendarView({
   const isToday = sameDay(date, today);
 
   return (
-    <div className="rounded-xl border border-border bg-white dark:bg-slate-900 overflow-hidden">
+    <div className="rounded-xl border border-border bg-white overflow-hidden">
       {/* Toolbar */}
       <div className="border-b border-border">
         <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
@@ -241,7 +241,7 @@ export function CalendarView({
           </Button>
         </div>
         <div className="px-3 pb-2.5">
-          <div className="flex rounded-lg border border-border bg-slate-50 dark:bg-slate-800 p-0.5 gap-0.5">
+          <div className="flex rounded-lg border border-border bg-slate-50 p-0.5 gap-0.5">
             {(["day", "week", "month"] as ViewMode[]).map((v) => (
               <button
                 key={v}
@@ -249,8 +249,8 @@ export function CalendarView({
                 className={cn(
                   "flex-1 rounded-md py-1.5 text-xs font-medium transition-colors",
                   view === v
-                    ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200",
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700",
                 )}
               >
                 {VIEW_LABELS[v]}
@@ -264,7 +264,7 @@ export function CalendarView({
       {view === "day" && (
         <div className="overflow-auto">
           {isBlocked(date) && (
-            <div className="bg-red-50 dark:bg-red-950 border-b border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300 font-medium flex items-center gap-2">
+            <div className="bg-red-50 border-b border-red-200 px-4 py-3 text-sm text-red-700 font-medium flex items-center gap-2">
               <span className="text-base">🚫</span>
               Día bloqueado —{" "}
               {blockedDays.find((b) => b.date === toLocalDateString(date))?.reason ??
@@ -272,7 +272,7 @@ export function CalendarView({
             </div>
           )}
           {!isBlocked(date) && isClosedBySchedule(date) && (
-            <div className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 text-sm text-slate-500 dark:text-slate-400 font-medium flex items-center gap-2">
+            <div className="bg-slate-50 border-b border-slate-200 px-4 py-3 text-sm text-slate-500 font-medium flex items-center gap-2">
               <span className="text-base">🔒</span>
               Día cerrado según horario del negocio
             </div>
@@ -291,12 +291,12 @@ export function CalendarView({
                 className={cn(
                   "flex border-b border-border last:border-b-0 transition-colors group",
                   blocked || closedDay
-                    ? "bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                    ? "bg-stone-50 cursor-not-allowed"
                     : occupied
-                      ? "bg-rose-50 dark:bg-rose-950"
+                      ? "bg-rose-50"
                       : unavailable
-                        ? "bg-slate-50 dark:bg-slate-850"
-                        : "bg-emerald-50 dark:bg-emerald-950 hover:bg-emerald-100 dark:hover:bg-emerald-900 cursor-pointer",
+                        ? "bg-white"
+                        : "bg-emerald-50 hover:bg-emerald-100 cursor-pointer",
                 )}
                 style={{ minHeight: "44px" }}
                 onClick={() => {
@@ -307,8 +307,8 @@ export function CalendarView({
                   className={cn(
                     "w-12 flex-shrink-0 border-r border-border py-1 pr-2 text-right text-xs font-medium",
                     m === 0
-                      ? "text-slate-600 dark:text-slate-300"
-                      : "text-slate-400 dark:text-slate-500",
+                      ? "text-slate-600"
+                      : "text-slate-400",
                   )}
                 >
                   {label}
@@ -319,16 +319,16 @@ export function CalendarView({
                     return (
                       <div
                         key={appt.id}
-                        className="rounded-md border border-rose-300 bg-rose-100 dark:bg-rose-900 dark:border-rose-700 px-2 py-1 text-sm cursor-pointer hover:bg-rose-200 dark:hover:bg-rose-800 active:bg-rose-300 transition-colors"
+                        className="rounded-md border border-rose-300 bg-rose-100 px-2 py-1 text-sm cursor-pointer hover:bg-rose-200 active:bg-rose-300 transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
                           router.push(`/dashboard/citas/${appt.id}`);
                         }}
                       >
-                        <div className="font-medium text-rose-900 dark:text-rose-100">
+                        <div className="font-medium text-rose-900">
                           {appt.customer_name}
                         </div>
-                        <div className="text-xs text-rose-700 dark:text-rose-300">
+                        <div className="text-xs text-rose-700">
                           {formatTime(appt.starts_at)}–{formatTime(appt.ends_at)} · {appt.service}
                           {staffMember && <> · {staffMember.name}</>}
                         </div>
@@ -337,7 +337,7 @@ export function CalendarView({
                   })}
                   {free && slotAppts.length === 0 && (
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Plus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      <Plus className="h-4 w-4 text-emerald-600" />
                     </div>
                   )}
                 </div>
@@ -353,11 +353,11 @@ export function CalendarView({
           <div className="min-w-[560px]">
             {/* Day headers */}
             <div
-              className="grid sticky top-0 bg-white dark:bg-slate-900 z-20 border-b border-border"
+              className="grid sticky top-0 bg-white z-20 border-b border-border"
               style={{ gridTemplateColumns: "44px repeat(7, 1fr)" }}
             >
               {/* Corner cell — sticky left */}
-              <div className="sticky left-0 bg-white dark:bg-slate-900 z-30 border-r border-border" />
+              <div className="sticky left-0 bg-white z-30 border-r border-border" />
               {weekDays.map((day, i) => {
                 const isT = sameDay(day, today);
                 const blocked = isBlocked(day);
@@ -367,10 +367,10 @@ export function CalendarView({
                   <div
                     key={i}
                     className={cn(
-                      "py-2 text-center border-r border-border last:border-r-0 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800",
-                      isT && "bg-slate-50 dark:bg-slate-800",
-                      blocked && "bg-red-50 dark:bg-red-950",
-                      !blocked && closedSched && "bg-slate-100 dark:bg-slate-800",
+                      "py-2 text-center border-r border-border last:border-r-0 cursor-pointer hover:bg-slate-50",
+                      isT && "bg-slate-50",
+                      blocked && "bg-red-50",
+                      !blocked && closedSched && "bg-stone-50",
                     )}
                     onClick={() => {
                       setDate(new Date(day));
@@ -381,9 +381,9 @@ export function CalendarView({
                     <div
                       className={cn(
                         "mx-auto mt-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium",
-                        isT && "bg-slate-900 dark:bg-white text-white dark:text-slate-900",
+                        isT && "bg-slate-900 text-white",
                         blocked && !isT && "bg-red-500 text-white",
-                        closedSched && !blocked && !isT && "text-slate-400 dark:text-slate-500",
+                        closedSched && !blocked && !isT && "text-slate-400",
                       )}
                     >
                       {day.getDate()}
@@ -392,12 +392,12 @@ export function CalendarView({
                       <div className="mx-auto mt-1 h-1.5 w-1.5 rounded-full bg-rose-500" />
                     )}
                     {blocked && (
-                      <div className="text-xs text-red-600 dark:text-red-400 leading-tight mt-0.5">
+                      <div className="text-xs text-red-600 leading-tight mt-0.5">
                         Cerrado
                       </div>
                     )}
                     {!blocked && closedSched && (
-                      <div className="text-xs text-slate-400 dark:text-slate-500 leading-tight mt-0.5">
+                      <div className="text-xs text-slate-400 leading-tight mt-0.5">
                         Cerrado
                       </div>
                     )}
@@ -416,10 +416,10 @@ export function CalendarView({
                 {/* Time label — sticky left */}
                 <div
                   className={cn(
-                    "sticky left-0 bg-white dark:bg-slate-900 z-10 border-r border-border py-0.5 pr-1 text-right text-xs leading-tight",
+                    "sticky left-0 bg-white z-10 border-r border-border py-0.5 pr-1 text-right text-xs leading-tight",
                     m === 0
-                      ? "text-slate-600 dark:text-slate-300 font-medium"
-                      : "text-slate-400 dark:text-slate-500",
+                      ? "text-slate-600 font-medium"
+                      : "text-slate-400",
                   )}
                 >
                   {label}
@@ -437,12 +437,12 @@ export function CalendarView({
                       className={cn(
                         "border-r border-border last:border-r-0 p-0.5 space-y-0.5 transition-colors group relative",
                         blocked || closedDay
-                          ? "bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
+                          ? "bg-stone-50 cursor-not-allowed"
                           : occupied
-                            ? "bg-rose-50 dark:bg-rose-950"
+                            ? "bg-rose-50"
                             : !inHours
-                              ? "bg-slate-50 dark:bg-slate-850"
-                              : "bg-emerald-50 dark:bg-emerald-950 hover:bg-emerald-100 dark:hover:bg-emerald-900 cursor-pointer",
+                              ? "bg-white"
+                              : "bg-emerald-50 hover:bg-emerald-100 cursor-pointer",
                       )}
                       onClick={() => {
                         if (free) handleFreeSlotClick(day, h, m);
@@ -451,24 +451,24 @@ export function CalendarView({
                       {slotAppts.map((appt) => (
                         <div
                           key={appt.id}
-                          className="rounded border border-rose-300 dark:border-rose-700 bg-rose-100 dark:bg-rose-900 px-1 py-0.5 text-xs cursor-pointer hover:bg-rose-200 dark:hover:bg-rose-800 transition-colors truncate"
+                          className="rounded border border-rose-300 bg-rose-100 px-1 py-0.5 text-xs cursor-pointer hover:bg-rose-200 transition-colors truncate"
                           title={`${appt.customer_name} — ${appt.service}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             router.push(`/dashboard/citas/${appt.id}`);
                           }}
                         >
-                          <div className="font-medium truncate text-rose-900 dark:text-rose-100">
+                          <div className="font-medium truncate text-rose-900">
                             {appt.customer_name}
                           </div>
-                          <div className="opacity-75 truncate text-rose-700 dark:text-rose-300">
+                          <div className="opacity-75 truncate text-rose-700">
                             {formatTime(appt.starts_at)}
                           </div>
                         </div>
                       ))}
                       {free && slotAppts.length === 0 && (
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                          <Plus className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
+                          <Plus className="h-3 w-3 text-emerald-500" />
                         </div>
                       )}
                     </div>
@@ -509,12 +509,12 @@ export function CalendarView({
                     className={cn(
                       "min-h-[56px] rounded-md border border-border p-1 cursor-pointer transition-colors active:opacity-80",
                       blocked
-                        ? "bg-red-100 dark:bg-red-950 border-red-300 dark:border-red-800"
+                        ? "bg-red-100 border-red-300"
                         : closedSched
-                          ? "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                          ? "bg-stone-50 border-stone-100"
                           : isT
-                            ? "ring-2 ring-slate-900 dark:ring-white ring-inset border-transparent hover:bg-slate-50 dark:hover:bg-slate-800"
-                            : "hover:bg-slate-50 dark:hover:bg-slate-800",
+                            ? "ring-2 ring-slate-900 ring-inset border-transparent hover:bg-slate-50"
+                            : "hover:bg-slate-50",
                       !isCurrentMonth && "opacity-30",
                     )}
                     onClick={() => {
@@ -525,20 +525,20 @@ export function CalendarView({
                     <div
                       className={cn(
                         "text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full mb-0.5",
-                        isT && "bg-slate-900 dark:bg-white text-white dark:text-slate-900",
-                        blocked && !isT && "text-red-700 dark:text-red-300",
-                        closedSched && !blocked && !isT && "text-slate-400 dark:text-slate-500",
+                        isT && "bg-slate-900 text-white",
+                        blocked && !isT && "text-red-700",
+                        closedSched && !blocked && !isT && "text-slate-400",
                       )}
                     >
                       {day.getDate()}
                     </div>
                     {blocked && (
-                      <div className="text-xs text-red-600 dark:text-red-400 leading-tight font-medium">
+                      <div className="text-xs text-red-600 leading-tight font-medium">
                         Cerrado
                       </div>
                     )}
                     {!blocked && closedSched && (
-                      <div className="text-xs text-slate-400 dark:text-slate-500 leading-tight">
+                      <div className="text-xs text-slate-400 leading-tight">
                         Cerrado
                       </div>
                     )}
@@ -564,19 +564,19 @@ export function CalendarView({
           ))}
           <div className="mt-2 flex items-center gap-3 px-1 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-sm bg-red-200 dark:bg-red-800" />{" "}
+              <span className="inline-block h-2 w-2 rounded-sm bg-red-200" />{" "}
               Bloqueado
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-sm bg-slate-200 dark:bg-slate-600" />{" "}
+              <span className="inline-block h-2 w-2 rounded-sm bg-slate-200" />{" "}
               Cerrado
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-sm bg-emerald-200 dark:bg-emerald-800" />{" "}
+              <span className="inline-block h-2 w-2 rounded-sm bg-emerald-200" />{" "}
               1–2
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-sm bg-amber-200 dark:bg-amber-800" />{" "}
+              <span className="inline-block h-2 w-2 rounded-sm bg-amber-200" />{" "}
               3–4
             </span>
           </div>
@@ -599,14 +599,14 @@ export function CalendarView({
                 className={cn(
                   "flex flex-col items-center flex-shrink-0 rounded-lg p-1.5 min-w-[38px] transition-colors",
                   isSelected
-                    ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900"
+                    ? "bg-slate-900 text-white"
                     : blocked
-                      ? "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300"
+                      ? "bg-red-100 text-red-700"
                       : closedSched
-                        ? "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500"
+                        ? "bg-stone-50 text-slate-400"
                         : isT
-                          ? "bg-slate-100 dark:bg-slate-800"
-                          : "hover:bg-slate-50 dark:hover:bg-slate-800",
+                          ? "bg-stone-50"
+                          : "hover:bg-slate-50",
                 )}
               >
                 <span className="text-xs">{DAYS_SHORT[day.getDay()]}</span>
@@ -615,7 +615,7 @@ export function CalendarView({
                   <div
                     className={cn(
                       "mt-0.5 h-1 w-1 rounded-full",
-                      isSelected ? "bg-white dark:bg-slate-900" : "bg-rose-500",
+                      isSelected ? "bg-white" : "bg-rose-500",
                     )}
                   />
                 )}

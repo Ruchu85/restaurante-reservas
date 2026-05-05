@@ -7,36 +7,36 @@ const cards = [
     href: "/dashboard/calendario",
     icon: Calendar,
     label: "Calendario",
-    bg: "bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800",
-    fg: "text-blue-700 dark:text-blue-300",
+    bg: "bg-blue-50 border-blue-200",
+    fg: "text-blue-700",
   },
   {
     href: "/dashboard/citas",
     icon: ClipboardList,
     label: "Citas",
-    bg: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950 dark:border-emerald-800",
-    fg: "text-emerald-700 dark:text-emerald-300",
+    bg: "bg-emerald-50 border-emerald-200",
+    fg: "text-emerald-700",
   },
   {
     href: "/dashboard/tickets",
     icon: Receipt,
     label: "Tickets",
-    bg: "bg-violet-50 border-violet-200 dark:bg-violet-950 dark:border-violet-800",
-    fg: "text-violet-700 dark:text-violet-300",
+    bg: "bg-violet-50 border-violet-200",
+    fg: "text-violet-700",
   },
   {
     href: "/dashboard/horarios",
     icon: Clock,
     label: "Horarios",
-    bg: "bg-amber-50 border-amber-200 dark:bg-amber-950 dark:border-amber-800",
-    fg: "text-amber-700 dark:text-amber-300",
+    bg: "bg-amber-50 border-amber-200",
+    fg: "text-amber-700",
   },
   {
     href: "/dashboard/ajustes",
     icon: Settings,
     label: "Ajustes",
-    bg: "bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-600",
-    fg: "text-slate-700 dark:text-slate-300",
+    bg: "bg-slate-50 border-slate-200",
+    fg: "text-slate-700",
   },
 ] as const;
 
@@ -50,7 +50,7 @@ export default function DashboardPage() {
 
       <Link
         href="/dashboard/citas/nueva"
-        className="mb-6 flex items-center justify-center gap-2 rounded-2xl bg-slate-900 dark:bg-white px-6 py-4 text-white dark:text-slate-900 font-semibold text-base w-full max-w-xs transition-all active:scale-95 hover:bg-slate-700 dark:hover:bg-slate-100"
+        className="mb-6 flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-4 text-white font-semibold text-base w-full max-w-xs transition-all active:scale-95 hover:bg-slate-700"
       >
         <Plus className="h-5 w-5" />
         Nueva cita
@@ -71,10 +71,10 @@ export default function DashboardPage() {
         <form action={signOut}>
           <button
             type="submit"
-            className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 p-6 aspect-square w-full transition-all active:scale-95 bg-rose-50 border-rose-200 dark:bg-rose-950 dark:border-rose-800"
+            className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 p-6 aspect-square w-full transition-all active:scale-95 bg-rose-50 border-rose-200"
           >
-            <LogOut className="h-10 w-10 text-rose-600 dark:text-rose-400" />
-            <span className="text-sm font-semibold text-rose-600 dark:text-rose-400">Salir</span>
+            <LogOut className="h-10 w-10 text-rose-600" />
+            <span className="text-sm font-semibold text-rose-600">Salir</span>
           </button>
         </form>
       </div>

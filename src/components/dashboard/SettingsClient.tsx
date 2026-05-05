@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useTheme } from "next-themes";
 import { toast } from "sonner";
-import { Plus, Trash2, Moon, Sun, Monitor, Pencil, Check, X } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,16 +14,13 @@ interface SettingsClientProps {
 }
 
 export function SettingsClient({ initialServices }: SettingsClientProps) {
-  const { theme, setTheme } = useTheme();
   const [services, setServices] = useState<Service[]>(initialServices);
   const [isPending, startTransition] = useTransition();
 
-  // New service form
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [newDuration, setNewDuration] = useState("");
 
-  // Inline edit state
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
@@ -43,7 +39,6 @@ export function SettingsClient({ initialServices }: SettingsClientProps) {
         toast.error(result.error);
       } else {
         toast.success("Servicio añadido");
-        // Optimistically add to list (server will have real id on next load)
         setServices((prev) => [
           ...prev,
           {
@@ -110,52 +105,20 @@ export function SettingsClient({ initialServices }: SettingsClientProps) {
     });
   }
 
-  const themes = [
-    { value: "light", label: "Claro", icon: Sun },
-    { value: "dark", label: "Oscuro", icon: Moon },
-    { value: "system", label: "Sistema", icon: Monitor },
-  ] as const;
-
   return (
     <div className="space-y-8 max-w-2xl">
-      {/* ── Tema ── */}
-      <section className="rounded-xl border border-border bg-white dark:bg-slate-900 p-5">
-        <h2 className="text-base font-semibold mb-1">Apariencia</h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          Elige el tema de la interfaz
-        </p>
-        <div className="flex gap-3">
-          {themes.map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              onClick={() => setTheme(value)}
-              className={`flex flex-1 flex-col items-center gap-2 rounded-lg border-2 p-3 transition-colors ${
-                theme === value
-                  ? "border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800"
-                  : "border-border hover:bg-slate-50 dark:hover:bg-slate-800"
-              }`}
-            >
-              <Icon className="h-5 w-5" />
-              <span className="text-xs font-medium">{label}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Servicios ── */}
-      <section className="rounded-xl border border-border bg-white dark:bg-slate-900 p-5">
+      <section className="rounded-xl border bg-white p-5">
         <h2 className="text-base font-semibold mb-1">Tipos de servicio</h2>
         <p className="text-sm text-muted-foreground mb-4">
           Configura los servicios y sus precios. Al crear citas, el precio se
           autocompletará según el servicio elegido.
         </p>
 
-        {/* Service list */}
         {services.length > 0 ? (
-          <div className="divide-y divide-border rounded-lg border border-border mb-4 overflow-hidden">
+          <div className="divide-y rounded-lg border mb-4 overflow-hidden">
             {services.map((s) =>
               editId === s.id ? (
-                <div key={s.id} className="p-3 bg-slate-50 dark:bg-slate-800 space-y-2">
+                <div key={s.id} className="p-3 bg-slate-50 space-y-2">
                   <div className="grid grid-cols-3 gap-2">
                     <div className="col-span-3 sm:col-span-1">
                       <Input
@@ -175,9 +138,7 @@ export function SettingsClient({ initialServices }: SettingsClientProps) {
                         placeholder="Precio"
                         className="pr-7 text-sm"
                       />
-                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
-                        €
-                      </span>
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
                     </div>
                     <div className="relative">
                       <Input
@@ -189,35 +150,21 @@ export function SettingsClient({ initialServices }: SettingsClientProps) {
                         placeholder="Minutos"
                         className="pr-8 text-sm"
                       />
-                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
-                        min
-                      </span>
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">min</span>
                     </div>
                   </div>
                   <div className="flex gap-2 justify-end">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setEditId(null)}
-                      disabled={isPending}
-                    >
+                    <Button size="sm" variant="ghost" onClick={() => setEditId(null)} disabled={isPending}>
                       <X className="h-4 w-4" />
                     </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleSaveEdit(s.id)}
-                      disabled={isPending || !editName.trim()}
-                    >
+                    <Button size="sm" onClick={() => handleSaveEdit(s.id)} disabled={isPending || !editName.trim()}>
                       <Check className="h-4 w-4 mr-1" />
                       Guardar
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div
-                  key={s.id}
-                  className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                >
+                <div key={s.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors">
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{s.name}</div>
                     <div className="text-xs text-muted-foreground">
@@ -226,20 +173,16 @@ export function SettingsClient({ initialServices }: SettingsClientProps) {
                     </div>
                   </div>
                   <Button
-                    variant="ghost"
-                    size="icon"
+                    variant="ghost" size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-foreground flex-shrink-0"
-                    onClick={() => startEdit(s)}
-                    disabled={isPending}
+                    onClick={() => startEdit(s)} disabled={isPending}
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                   <Button
-                    variant="ghost"
-                    size="icon"
+                    variant="ghost" size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-red-600 flex-shrink-0"
-                    onClick={() => handleDelete(s.id)}
-                    disabled={isPending}
+                    onClick={() => handleDelete(s.id)} disabled={isPending}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -253,60 +196,37 @@ export function SettingsClient({ initialServices }: SettingsClientProps) {
           </p>
         )}
 
-        {/* Add new service */}
         <form onSubmit={handleAddService} className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div className="sm:col-span-1">
-              <Label htmlFor="new-name" className="text-xs">
-                Nombre *
-              </Label>
+              <Label htmlFor="new-name" className="text-xs">Nombre *</Label>
               <Input
-                id="new-name"
-                value={newName}
+                id="new-name" value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Ej: Corte de cabello"
-                className="text-sm"
-                required
+                className="text-sm" required
               />
             </div>
             <div>
-              <Label htmlFor="new-price" className="text-xs">
-                Precio (€)
-              </Label>
+              <Label htmlFor="new-price" className="text-xs">Precio (€)</Label>
               <div className="relative">
                 <Input
-                  id="new-price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={newPrice}
-                  onChange={(e) => setNewPrice(e.target.value)}
-                  placeholder="0.00"
-                  className="pr-7 text-sm"
+                  id="new-price" type="number" min="0" step="0.01"
+                  value={newPrice} onChange={(e) => setNewPrice(e.target.value)}
+                  placeholder="0.00" className="pr-7 text-sm"
                 />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
-                  €
-                </span>
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
               </div>
             </div>
             <div>
-              <Label htmlFor="new-duration" className="text-xs">
-                Duración (min)
-              </Label>
+              <Label htmlFor="new-duration" className="text-xs">Duración (min)</Label>
               <div className="relative">
                 <Input
-                  id="new-duration"
-                  type="number"
-                  min="5"
-                  step="5"
-                  value={newDuration}
-                  onChange={(e) => setNewDuration(e.target.value)}
-                  placeholder="30"
-                  className="pr-8 text-sm"
+                  id="new-duration" type="number" min="5" step="5"
+                  value={newDuration} onChange={(e) => setNewDuration(e.target.value)}
+                  placeholder="30" className="pr-8 text-sm"
                 />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
-                  min
-                </span>
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">min</span>
               </div>
             </div>
           </div>

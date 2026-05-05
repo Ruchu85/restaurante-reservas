@@ -208,12 +208,12 @@ export function NewAppointmentForm({
     <form onSubmit={handleSubmit} className="space-y-5 max-w-lg">
       {/* Warning banners */}
       {isDayBlocked && (
-        <div className="rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
           🚫 Este día está bloqueado (vacaciones/festivo). No se pueden crear citas.
         </div>
       )}
       {isDayClosed && (
-        <div className="rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
+        <div className="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-slate-600">
           🔒 El salón no abre este día según el horario configurado.
         </div>
       )}
@@ -346,7 +346,7 @@ export function NewAppointmentForm({
         </div>
         <div className="space-y-1.5">
           <Label>Hora de fin</Label>
-          <Input value={endTime} readOnly className="bg-slate-50 dark:bg-slate-800 text-muted-foreground" />
+          <Input value={endTime} readOnly className="bg-slate-50 text-muted-foreground" />
         </div>
       </div>
 
