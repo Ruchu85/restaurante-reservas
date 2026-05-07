@@ -39,20 +39,50 @@ export async function createService(input: {
   const salonId = await getSalonId();
   if (!salonId) return { error: "No se encontró el salón." };
 
-  const { error } = await admin.from("services").insert({
-    salon_id: salonId,
-    name: parsed.data.name,
-    price: parsed.data.price,
-    duration_minutes: parsed.data.duration_minutes,
-  });
+  // Check if a service with this name already exists (active or soft-deleted)
+  const { data: existing } = await admin
+    .from("services")
+    .select("id, active")
+    .eq("salon_id", salonId)
+    .eq("name", parsed.data.name)
+    .maybeSingle();
 
-  if (error) {
-    if (error.code === "23505") return { error: "Ya existe un servicio con ese nombre." };
-    return { error: error.message };
+  if (existing?.active) {
+    return { error: "Ya existe un servicio con ese nombre." };
+  }
+
+  let service;
+  if (existing && !existing.active) {
+    // Reactivate the soft-deleted service with new price/duration
+    const { data, error } = await admin
+      .from("services")
+      .update({
+        active: true,
+        price: parsed.data.price,
+        duration_minutes: parsed.data.duration_minutes,
+      })
+      .eq("id", existing.id)
+      .select()
+      .single();
+    if (error) return { error: error.message };
+    service = data;
+  } else {
+    const { data, error } = await admin
+      .from("services")
+      .insert({
+        salon_id: salonId,
+        name: parsed.data.name,
+        price: parsed.data.price,
+        duration_minutes: parsed.data.duration_minutes,
+      })
+      .select()
+      .single();
+    if (error) return { error: error.message };
+    service = data;
   }
 
   revalidatePath("/dashboard/ajustes");
-  return { success: true };
+  return { success: true, service };
 }
 
 export async function updateService(

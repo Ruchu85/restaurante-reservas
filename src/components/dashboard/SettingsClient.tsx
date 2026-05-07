@@ -41,15 +41,7 @@ export function SettingsClient({ initialServices }: SettingsClientProps) {
         toast.success("Servicio añadido");
         setServices((prev) => [
           ...prev,
-          {
-            id: Date.now().toString(),
-            salon_id: "",
-            name: newName.trim(),
-            price: newPrice ? parseFloat(newPrice) : null,
-            duration_minutes: newDuration ? parseInt(newDuration) : null,
-            active: true,
-            created_at: new Date().toISOString(),
-          },
+          result.service as Service,
         ]);
         setNewName("");
         setNewPrice("");
