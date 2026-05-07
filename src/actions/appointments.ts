@@ -128,50 +128,56 @@ export async function markTicketPrinted(ids: string[]) {
   const admin = createAdminClient();
   const salonId = await getSalonId();
 
-  const { error: colCheck } = await admin
+  // Fetch appointments including starts_at to determine the billing month
+  const { data: existing } = await admin
     .from("appointments")
-    .select("ticket_number")
-    .limit(1);
+    .select("id, ticket_number, starts_at")
+    .in("id", ids);
 
-  const hasTicketNumberCol = !colCheck;
+  if (!existing) return { success: true };
 
-  if (hasTicketNumberCol) {
-    const { data: existing } = await admin
+  const needsNumber = existing.filter((a) => !a.ticket_number);
+  const alreadyNumbered = existing.filter((a) => a.ticket_number).map((a) => a.id);
+
+  // Assign per-month sequential numbers: format YYYYMM000 (e.g. 202605001)
+  for (const appt of needsNumber) {
+    const d = new Date(appt.starts_at);
+    const parts = new Intl.DateTimeFormat("es-ES", {
+      year: "numeric",
+      month: "2-digit",
+      timeZone: "Europe/Madrid",
+    }).formatToParts(d);
+    const year = parts.find((p) => p.type === "year")?.value ?? String(d.getFullYear());
+    const month = parts.find((p) => p.type === "month")?.value ?? String(d.getMonth() + 1).padStart(2, "0");
+    const yyyymm = parseInt(year + month); // e.g. 202605
+    const base = yyyymm * 1000;            // e.g. 202605000
+
+    const { data: maxRow } = await admin
       .from("appointments")
-      .select("id, ticket_number")
-      .in("id", ids);
+      .select("ticket_number")
+      .eq("salon_id", salonId ?? "")
+      .gte("ticket_number", base)
+      .lt("ticket_number", base + 1000)
+      .not("ticket_number", "is", null)
+      .order("ticket_number", { ascending: false })
+      .limit(1)
+      .single();
 
-    const needsNumber =
-      existing
-        ?.filter((a: Record<string, unknown>) => !a.ticket_number)
-        .map((a: Record<string, unknown>) => a.id as string) ?? [];
+    const nextNum = (maxRow as { ticket_number: number } | null)?.ticket_number
+      ? (maxRow as { ticket_number: number }).ticket_number + 1
+      : base + 1;
 
-    if (needsNumber.length > 0) {
-      const { data: maxRow } = await admin
-        .from("appointments")
-        .select("ticket_number")
-        .eq("salon_id", salonId ?? "")
-        .not("ticket_number", "is", null)
-        .order("ticket_number", { ascending: false })
-        .limit(1)
-        .single();
+    await admin
+      .from("appointments")
+      .update({ ticket_printed: true, ticket_number: nextNum })
+      .eq("id", appt.id);
+  }
 
-      let next = ((maxRow as { ticket_number: number } | null)?.ticket_number ?? 200) + 1;
-
-      for (const id of needsNumber) {
-        await admin
-          .from("appointments")
-          .update({ ticket_printed: true, ticket_number: next++ })
-          .eq("id", id);
-      }
-    }
-
-    const alreadyNumbered = ids.filter((id) => !needsNumber.includes(id));
-    if (alreadyNumbered.length > 0) {
-      await admin.from("appointments").update({ ticket_printed: true }).in("id", alreadyNumbered);
-    }
-  } else {
-    await admin.from("appointments").update({ ticket_printed: true }).in("id", ids);
+  if (alreadyNumbered.length > 0) {
+    await admin
+      .from("appointments")
+      .update({ ticket_printed: true })
+      .in("id", alreadyNumbered);
   }
 
   revalidatePath("/dashboard/citas");

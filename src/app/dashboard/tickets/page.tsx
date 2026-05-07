@@ -4,8 +4,19 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate, formatTime } from "@/lib/utils";
 import { PrintButton } from "@/components/dashboard/PrintButton";
 import type { Appointment } from "@/types";
+import type { SalonInfo } from "@/lib/printTicket";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+
+// Business registration data printed on every ticket
+const SALON_INFO: SalonInfo = {
+  name: "PELUQUERIA MIXTA ALI",
+  owner: "Alicia Quintana Martinez",
+  nif: "N.I.F. 10.200.117-P",
+  address: "C/Real, 16",
+  phone: "626 758 515",
+  city: "24717 Val de San Román (León)",
+};
 
 export const metadata = { title: "Tickets — Panel admin" };
 
@@ -28,20 +39,16 @@ export default async function TicketsPage({
   const admin = createAdminClient();
   const salonId = await getSalonId();
 
-  const [{ data: appts }, { data: salon }] = await Promise.all([
-    admin
-      .from("appointments")
-      .select("*")
-      .eq("salon_id", salonId ?? "")
-      .eq("status", "active")
-      .gte("starts_at", from + "T00:00:00+00:00")
-      .lte("starts_at", to + "T23:59:59+00:00")
-      .order("starts_at"),
-    admin.from("salons").select("name, address, phone").eq("id", salonId ?? "").single(),
-  ]);
+  const { data: appts } = await admin
+    .from("appointments")
+    .select("*")
+    .eq("salon_id", salonId ?? "")
+    .eq("status", "active")
+    .gte("starts_at", from + "T00:00:00+00:00")
+    .lte("starts_at", to + "T23:59:59+00:00")
+    .order("starts_at");
 
   const appointments = (appts ?? []).map((a) => ({ ticket_number: null, ...a })) as Appointment[];
-  const salonInfo = salon ?? undefined;
 
   const printed = appointments.filter((a) => a.ticket_printed);
   const pending = appointments.filter((a) => !a.ticket_printed);
@@ -96,9 +103,9 @@ export default async function TicketsPage({
             <span className="text-emerald-700 font-medium">{printed.length} impresas</span> ·{" "}
             <span className="text-amber-700 font-medium">{pending.length} pendientes</span>
           </span>
-          <PrintButton appointments={appointments} label="Imprimir todos" salon={salonInfo} />
+          <PrintButton appointments={appointments} label="Imprimir todos" salon={SALON_INFO} />
           {pending.length > 0 && (
-            <PrintButton appointments={pending} label="Solo pendientes" salon={salonInfo} />
+            <PrintButton appointments={pending} label="Solo pendientes" salon={SALON_INFO} />
           )}
         </div>
       )}
@@ -132,7 +139,7 @@ export default async function TicketsPage({
                     <Badge variant={appt.ticket_printed ? "outline" : "secondary"} className={appt.ticket_printed ? "border-emerald-300 text-emerald-700" : ""}>
                       {appt.ticket_printed ? "✓ Impreso" : "Pendiente"}
                     </Badge>
-                    <PrintButton appointments={[appt]} variant="icon" salon={salonInfo} />
+                    <PrintButton appointments={[appt]} variant="icon" salon={SALON_INFO} />
                   </div>
                 </div>
               ))}
