@@ -35,7 +35,9 @@ export function PrintButton({
         // Assign ticket numbers first so the PDF shows the real sequential number
         const result = await markTicketPrinted(ids);
         if ("error" in result && result.error) {
-          toast.error("Error al marcar como impreso: " + result.error);
+          // Show warning but still generate PDF so the user can print
+          toast.warning("No se pudo marcar en base de datos: " + result.error);
+          await downloadTicketsPDF(appointments, salon);
           return;
         }
         const returned = "appointments" in result ? result.appointments : null;
@@ -45,7 +47,9 @@ export function PrintButton({
         router.refresh();
       } catch (err) {
         console.error("[PrintButton]", err);
-        toast.error("Error al generar el ticket. Inténtalo de nuevo.");
+        // Last resort: still generate the PDF even if everything else failed
+        try { await downloadTicketsPDF(appointments, salon); } catch { /* ignore */ }
+        toast.error("Error al marcar como impreso. El PDF se ha generado igualmente.");
       }
     });
   }

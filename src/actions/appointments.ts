@@ -129,18 +129,28 @@ export async function markTicketPrinted(ids: string[]) {
   const admin = createAdminClient();
   const salonId = await getSalonId();
 
-  // Fetch appointments including starts_at to determine the billing month
+  // Use select("*") to avoid PostgREST 42703 errors if ticket_number/ticket_printed
+  // columns don't exist yet in the production database
   const { data: existing, error: fetchError } = await admin
     .from("appointments")
-    .select("id, ticket_number, starts_at")
+    .select("*")
     .in("id", ids);
 
-  if (fetchError || !existing || existing.length === 0) {
-    return { error: "No se pudieron cargar las citas." };
+  if (fetchError) {
+    console.error("[markTicketPrinted] fetch error:", fetchError.message);
+    return { error: `Error al cargar citas: ${fetchError.message}` };
   }
 
-  const needsNumber = existing.filter((a) => !a.ticket_number);
-  const alreadyNumbered = existing.filter((a) => a.ticket_number).map((a) => a.id);
+  if (!existing || existing.length === 0) {
+    // IDs not found — return empty so caller falls back to original data for PDF
+    return { success: true, appointments: [] as Appointment[] };
+  }
+
+  type Row = { id: string; ticket_number?: number | null; starts_at: string };
+  const rows = existing as Row[];
+
+  const needsNumber = rows.filter((a) => !a.ticket_number);
+  const alreadyNumbered = rows.filter((a) => a.ticket_number).map((a) => a.id);
 
   // Assign per-month sequential numbers: format YYYYMM000 (e.g. 202605001)
   // Process one at a time so each gets the correct next sequential number
@@ -156,7 +166,7 @@ export async function markTicketPrinted(ids: string[]) {
     const yyyymm = parseInt(year + month); // e.g. 202605
     const base = yyyymm * 1000;            // e.g. 202605000
 
-    // maybeSingle() instead of single() to avoid error when no rows exist yet
+    // maybeSingle() avoids error when no tickets exist for the month yet
     const { data: maxRow } = await admin
       .from("appointments")
       .select("ticket_number")
@@ -178,7 +188,8 @@ export async function markTicketPrinted(ids: string[]) {
       .eq("id", appt.id);
 
     if (updateError) {
-      console.error("[markTicketPrinted] update error:", updateError);
+      // Column may not exist yet in production — log but continue so PDF still generates
+      console.error("[markTicketPrinted] update error:", updateError.message);
     }
   }
 
@@ -189,7 +200,7 @@ export async function markTicketPrinted(ids: string[]) {
       .in("id", alreadyNumbered);
 
     if (updateError) {
-      console.error("[markTicketPrinted] update printed error:", updateError);
+      console.error("[markTicketPrinted] update printed error:", updateError.message);
     }
   }
 
