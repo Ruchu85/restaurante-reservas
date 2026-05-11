@@ -186,11 +186,19 @@ export function CalendarView({
       window.alert("No hay citas para imprimir.");
       return;
     }
-    const ids = appts.map((a) => a.id);
-    // Assign ticket numbers first, then generate PDF with real numbers
-    const result = await markTicketPrinted(ids);
-    const aptsWithNumbers = result.appointments?.length ? result.appointments : appts;
-    await downloadTicketsPDF(aptsWithNumbers, SALON_INFO);
+    try {
+      const ids = appts.map((a) => a.id);
+      // Assign ticket numbers first, then generate PDF with real numbers
+      const result = await markTicketPrinted(ids);
+      const returned = "appointments" in result ? result.appointments : null;
+      const aptsWithNumbers = returned && returned.length > 0 ? returned : appts;
+      await downloadTicketsPDF(aptsWithNumbers, SALON_INFO);
+      // Refresh server components so the calendar reflects the "Impreso" state
+      router.refresh();
+    } catch (err) {
+      console.error("[CalendarView print]", err);
+      window.alert("Error al imprimir los tickets. Inténtalo de nuevo.");
+    }
   }
 
   function goToDay(day: Date) {

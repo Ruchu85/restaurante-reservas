@@ -130,12 +130,14 @@ export async function markTicketPrinted(ids: string[]) {
   const salonId = await getSalonId();
 
   // Fetch appointments including starts_at to determine the billing month
-  const { data: existing } = await admin
+  const { data: existing, error: fetchError } = await admin
     .from("appointments")
     .select("id, ticket_number, starts_at")
     .in("id", ids);
 
-  if (!existing) return { success: true, appointments: [] as Appointment[] };
+  if (fetchError || !existing || existing.length === 0) {
+    return { error: "No se pudieron cargar las citas." };
+  }
 
   const needsNumber = existing.filter((a) => !a.ticket_number);
   const alreadyNumbered = existing.filter((a) => a.ticket_number).map((a) => a.id);
@@ -154,6 +156,7 @@ export async function markTicketPrinted(ids: string[]) {
     const yyyymm = parseInt(year + month); // e.g. 202605
     const base = yyyymm * 1000;            // e.g. 202605000
 
+    // maybeSingle() instead of single() to avoid error when no rows exist yet
     const { data: maxRow } = await admin
       .from("appointments")
       .select("ticket_number")
@@ -163,23 +166,31 @@ export async function markTicketPrinted(ids: string[]) {
       .not("ticket_number", "is", null)
       .order("ticket_number", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     const nextNum = (maxRow as { ticket_number: number } | null)?.ticket_number
       ? (maxRow as { ticket_number: number }).ticket_number + 1
       : base + 1;
 
-    await admin
+    const { error: updateError } = await admin
       .from("appointments")
       .update({ ticket_printed: true, ticket_number: nextNum })
       .eq("id", appt.id);
+
+    if (updateError) {
+      console.error("[markTicketPrinted] update error:", updateError);
+    }
   }
 
   if (alreadyNumbered.length > 0) {
-    await admin
+    const { error: updateError } = await admin
       .from("appointments")
       .update({ ticket_printed: true })
       .in("id", alreadyNumbered);
+
+    if (updateError) {
+      console.error("[markTicketPrinted] update printed error:", updateError);
+    }
   }
 
   // Return the updated appointments so callers can generate PDFs with real ticket numbers
@@ -189,7 +200,8 @@ export async function markTicketPrinted(ids: string[]) {
     .in("id", ids)
     .order("starts_at");
 
-  revalidatePath("/dashboard/citas");
+  // "layout" revalidates all pages sharing that layout, including dynamic /citas/[id] routes
+  revalidatePath("/dashboard/citas", "layout");
   revalidatePath("/dashboard/tickets");
   revalidatePath("/dashboard/calendario");
   return { success: true, appointments: (updated ?? []) as Appointment[] };

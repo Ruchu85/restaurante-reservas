@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { EditAppointmentForm } from "@/components/dashboard/EditAppointmentForm";
 import { PrintButton } from "@/components/dashboard/PrintButton";
 import { SALON_INFO } from "@/lib/salonConfig";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import type { Appointment, Service } from "@/types";
@@ -52,10 +53,19 @@ export default async function EditCitaPage({
             <h1 className="text-2xl font-bold">Editar cita</h1>
             <p className="text-sm text-muted-foreground">
               {appt.customer_name} · {appt.service}
-              {appt.ticket_printed && (
-                <span className="ml-2 text-emerald-600">✓ Ticket impreso</span>
-              )}
             </p>
+            <div className="mt-2 flex items-center gap-2">
+              {appt.ticket_printed ? (
+                <Badge variant="outline" className="border-emerald-300 text-emerald-700 text-xs font-medium">
+                  ✓ Ticket impreso
+                  {appt.ticket_number ? ` · Nº ${appt.ticket_number}` : ""}
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="text-xs">
+                  Pendiente de imprimir
+                </Badge>
+              )}
+            </div>
           </div>
           <PrintButton appointments={[appt]} label="Imprimir ticket" salon={SALON_INFO} />
         </div>

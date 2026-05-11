@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -23,20 +24,29 @@ export function PrintButton({
   salon,
 }: PrintButtonProps) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
   const allPrinted = appointments.length > 0 && appointments.every((a) => a.ticket_printed);
 
   function handlePrint() {
     if (!appointments.length) return;
     const ids = appointments.map((a) => a.id);
     startTransition(async () => {
-      // Assign ticket numbers first so the PDF shows the real sequential number
-      const result = await markTicketPrinted(ids);
-      if ("error" in result && result.error) {
-        toast.error("No se pudo marcar como impreso");
-        return;
+      try {
+        // Assign ticket numbers first so the PDF shows the real sequential number
+        const result = await markTicketPrinted(ids);
+        if ("error" in result && result.error) {
+          toast.error("Error al marcar como impreso: " + result.error);
+          return;
+        }
+        const returned = "appointments" in result ? result.appointments : null;
+        const aptsWithNumbers = returned && returned.length > 0 ? returned : appointments;
+        await downloadTicketsPDF(aptsWithNumbers, salon);
+        // Force server components on this page to re-render with fresh data
+        router.refresh();
+      } catch (err) {
+        console.error("[PrintButton]", err);
+        toast.error("Error al generar el ticket. Inténtalo de nuevo.");
       }
-      const aptsWithNumbers = result.appointments?.length ? result.appointments : appointments;
-      await downloadTicketsPDF(aptsWithNumbers, salon);
     });
   }
 
@@ -67,7 +77,7 @@ export function PrintButton({
       className={cn(allPrinted && "border-emerald-300 text-emerald-700")}
     >
       <Printer className="mr-1.5 h-4 w-4" />
-      {label}
+      {isPending ? "Procesando…" : label}
     </Button>
   );
 }
