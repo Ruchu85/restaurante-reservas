@@ -2,6 +2,7 @@ import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import { EditAppointmentForm } from "@/components/dashboard/EditAppointmentForm";
 import { PrintButton } from "@/components/dashboard/PrintButton";
+import { SALON_INFO } from "@/lib/salonConfig";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import type { Appointment, Service } from "@/types";
@@ -17,14 +18,13 @@ export default async function EditCitaPage({
   const admin = createAdminClient();
   const salonId = await getSalonId();
 
-  const [{ data: appointment }, { data: salon }, { data: services }] = await Promise.all([
+  const [{ data: appointment }, { data: services }] = await Promise.all([
     admin
       .from("appointments")
       .select("*")
       .eq("id", id)
       .eq("salon_id", salonId ?? "")
       .single(),
-    admin.from("salons").select("name, address, phone").eq("id", salonId ?? "").single(),
     admin
       .from("services")
       .select("*")
@@ -57,7 +57,7 @@ export default async function EditCitaPage({
               )}
             </p>
           </div>
-          <PrintButton appointments={[appt]} label="Imprimir ticket" salon={salon ?? undefined} />
+          <PrintButton appointments={[appt]} label="Imprimir ticket" salon={SALON_INFO} />
         </div>
       </div>
 

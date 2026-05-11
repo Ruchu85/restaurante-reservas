@@ -6,7 +6,9 @@ import { ChevronLeft, ChevronRight, Plus, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn, formatTime } from "@/lib/utils";
-import { downloadTicketsPDF, type SalonInfo } from "@/lib/printTicket";
+import { downloadTicketsPDF } from "@/lib/printTicket";
+import { SALON_INFO } from "@/lib/salonConfig";
+import { markTicketPrinted } from "@/actions/appointments";
 import type { Appointment, BlockedDay, BusinessHours, StaffMember } from "@/types";
 
 interface CalendarViewProps {
@@ -15,7 +17,6 @@ interface CalendarViewProps {
   currentDate: string;
   blockedDays?: BlockedDay[];
   businessHours?: BusinessHours[];
-  salonInfo?: SalonInfo;
 }
 
 type ViewMode = "day" | "week" | "month";
@@ -67,7 +68,6 @@ export function CalendarView({
   currentDate,
   blockedDays = [],
   businessHours = [],
-  salonInfo,
 }: CalendarViewProps) {
   const router = useRouter();
   const [date, setDate] = useState(new Date(currentDate + "T12:00:00"));
@@ -186,7 +186,11 @@ export function CalendarView({
       window.alert("No hay citas para imprimir.");
       return;
     }
-    await downloadTicketsPDF(appts, salonInfo);
+    const ids = appts.map((a) => a.id);
+    // Assign ticket numbers first, then generate PDF with real numbers
+    const result = await markTicketPrinted(ids);
+    const aptsWithNumbers = result.appointments?.length ? result.appointments : appts;
+    await downloadTicketsPDF(aptsWithNumbers, SALON_INFO);
   }
 
   function goToDay(day: Date) {

@@ -3,6 +3,7 @@
 import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import type { Appointment } from "@/types";
 
 const CreateSchema = z.object({
   customer_name: z.string().min(2).max(100),
@@ -124,7 +125,7 @@ export async function cancelAppointment(id: string) {
 }
 
 export async function markTicketPrinted(ids: string[]) {
-  if (!ids.length) return { success: true };
+  if (!ids.length) return { success: true, appointments: [] as Appointment[] };
   const admin = createAdminClient();
   const salonId = await getSalonId();
 
@@ -134,12 +135,13 @@ export async function markTicketPrinted(ids: string[]) {
     .select("id, ticket_number, starts_at")
     .in("id", ids);
 
-  if (!existing) return { success: true };
+  if (!existing) return { success: true, appointments: [] as Appointment[] };
 
   const needsNumber = existing.filter((a) => !a.ticket_number);
   const alreadyNumbered = existing.filter((a) => a.ticket_number).map((a) => a.id);
 
   // Assign per-month sequential numbers: format YYYYMM000 (e.g. 202605001)
+  // Process one at a time so each gets the correct next sequential number
   for (const appt of needsNumber) {
     const d = new Date(appt.starts_at);
     const parts = new Intl.DateTimeFormat("es-ES", {
@@ -180,9 +182,17 @@ export async function markTicketPrinted(ids: string[]) {
       .in("id", alreadyNumbered);
   }
 
+  // Return the updated appointments so callers can generate PDFs with real ticket numbers
+  const { data: updated } = await admin
+    .from("appointments")
+    .select("*")
+    .in("id", ids)
+    .order("starts_at");
+
   revalidatePath("/dashboard/citas");
   revalidatePath("/dashboard/tickets");
-  return { success: true };
+  revalidatePath("/dashboard/calendario");
+  return { success: true, appointments: (updated ?? []) as Appointment[] };
 }
 
 export async function getTickets(from: string, to: string) {

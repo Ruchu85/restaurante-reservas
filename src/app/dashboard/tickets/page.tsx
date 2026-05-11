@@ -3,20 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatTime } from "@/lib/utils";
 import { PrintButton } from "@/components/dashboard/PrintButton";
+import { SALON_INFO } from "@/lib/salonConfig";
 import type { Appointment } from "@/types";
-import type { SalonInfo } from "@/lib/printTicket";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-
-// Business registration data printed on every ticket
-const SALON_INFO: SalonInfo = {
-  name: "PELUQUERIA MIXTA ALI",
-  owner: "Alicia Quintana Martinez",
-  nif: "N.I.F. 10.200.117-P",
-  address: "C/Real, 16",
-  phone: "626 758 515",
-  city: "24717 Val de San Román (León)",
-};
 
 export const metadata = { title: "Tickets — Panel admin" };
 

@@ -29,11 +29,14 @@ export function PrintButton({
     if (!appointments.length) return;
     const ids = appointments.map((a) => a.id);
     startTransition(async () => {
-      await downloadTicketsPDF(appointments, salon);
+      // Assign ticket numbers first so the PDF shows the real sequential number
       const result = await markTicketPrinted(ids);
       if ("error" in result && result.error) {
         toast.error("No se pudo marcar como impreso");
+        return;
       }
+      const aptsWithNumbers = result.appointments?.length ? result.appointments : appointments;
+      await downloadTicketsPDF(aptsWithNumbers, salon);
     });
   }
 

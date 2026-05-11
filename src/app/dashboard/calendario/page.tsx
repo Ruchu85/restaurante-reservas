@@ -25,7 +25,6 @@ export default async function CalendarioPage({
     { data: staff },
     { data: blockedDays },
     { data: businessHours },
-    { data: salon },
   ] = await Promise.all([
     admin
       .from("appointments")
@@ -52,7 +51,6 @@ export default async function CalendarioPage({
       .select("*")
       .eq("salon_id", salonId ?? "")
       .order("day_of_week"),
-    admin.from("salons").select("name, address, phone").eq("id", salonId ?? "").single(),
   ]);
 
   return (
@@ -68,7 +66,7 @@ export default async function CalendarioPage({
       currentDate={today}
       blockedDays={blockedDays ?? []}
       businessHours={businessHours ?? []}
-      salonInfo={salon ?? undefined}
+
     />
   );
 }
