@@ -26,6 +26,7 @@ export default async function NuevaCitaPage({
     { data: appointments },
     { data: blockedDays },
     { data: services },
+    { data: customers },
   ] = await Promise.all([
     admin
       .from("business_hours")
@@ -51,6 +52,11 @@ export default async function NuevaCitaPage({
       .eq("salon_id", salonId ?? "")
       .eq("active", true)
       .order("name"),
+    admin
+      .from("customers")
+      .select("*")
+      .eq("salon_id", salonId ?? "")
+      .order("name"),
   ]);
 
   return (
@@ -74,6 +80,7 @@ export default async function NuevaCitaPage({
         existingAppointments={appointments ?? []}
         blockedDays={blockedDays ?? []}
         services={(services as import("@/types").Service[]) ?? []}
+        customers={(customers as import("@/types").Customer[]) ?? []}
       />
     </div>
   );

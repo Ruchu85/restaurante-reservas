@@ -255,7 +255,21 @@ export async function downloadTicketsPDF(appointments: Appointment[], salon?: Sa
   }
 
   const dateStr = new Date().toLocaleDateString("es-ES").replace(/\//g, "-");
-  doc.save(`tickets-${dateStr}.pdf`);
+  const filename = `tickets-${dateStr}.pdf`;
+
+  // iOS Safari does not support programmatic file downloads via <a> click.
+  // Instead, open the PDF blob in a new tab so the user can save it from there.
+  const isIOS =
+    typeof navigator !== "undefined" &&
+    /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+    !("MSStream" in window);
+
+  if (isIOS) {
+    const blobUrl = doc.output("bloburl") as unknown as string;
+    window.open(blobUrl, "_blank");
+  } else {
+    doc.save(filename);
+  }
 }
 
 export const printTickets = downloadTicketsPDF;

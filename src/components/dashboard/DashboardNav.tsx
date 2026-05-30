@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Calendar, ClipboardList, Clock, Home, LogOut, Receipt, Scissors, Settings } from "lucide-react";
+import { Calendar, ClipboardList, Clock, Home, LogOut, Receipt, Scissors, Settings, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/dashboard", label: "Inicio", icon: Home, exact: true },
   { href: "/dashboard/calendario", label: "Calendario", icon: Calendar },
   { href: "/dashboard/citas", label: "Citas", icon: ClipboardList },
+  { href: "/dashboard/clientes", label: "Clientes", icon: Users },
   { href: "/dashboard/tickets", label: "Tickets", icon: Receipt },
   { href: "/dashboard/horarios", label: "Horarios", icon: Clock },
   { href: "/dashboard/ajustes", label: "Ajustes", icon: Settings },

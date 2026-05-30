@@ -10,7 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { createAppointment } from "@/actions/appointments";
-import type { BlockedDay, BusinessHours, Service } from "@/types";
+import { upsertCustomer } from "@/actions/customers";
+import { CustomerCombobox } from "@/components/dashboard/CustomerCombobox";
+import type { BlockedDay, BusinessHours, Customer, Service } from "@/types";
 
 interface ExistingAppt {
   starts_at: string;
@@ -24,6 +26,7 @@ interface NewAppointmentFormProps {
   existingAppointments?: ExistingAppt[];
   blockedDays?: BlockedDay[];
   services?: Service[];
+  customers?: Customer[];
 }
 
 const DEFAULT_SERVICES = [
@@ -62,7 +65,6 @@ function computeSlots(
   existingAppts: ExistingAppt[],
   blockedDays: BlockedDay[],
 ): { time: string; occupied: boolean }[] | null {
-  // null = day is blocked or closed
   if (blockedDays.some((b) => b.date === date)) return null;
 
   const d = new Date(date + "T12:00:00");
@@ -107,6 +109,7 @@ export function NewAppointmentForm({
   existingAppointments = [],
   blockedDays = [],
   services = [],
+  customers = [],
 }: NewAppointmentFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -133,7 +136,22 @@ export function NewAppointmentForm({
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  // Auto-fill price when a known service is selected
+  function handleCustomerChange(name: string, preferredService?: string | null) {
+    setForm((f) => {
+      // If a known preferred service exists and matches a selectable option, pre-fill it
+      const newService = preferredService && serviceNames.includes(preferredService)
+        ? preferredService
+        : f.service;
+      const found = services.find((s) => s.name === newService);
+      return {
+        ...f,
+        customer_name: name,
+        service: newService,
+        price: found?.price != null ? String(found.price) : f.price,
+      };
+    });
+  }
+
   function handleServiceChange(v: string) {
     const found = services.find((s) => s.name === v);
     setForm((f) => ({
@@ -186,6 +204,9 @@ export function NewAppointmentForm({
     const priceVal = form.price !== "" ? parseFloat(form.price) : null;
 
     startTransition(async () => {
+      // Persist the customer (create if new, update preferred_service if existing)
+      await upsertCustomer(form.customer_name, serviceName);
+
       const result = await createAppointment({
         customer_name: form.customer_name,
         service: serviceName,
@@ -221,14 +242,11 @@ export function NewAppointmentForm({
       {/* Cliente */}
       <div className="space-y-1.5">
         <Label htmlFor="customer">Nombre del cliente *</Label>
-        <Input
-          id="customer"
+        <CustomerCombobox
           value={form.customer_name}
-          onChange={(e) => update("customer_name", e.target.value)}
+          customers={customers}
+          onChange={handleCustomerChange}
           required
-          minLength={2}
-          placeholder="Ana García"
-          autoFocus
         />
       </div>
 

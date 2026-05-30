@@ -77,6 +77,14 @@ export interface Appointment {
   staff?: Pick<StaffMember, "id" | "name">;
 }
 
+export interface Customer {
+  id: string;
+  salon_id: string;
+  name: string;
+  preferred_service: string | null;
+  created_at: string;
+}
+
 export interface TimeSlot {
   starts_at: Date;
   ends_at: Date;

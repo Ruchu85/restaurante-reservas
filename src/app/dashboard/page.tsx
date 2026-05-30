@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, ClipboardList, Clock, LogOut, Plus, Receipt, Settings } from "lucide-react";
+import { Calendar, ClipboardList, Clock, LogOut, Plus, Receipt, Settings, Users } from "lucide-react";
 import { signOut } from "@/actions/auth";
 
 const cards = [
@@ -16,6 +16,13 @@ const cards = [
     label: "Citas",
     bg: "bg-emerald-50 border-emerald-200",
     fg: "text-emerald-700",
+  },
+  {
+    href: "/dashboard/clientes",
+    icon: Users,
+    label: "Clientes",
+    bg: "bg-cyan-50 border-cyan-200",
+    fg: "text-cyan-700",
   },
   {
     href: "/dashboard/tickets",
