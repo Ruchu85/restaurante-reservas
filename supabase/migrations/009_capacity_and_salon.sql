@@ -38,7 +38,7 @@ alter table customers add column if not exists notes text;
 -- existente del constraint de no-solapamiento.
 -- ============================================================
 create or replace function check_slot_capacity()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql as $capacity$
 declare
   cap      int;
   day_cap  int;
@@ -95,7 +95,7 @@ begin
 
   return new;
 end;
-$$;
+$capacity$;
 
 drop trigger if exists appointments_capacity_check on appointments;
 create trigger appointments_capacity_check
