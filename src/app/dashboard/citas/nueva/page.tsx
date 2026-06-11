@@ -1,4 +1,5 @@
 import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
+import { getSalon } from "@/lib/salon";
 import { NewAppointmentForm } from "@/components/dashboard/NewAppointmentForm";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
@@ -8,11 +9,12 @@ export const metadata = { title: "Nueva cita — PELUQUERIA ALI" };
 export default async function NuevaCitaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; time?: string }>;
+  searchParams: Promise<{ date?: string; time?: string; customer?: string }>;
 }) {
   const params = await searchParams;
   const admin = createAdminClient();
   const salonId = await getSalonId();
+  const salon = await getSalon();
 
   const today = new Date();
   const selectedDate = params.date ?? today.toISOString().split("T")[0];
@@ -27,6 +29,7 @@ export default async function NuevaCitaPage({
     { data: blockedDays },
     { data: services },
     { data: customers },
+    { data: staff },
   ] = await Promise.all([
     admin
       .from("business_hours")
@@ -57,6 +60,12 @@ export default async function NuevaCitaPage({
       .select("*")
       .eq("salon_id", salonId ?? "")
       .order("name"),
+    admin
+      .from("staff_members")
+      .select("id, name")
+      .eq("salon_id", salonId ?? "")
+      .eq("active", true)
+      .order("name"),
   ]);
 
   return (
@@ -76,11 +85,14 @@ export default async function NuevaCitaPage({
       <NewAppointmentForm
         initialDate={params.date}
         initialTime={params.time}
+        initialCustomer={params.customer}
         businessHours={businessHours ?? []}
         existingAppointments={appointments ?? []}
         blockedDays={blockedDays ?? []}
         services={(services as import("@/types").Service[]) ?? []}
         customers={(customers as import("@/types").Customer[]) ?? []}
+        staff={staff ?? []}
+        capacity={salon?.slot_capacity ?? 1}
       />
     </div>
   );

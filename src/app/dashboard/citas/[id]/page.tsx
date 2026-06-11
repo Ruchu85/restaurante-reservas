@@ -1,12 +1,13 @@
 import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
+import { getSalon, salonToTicketInfo } from "@/lib/salon";
 import { notFound } from "next/navigation";
 import { EditAppointmentForm } from "@/components/dashboard/EditAppointmentForm";
 import { PrintButton } from "@/components/dashboard/PrintButton";
-import { SALON_INFO } from "@/lib/salonConfig";
+import { WhatsAppReminder } from "@/components/dashboard/WhatsAppReminder";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import type { Appointment, Service } from "@/types";
+import type { Appointment, Customer, Service } from "@/types";
 
 export const metadata = { title: "Editar cita — PELUQUERIA ALI" };
 
@@ -18,8 +19,10 @@ export default async function EditCitaPage({
   const { id } = await params;
   const admin = createAdminClient();
   const salonId = await getSalonId();
+  const salon = await getSalon();
+  const SALON_INFO = salonToTicketInfo(salon);
 
-  const [{ data: appointment }, { data: services }] = await Promise.all([
+  const [{ data: appointment }, { data: services }, { data: staff }] = await Promise.all([
     admin
       .from("appointments")
       .select("*")
@@ -32,11 +35,29 @@ export default async function EditCitaPage({
       .eq("salon_id", salonId ?? "")
       .eq("active", true)
       .order("name"),
+    admin
+      .from("staff_members")
+      .select("id, name")
+      .eq("salon_id", salonId ?? "")
+      .eq("active", true)
+      .order("name"),
   ]);
 
   if (!appointment) notFound();
 
   const appt = { ticket_number: null, price: null, ...appointment } as Appointment;
+
+  // Buscar el teléfono del cliente para el recordatorio por WhatsApp
+  let customerPhone: string | null = null;
+  if (appt.status === "active") {
+    const { data: customer } = await admin
+      .from("customers")
+      .select("phone")
+      .eq("salon_id", salonId ?? "")
+      .ilike("name", appt.customer_name)
+      .maybeSingle();
+    customerPhone = (customer as Pick<Customer, "phone"> | null)?.phone ?? null;
+  }
 
   return (
     <div>
@@ -71,7 +92,20 @@ export default async function EditCitaPage({
         </div>
       </div>
 
-      <EditAppointmentForm appointment={appt} services={(services as Service[]) ?? []} />
+      {appt.status === "active" && (
+        <WhatsAppReminder
+          customerName={appt.customer_name}
+          phone={customerPhone}
+          salonName={SALON_INFO.name}
+          startsAt={appt.starts_at}
+        />
+      )}
+
+      <EditAppointmentForm
+        appointment={appt}
+        services={(services as Service[]) ?? []}
+        staff={staff ?? []}
+      />
     </div>
   );
 }

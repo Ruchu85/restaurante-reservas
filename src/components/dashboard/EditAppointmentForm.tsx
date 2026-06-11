@@ -16,12 +16,15 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { updateAppointment } from "@/actions/appointments";
-import type { Appointment, Service } from "@/types";
+import type { Appointment, Service, StaffMember } from "@/types";
 
 interface EditAppointmentFormProps {
   appointment: Appointment;
   services?: Service[];
+  staff?: Pick<StaffMember, "id" | "name">[];
 }
+
+const UNASSIGNED = "__none__";
 
 const DEFAULT_SERVICES = [
   "Corte de cabello",
@@ -65,10 +68,11 @@ function initFromAppointment(appt: Appointment, serviceNames: string[]) {
     start_time: local.split("T")[1],
     notes: appt.notes ?? "",
     price: appt.price != null ? String(appt.price) : "",
+    staff_id: appt.staff_id ?? UNASSIGNED,
   };
 }
 
-export function EditAppointmentForm({ appointment, services = [] }: EditAppointmentFormProps) {
+export function EditAppointmentForm({ appointment, services = [], staff = [] }: EditAppointmentFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -125,6 +129,7 @@ export function EditAppointmentForm({ appointment, services = [] }: EditAppointm
         ends_at: ends.toISOString(),
         notes: form.notes || undefined,
         price: priceVal,
+        staff_id: form.staff_id === UNASSIGNED ? null : form.staff_id,
       });
 
       if (result.error) {
@@ -249,6 +254,25 @@ export function EditAppointmentForm({ appointment, services = [] }: EditAppointm
           />
         </div>
       </div>
+
+      {staff.length > 0 && (
+        <div className="space-y-1.5">
+          <Label htmlFor="staff-select">Profesional (opcional)</Label>
+          <Select value={form.staff_id} onValueChange={(v) => update("staff_id", v)}>
+            <SelectTrigger id="staff-select">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNASSIGNED}>Sin asignar</SelectItem>
+              {staff.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className="space-y-1.5">
         <Label htmlFor="notes">Notas (opcional)</Label>

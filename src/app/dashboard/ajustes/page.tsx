@@ -1,4 +1,5 @@
 import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
+import { getSalon } from "@/lib/salon";
 import { SettingsClient } from "@/components/dashboard/SettingsClient";
 import type { Service } from "@/types";
 
@@ -7,6 +8,7 @@ export const metadata = { title: "Ajustes — PELUQUERIA ALI" };
 export default async function AjustesPage() {
   const admin = createAdminClient();
   const salonId = await getSalonId();
+  const salon = await getSalon();
 
   let services: Service[] = [];
   try {
@@ -27,7 +29,7 @@ export default async function AjustesPage() {
         <h1 className="text-2xl font-bold">Ajustes</h1>
         <p className="text-sm text-muted-foreground">Configura tu salón</p>
       </div>
-      <SettingsClient initialServices={services} />
+      <SettingsClient initialServices={services} salon={salon} />
     </div>
   );
 }

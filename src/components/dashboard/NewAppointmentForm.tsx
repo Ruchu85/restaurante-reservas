@@ -12,7 +12,7 @@ import { Loader2 } from "lucide-react";
 import { createAppointment } from "@/actions/appointments";
 import { upsertCustomer } from "@/actions/customers";
 import { CustomerCombobox } from "@/components/dashboard/CustomerCombobox";
-import type { BlockedDay, BusinessHours, Customer, Service } from "@/types";
+import type { BlockedDay, BusinessHours, Customer, Service, StaffMember } from "@/types";
 
 interface ExistingAppt {
   starts_at: string;
@@ -22,12 +22,17 @@ interface ExistingAppt {
 interface NewAppointmentFormProps {
   initialDate?: string;
   initialTime?: string;
+  initialCustomer?: string;
   businessHours?: BusinessHours[];
   existingAppointments?: ExistingAppt[];
   blockedDays?: BlockedDay[];
   services?: Service[];
   customers?: Customer[];
+  staff?: Pick<StaffMember, "id" | "name">[];
+  capacity?: number;
 }
+
+const UNASSIGNED = "__none__";
 
 const DEFAULT_SERVICES = [
   "Corte de cabello",
@@ -59,45 +64,62 @@ function toLocalDatetimeValue(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+interface Slot {
+  time: string;
+  occupied: boolean;
+  remaining: number;
+}
+
+function rangesForDay(hours: BusinessHours | undefined): [number, number][] {
+  if (!hours) return [[8 * 60, 20 * 60]];
+  if (!hours.is_open) return [];
+  const toMin = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
+  const ranges: [number, number][] = [[toMin(hours.opens_at), toMin(hours.closes_at)]];
+  if (hours.opens_at_2 && hours.closes_at_2) {
+    ranges.push([toMin(hours.opens_at_2), toMin(hours.closes_at_2)]);
+  }
+  return ranges;
+}
+
 function computeSlots(
   date: string,
   businessHours: BusinessHours[],
   existingAppts: ExistingAppt[],
   blockedDays: BlockedDay[],
-): { time: string; occupied: boolean }[] | null {
+  capacity: number,
+): Slot[] | null {
   if (blockedDays.some((b) => b.date === date)) return null;
 
   const d = new Date(date + "T12:00:00");
   const dayOfWeek = d.getDay();
   const hours = businessHours.find((h) => h.day_of_week === dayOfWeek);
+  if (hours && !hours.is_open) return null;
 
-  let openMin = 8 * 60;
-  let closeMin = 20 * 60;
+  const ranges = rangesForDay(hours);
+  const cap = capacity > 0 ? capacity : 1;
+  const slots: Slot[] = [];
 
-  if (hours) {
-    if (!hours.is_open) return null;
-    const [oh, om] = hours.opens_at.split(":").map(Number);
-    const [ch, cm] = hours.closes_at.split(":").map(Number);
-    openMin = oh * 60 + om;
-    closeMin = ch * 60 + cm;
-  }
+  for (const [openMin, closeMin] of ranges) {
+    for (let m = openMin; m < closeMin; m += 30) {
+      const h = Math.floor(m / 60);
+      const min = m % 60;
+      const time = `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
 
-  const slots: { time: string; occupied: boolean }[] = [];
-  for (let m = openMin; m < closeMin; m += 30) {
-    const h = Math.floor(m / 60);
-    const min = m % 60;
-    const time = `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+      const slotStart = new Date(`${date}T${time}:00`);
+      const slotEnd = new Date(slotStart.getTime() + 30 * 60_000);
 
-    const slotStart = new Date(`${date}T${time}:00`);
-    const slotEnd = new Date(slotStart.getTime() + 30 * 60_000);
-
-    const occupied = existingAppts.some((appt) => {
-      const s = new Date(appt.starts_at);
-      const e = new Date(appt.ends_at);
-      return s < slotEnd && e > slotStart;
-    });
-
-    slots.push({ time, occupied });
+      let count = 0;
+      for (const appt of existingAppts) {
+        const s = new Date(appt.starts_at);
+        const e = new Date(appt.ends_at);
+        if (s < slotEnd && e > slotStart) count++;
+      }
+      const remaining = Math.max(0, cap - count);
+      slots.push({ time, occupied: remaining <= 0, remaining });
+    }
   }
   return slots;
 }
@@ -105,11 +127,14 @@ function computeSlots(
 export function NewAppointmentForm({
   initialDate,
   initialTime,
+  initialCustomer,
   businessHours = [],
   existingAppointments = [],
   blockedDays = [],
   services = [],
   customers = [],
+  staff = [],
+  capacity = 1,
 }: NewAppointmentFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -120,7 +145,7 @@ export function NewAppointmentForm({
   const defaultStart = roundToQuarter(new Date());
 
   const [form, setForm] = useState({
-    customer_name: "",
+    customer_name: initialCustomer ?? "",
     service: serviceNames[0],
     service_custom: "",
     duration: 30,
@@ -130,6 +155,7 @@ export function NewAppointmentForm({
       `${String(defaultStart.getHours()).padStart(2, "0")}:${String(defaultStart.getMinutes()).padStart(2, "0")}`,
     notes: "",
     price: "",
+    staff_id: UNASSIGNED,
   });
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -177,8 +203,8 @@ export function NewAppointmentForm({
   })();
 
   const slots = useMemo(
-    () => computeSlots(form.date, businessHours, existingAppointments, blockedDays),
-    [form.date, businessHours, existingAppointments, blockedDays],
+    () => computeSlots(form.date, businessHours, existingAppointments, blockedDays, capacity),
+    [form.date, businessHours, existingAppointments, blockedDays, capacity],
   );
 
   const isDayBlocked = blockedDays.some((b) => b.date === form.date);
@@ -214,6 +240,7 @@ export function NewAppointmentForm({
         ends_at: ends.toISOString(),
         notes: form.notes || undefined,
         price: priceVal,
+        staff_id: form.staff_id === UNASSIGNED ? null : form.staff_id,
       });
       if (result.error) {
         toast.error(result.error);
@@ -317,15 +344,27 @@ export function NewAppointmentForm({
               <SelectValue placeholder="Selecciona hora" />
             </SelectTrigger>
             <SelectContent>
-              {slots.map(({ time, occupied }) => (
+              {slots.map(({ time, occupied, remaining }) => (
                 <SelectItem
                   key={time}
                   value={time}
                   disabled={occupied}
-                  className={occupied ? "text-rose-400 line-through" : "text-emerald-700"}
+                  className={
+                    occupied
+                      ? "text-rose-400 line-through"
+                      : capacity > 1 && remaining < capacity
+                        ? "text-amber-700"
+                        : "text-emerald-700"
+                  }
                 >
                   {time}
-                  {occupied ? " — ocupado" : " — libre"}
+                  {occupied
+                    ? " — completo"
+                    : capacity > 1
+                      ? remaining === 1
+                        ? " — queda 1 hueco"
+                        : ` — ${remaining} huecos`
+                      : " — libre"}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -367,6 +406,26 @@ export function NewAppointmentForm({
           <Input value={endTime} readOnly className="bg-slate-50 text-muted-foreground" />
         </div>
       </div>
+
+      {/* Profesional */}
+      {staff.length > 0 && (
+        <div className="space-y-1.5">
+          <Label htmlFor="staff-select">Profesional (opcional)</Label>
+          <Select value={form.staff_id} onValueChange={(v) => update("staff_id", v)}>
+            <SelectTrigger id="staff-select">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNASSIGNED}>Sin asignar</SelectItem>
+              {staff.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Notas */}
       <div className="space-y-1.5">

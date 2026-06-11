@@ -19,10 +19,20 @@ export function BusinessHoursForm({ dayOfWeek, dayName, existing }: BusinessHour
   const [isOpen, setIsOpen] = useState(existing?.is_open ?? dayOfWeek !== 0);
   const [opensAt, setOpensAt] = useState(existing?.opens_at ?? "09:00");
   const [closesAt, setClosesAt] = useState(existing?.closes_at ?? "20:00");
+  const [split, setSplit] = useState(Boolean(existing?.opens_at_2 && existing?.closes_at_2));
+  const [opensAt2, setOpensAt2] = useState(existing?.opens_at_2 ?? "16:00");
+  const [closesAt2, setClosesAt2] = useState(existing?.closes_at_2 ?? "20:00");
 
   function handleSave() {
     startTransition(async () => {
-      const result = await upsertBusinessHours(dayOfWeek, opensAt, closesAt, isOpen);
+      const result = await upsertBusinessHours(
+        dayOfWeek,
+        opensAt,
+        closesAt,
+        isOpen,
+        split ? opensAt2 : null,
+        split ? closesAt2 : null,
+      );
       if (result.error) {
         toast.error("Error al guardar: " + result.error);
       } else {
@@ -32,49 +42,62 @@ export function BusinessHoursForm({ dayOfWeek, dayName, existing }: BusinessHour
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-      <div className="w-20 flex-shrink-0 text-sm font-medium">{dayName}</div>
+    <div className="rounded-lg border p-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="w-20 flex-shrink-0 text-sm font-medium">{dayName}</div>
 
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
-          isOpen ? "bg-slate-900" : "bg-slate-200"
-        )}
-        aria-label={isOpen ? "Cerrar" : "Abrir"}
-      >
-        <span
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition",
-            isOpen ? "translate-x-4" : "translate-x-0"
+            "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
+            isOpen ? "bg-slate-900" : "bg-slate-200"
           )}
-        />
-      </button>
+          aria-label={isOpen ? "Cerrar" : "Abrir"}
+        >
+          <span
+            className={cn(
+              "inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition",
+              isOpen ? "translate-x-4" : "translate-x-0"
+            )}
+          />
+        </button>
 
-      {isOpen ? (
-        <>
-          <Input
-            type="time"
-            value={opensAt}
-            onChange={(e) => setOpensAt(e.target.value)}
-            className="w-28"
-          />
-          <span className="text-sm text-muted-foreground">—</span>
-          <Input
-            type="time"
-            value={closesAt}
-            onChange={(e) => setClosesAt(e.target.value)}
-            className="w-28"
-          />
-        </>
-      ) : (
-        <span className="text-sm text-muted-foreground">Cerrado</span>
+        {isOpen ? (
+          <>
+            <Input type="time" value={opensAt} onChange={(e) => setOpensAt(e.target.value)} className="w-28" />
+            <span className="text-sm text-muted-foreground">—</span>
+            <Input type="time" value={closesAt} onChange={(e) => setClosesAt(e.target.value)} className="w-28" />
+          </>
+        ) : (
+          <span className="text-sm text-muted-foreground">Cerrado</span>
+        )}
+
+        <Button size="sm" variant="outline" onClick={handleSave} disabled={isPending} className="ml-auto">
+          Guardar
+        </Button>
+      </div>
+
+      {isOpen && (
+        <div className="mt-2 pl-[7rem] flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={split}
+              onChange={(e) => setSplit(e.target.checked)}
+              className="rounded border-slate-300"
+            />
+            Turno partido (tarde)
+          </label>
+          {split && (
+            <>
+              <Input type="time" value={opensAt2} onChange={(e) => setOpensAt2(e.target.value)} className="w-28" />
+              <span className="text-sm text-muted-foreground">—</span>
+              <Input type="time" value={closesAt2} onChange={(e) => setClosesAt2(e.target.value)} className="w-28" />
+            </>
+          )}
+        </div>
       )}
-
-      <Button size="sm" variant="outline" onClick={handleSave} disabled={isPending} className="ml-auto">
-        Guardar
-      </Button>
     </div>
   );
 }

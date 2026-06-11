@@ -12,6 +12,7 @@ const CreateSchema = z.object({
   ends_at: z.string().datetime(),
   notes: z.string().max(500).optional(),
   price: z.number().min(0).max(99999).nullable().optional(),
+  staff_id: z.string().uuid().nullable().optional(),
 });
 
 const UpdateSchema = CreateSchema.partial();
@@ -60,7 +61,7 @@ export async function createAppointment(input: CreateAppointmentInput) {
     .from("appointments")
     .insert({
       salon_id: salonId,
-      staff_id: null,
+      staff_id: parsed.data.staff_id ?? null,
       customer_name: parsed.data.customer_name,
       service: parsed.data.service,
       starts_at: parsed.data.starts_at,
@@ -74,7 +75,7 @@ export async function createAppointment(input: CreateAppointmentInput) {
 
   if (error) {
     if (error.code === "23P01") {
-      return { error: "Ese horario ya está ocupado." };
+      return { error: "Este tramo ya está completo (capacidad alcanzada)." };
     }
     return { error: "No se pudo crear la cita. Inténtalo de nuevo." };
   }
@@ -99,7 +100,7 @@ export async function updateAppointment(id: string, input: UpdateAppointmentInpu
 
   if (error) {
     if (error.code === "23P01") {
-      return { error: "Ese horario ya está ocupado." };
+      return { error: "Este tramo ya está completo (capacidad alcanzada)." };
     }
     return { error: error.message };
   }

@@ -69,6 +69,7 @@ export async function upsertCustomer(
 
 export async function createCustomer(
   name: string,
+  phone?: string | null,
 ): Promise<{ data?: Customer; error?: string }> {
   const parsed = NameSchema.safeParse(name);
   if (!parsed.success) return { error: "El nombre debe tener al menos 2 caracteres." };
@@ -79,7 +80,7 @@ export async function createCustomer(
 
   const { data, error } = await admin
     .from("customers")
-    .insert({ salon_id: salonId, name: parsed.data })
+    .insert({ salon_id: salonId, name: parsed.data, phone: phone?.trim() || null })
     .select()
     .single();
 
@@ -89,6 +90,65 @@ export async function createCustomer(
   }
 
   revalidatePath("/dashboard/clientes");
+  return { data: data as Customer };
+}
+
+const UpdateCustomerSchema = z.object({
+  name: z.string().min(2).max(100).optional(),
+  phone: z.string().max(40).nullable().optional(),
+  notes: z.string().max(500).nullable().optional(),
+  preferred_service: z.string().max(100).nullable().optional(),
+});
+
+export async function updateCustomer(
+  id: string,
+  input: z.infer<typeof UpdateCustomerSchema>,
+): Promise<{ success?: boolean; error?: string }> {
+  const parsed = UpdateCustomerSchema.safeParse(input);
+  if (!parsed.success) return { error: "Datos inválidos." };
+
+  const admin = createAdminClient();
+  const salonId = await getSalonId();
+  if (!salonId) return { error: "No se encontró el salón." };
+
+  const payload = {
+    ...parsed.data,
+    phone: parsed.data.phone?.trim() || null,
+    notes: parsed.data.notes?.trim() || null,
+  };
+
+  const { error } = await admin
+    .from("customers")
+    .update(payload)
+    .eq("id", id)
+    .eq("salon_id", salonId);
+
+  if (error) {
+    if (error.code === "23505") return { error: "Ya existe un cliente con ese nombre." };
+    return { error: error.message };
+  }
+
+  revalidatePath("/dashboard/clientes");
+  revalidatePath(`/dashboard/clientes/${id}`);
+  return { success: true };
+}
+
+export async function getCustomerById(
+  id: string,
+): Promise<{ data?: Customer; error?: string }> {
+  const admin = createAdminClient();
+  const salonId = await getSalonId();
+  if (!salonId) return { error: "No se encontró el salón." };
+
+  const { data, error } = await admin
+    .from("customers")
+    .select("*")
+    .eq("id", id)
+    .eq("salon_id", salonId)
+    .maybeSingle();
+
+  if (error) return { error: error.message };
+  if (!data) return { error: "Cliente no encontrado." };
   return { data: data as Customer };
 }
 

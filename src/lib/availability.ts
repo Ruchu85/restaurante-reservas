@@ -9,11 +9,36 @@ export interface SlotInput {
   blockedDays: BlockedDay[];
   staffId?: string;
   slotIntervalMinutes?: number;
+  /** Clientes simultáneos permitidos por tramo (capacidad). Por defecto 1. */
+  capacity?: number;
 }
 
 export interface TimeSlotResult {
   starts_at: Date;
   ends_at: Date;
+  /** Huecos libres restantes en el tramo (capacidad − ocupación). */
+  remaining: number;
+}
+
+/**
+ * Cuenta cuántas citas activas solapan el rango [start, end).
+ * Si se pasa staffId, solo cuenta las de ese profesional.
+ */
+export function countOverlapping(
+  appointments: Pick<Appointment, "starts_at" | "ends_at" | "status" | "staff_id">[],
+  start: Date,
+  end: Date,
+  staffId?: string,
+): number {
+  let count = 0;
+  for (const appt of appointments) {
+    if (appt.status !== "active") continue;
+    if (staffId && appt.staff_id !== staffId) continue;
+    const s = new Date(appt.starts_at);
+    const e = new Date(appt.ends_at);
+    if (start < e && end > s) count++;
+  }
+  return count;
 }
 
 export function computeAvailableSlots(input: SlotInput): TimeSlotResult[] {
@@ -25,6 +50,7 @@ export function computeAvailableSlots(input: SlotInput): TimeSlotResult[] {
     blockedDays,
     staffId,
     slotIntervalMinutes = 15,
+    capacity = 1,
   } = input;
 
   // Reject blocked days
@@ -36,34 +62,31 @@ export function computeAvailableSlots(input: SlotInput): TimeSlotResult[] {
   const hours = businessHours.find((h) => h.day_of_week === dayOfWeek);
   if (!hours || !hours.is_open) return [];
 
-  const openTime = parseTimeOnDate(date, hours.opens_at);
-  const closeTime = parseTimeOnDate(date, hours.closes_at);
-
+  const ranges = businessHourRanges(date, hours);
+  const cap = capacity > 0 ? capacity : 1;
   const now = new Date();
   const slots: TimeSlotResult[] = [];
-  let cursor = roundToInterval(openTime, slotIntervalMinutes);
 
-  while (addMinutes(cursor, durationMinutes) <= closeTime) {
-    const slotEnd = addMinutes(cursor, durationMinutes);
+  for (const { open: openTime, close: closeTime } of ranges) {
+    let cursor = roundToInterval(openTime, slotIntervalMinutes);
 
-    if (cursor <= now) {
+    while (addMinutes(cursor, durationMinutes) <= closeTime) {
+      const slotEnd = addMinutes(cursor, durationMinutes);
+
+      if (cursor <= now) {
+        cursor = addMinutes(cursor, slotIntervalMinutes);
+        continue;
+      }
+
+      const occupied = countOverlapping(existingAppointments, cursor, slotEnd, staffId);
+      const remaining = cap - occupied;
+
+      if (remaining > 0) {
+        slots.push({ starts_at: cursor, ends_at: slotEnd, remaining });
+      }
+
       cursor = addMinutes(cursor, slotIntervalMinutes);
-      continue;
     }
-
-    const hasConflict = existingAppointments.some((appt) => {
-      if (staffId && appt.staff_id !== staffId) return false;
-      if (appt.status !== "active") return false;
-      const apptStart = new Date(appt.starts_at);
-      const apptEnd = new Date(appt.ends_at);
-      return cursor < apptEnd && slotEnd > apptStart;
-    });
-
-    if (!hasConflict) {
-      slots.push({ starts_at: cursor, ends_at: slotEnd });
-    }
-
-    cursor = addMinutes(cursor, slotIntervalMinutes);
   }
 
   return slots;
@@ -79,10 +102,28 @@ export function isWithinBusinessHours(
   if (!hours || !hours.is_open) return false;
 
   const date = startsAt.toISOString().split("T")[0];
-  const openTime = parseTimeOnDate(date, hours.opens_at);
-  const closeTime = parseTimeOnDate(date, hours.closes_at);
+  return businessHourRanges(date, hours).some(
+    ({ open, close }) => startsAt >= open && endsAt <= close,
+  );
+}
 
-  return startsAt >= openTime && endsAt <= closeTime;
+/**
+ * Devuelve los tramos abiertos del día (uno o dos si hay turno partido).
+ */
+export function businessHourRanges(
+  date: string,
+  hours: BusinessHours,
+): { open: Date; close: Date }[] {
+  const ranges = [
+    { open: parseTimeOnDate(date, hours.opens_at), close: parseTimeOnDate(date, hours.closes_at) },
+  ];
+  if (hours.opens_at_2 && hours.closes_at_2) {
+    ranges.push({
+      open: parseTimeOnDate(date, hours.opens_at_2),
+      close: parseTimeOnDate(date, hours.closes_at_2),
+    });
+  }
+  return ranges;
 }
 
 function parseTimeOnDate(date: string, time: string): Date {

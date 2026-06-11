@@ -2,6 +2,8 @@ import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BusinessHoursForm } from "@/components/dashboard/BusinessHoursForm";
 import { BlockedDayForm } from "@/components/dashboard/BlockedDayForm";
+import { StaffManager } from "@/components/dashboard/StaffManager";
+import type { StaffMember } from "@/types";
 
 export const metadata = { title: "Horarios — Panel admin" };
 
@@ -11,7 +13,7 @@ export default async function HorariosPage() {
   const admin = createAdminClient();
   const salonId = await getSalonId();
 
-  const [{ data: hours }, { data: blockedDays }] = await Promise.all([
+  const [{ data: hours }, { data: blockedDays }, { data: staff }] = await Promise.all([
     admin
       .from("business_hours")
       .select("*")
@@ -23,6 +25,12 @@ export default async function HorariosPage() {
       .eq("salon_id", salonId ?? "")
       .gte("date", new Date().toISOString().split("T")[0])
       .order("date"),
+    admin
+      .from("staff_members")
+      .select("*")
+      .eq("salon_id", salonId ?? "")
+      .eq("active", true)
+      .order("name"),
   ]);
 
   const hoursMap = new Map(hours?.map((h) => [h.day_of_week, h]) ?? []);
@@ -55,6 +63,15 @@ export default async function HorariosPage() {
         </CardHeader>
         <CardContent>
           <BlockedDayForm blockedDays={blockedDays ?? []} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Profesionales</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <StaffManager staff={(staff as StaffMember[]) ?? []} />
         </CardContent>
       </Card>
     </div>

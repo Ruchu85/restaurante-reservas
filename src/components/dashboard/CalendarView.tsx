@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Plus, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn, formatTime } from "@/lib/utils";
-import { downloadTicketsPDF } from "@/lib/printTicket";
+import { downloadTicketsPDF, type SalonInfo } from "@/lib/printTicket";
 import { SALON_INFO } from "@/lib/salonConfig";
 import { markTicketPrinted } from "@/actions/appointments";
 import type { Appointment, BlockedDay, BusinessHours, StaffMember } from "@/types";
@@ -17,6 +17,8 @@ interface CalendarViewProps {
   currentDate: string;
   blockedDays?: BlockedDay[];
   businessHours?: BusinessHours[];
+  capacity?: number;
+  salonInfo?: SalonInfo;
 }
 
 type ViewMode = "day" | "week" | "month";
@@ -44,16 +46,33 @@ function toLocalDateString(d: Date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function slotOccupied(slotH: number, slotM: number, day: Date, appts: Appointment[]) {
+function slotOccupancy(slotH: number, slotM: number, day: Date, appts: Appointment[]) {
   const slotStart = new Date(day);
   slotStart.setHours(slotH, slotM, 0, 0);
   const slotEnd = new Date(slotStart.getTime() + 30 * 60_000);
-  return appts.some((a) => {
+  let n = 0;
+  for (const a of appts) {
+    if (a.status !== "active") continue;
     const s = new Date(a.starts_at);
     const e = new Date(a.ends_at);
-    return s < slotEnd && e > slotStart;
-  });
+    if (s < slotEnd && e > slotStart) n++;
+  }
+  return n;
 }
+
+type SlotState = "free" | "partial" | "full";
+
+function occupancyState(occupancy: number, capacity: number): SlotState {
+  if (occupancy <= 0) return "free";
+  if (occupancy >= capacity) return "full";
+  return "partial";
+}
+
+const SLOT_BG: Record<SlotState, string> = {
+  free: "bg-emerald-50 hover:bg-emerald-100 cursor-pointer",
+  partial: "bg-amber-50 hover:bg-amber-100 cursor-pointer",
+  full: "bg-rose-50",
+};
 
 function apptCountColor(n: number) {
   if (n === 0) return null;
@@ -68,14 +87,24 @@ export function CalendarView({
   currentDate,
   blockedDays = [],
   businessHours = [],
+  capacity = 1,
+  salonInfo = SALON_INFO,
 }: CalendarViewProps) {
   const router = useRouter();
+  const cap = capacity > 0 ? capacity : 1;
   const [date, setDate] = useState(new Date(currentDate + "T12:00:00"));
   const [view, setView] = useState<ViewMode>("week");
+  const [staffFilter, setStaffFilter] = useState<string>("all");
 
   useEffect(() => {
     setDate(new Date(currentDate + "T12:00:00"));
   }, [currentDate]);
+
+  // Citas visibles según el filtro de profesional
+  const visibleAppointments =
+    staffFilter === "all"
+      ? appointments
+      : appointments.filter((a) => a.staff_id === staffFilter);
 
   const today = new Date();
   const blockedSet = new Set(blockedDays.map((b) => b.date));
@@ -97,10 +126,15 @@ export function CalendarView({
   function isWithinBusinessHours(day: Date, h: number, m: number): boolean {
     const bh = getBH(day);
     if (!bh || !bh.is_open) return false;
-    const [oh, om] = bh.opens_at.split(":").map(Number);
-    const [ch, cm] = bh.closes_at.split(":").map(Number);
     const slotMin = h * 60 + m;
-    return slotMin >= oh * 60 + om && slotMin < ch * 60 + cm;
+    const inRange = (open: string, close: string) => {
+      const [oh, om] = open.split(":").map(Number);
+      const [ch, cm] = close.split(":").map(Number);
+      return slotMin >= oh * 60 + om && slotMin < ch * 60 + cm;
+    };
+    if (inRange(bh.opens_at, bh.closes_at)) return true;
+    if (bh.opens_at_2 && bh.closes_at_2 && inRange(bh.opens_at_2, bh.closes_at_2)) return true;
+    return false;
   }
 
   /* ---- week helpers ---- */
@@ -145,11 +179,32 @@ export function CalendarView({
   }
 
   function getApptForDay(day: Date) {
-    return appointments.filter((a) => sameDay(new Date(a.starts_at), day));
+    return visibleAppointments.filter((a) => sameDay(new Date(a.starts_at), day));
+  }
+
+  function computeDaySummary(day: Date) {
+    const dayAppts = getApptForDay(day);
+    if (isBlocked(day) || isClosedBySchedule(day)) {
+      return { count: dayAppts.length, freeSlots: 0, occupancyPct: 0 };
+    }
+    let inHoursSlots = 0;
+    let occupiedUnits = 0;
+    let freeSlots = 0;
+    for (const { h, m } of SLOTS) {
+      if (!isWithinBusinessHours(day, h, m)) continue;
+      inHoursSlots++;
+      const occ = Math.min(slotOccupancy(h, m, day, visibleAppointments), cap);
+      occupiedUnits += occ;
+      if (occ < cap) freeSlots++;
+    }
+    const capacityTotal = inHoursSlots * cap;
+    const occupancyPct =
+      capacityTotal > 0 ? Math.round((occupiedUnits / capacityTotal) * 100) : 0;
+    return { count: dayAppts.length, freeSlots, occupancyPct };
   }
 
   function getApptStartingInSlot(day: Date, h: number, m: number) {
-    return appointments.filter((a) => {
+    return visibleAppointments.filter((a) => {
       const d = new Date(a.starts_at);
       return sameDay(d, day) && d.getHours() === h && d.getMinutes() === m;
     });
@@ -192,7 +247,7 @@ export function CalendarView({
       const result = await markTicketPrinted(ids);
       const returned = "appointments" in result ? result.appointments : null;
       const aptsWithNumbers = returned && returned.length > 0 ? returned : appts;
-      await downloadTicketsPDF(aptsWithNumbers, SALON_INFO);
+      await downloadTicketsPDF(aptsWithNumbers, salonInfo);
       // Refresh server components so the calendar reflects the "Impreso" state
       router.refresh();
     } catch (err) {
@@ -264,8 +319,8 @@ export function CalendarView({
             <span className="hidden sm:inline">Nueva cita</span>
           </Button>
         </div>
-        <div className="px-3 pb-2.5">
-          <div className="flex rounded-lg border border-border bg-slate-50 p-0.5 gap-0.5">
+        <div className="px-3 pb-2.5 flex gap-2">
+          <div className="flex flex-1 rounded-lg border border-border bg-slate-50 p-0.5 gap-0.5">
             {(["day", "week", "month"] as ViewMode[]).map((v) => (
               <button
                 key={v}
@@ -281,6 +336,21 @@ export function CalendarView({
               </button>
             ))}
           </div>
+          {staff.length > 0 && (
+            <select
+              value={staffFilter}
+              onChange={(e) => setStaffFilter(e.target.value)}
+              className="rounded-lg border border-border bg-white px-2 text-xs font-medium text-slate-700 max-w-[40%]"
+              aria-label="Filtrar por profesional"
+            >
+              <option value="all">Todos</option>
+              {staff.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -301,13 +371,31 @@ export function CalendarView({
               Día cerrado según horario del negocio
             </div>
           )}
+          {!isBlocked(date) && !isClosedBySchedule(date) && (() => {
+            const s = computeDaySummary(date);
+            return (
+              <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 border-b border-border text-xs text-slate-600">
+                <span>
+                  Ocupación <b className="text-slate-900">{s.occupancyPct}%</b>
+                </span>
+                <span className="text-slate-300">·</span>
+                <span>{s.count} cita{s.count !== 1 ? "s" : ""}</span>
+                <span className="text-slate-300">·</span>
+                <span className="text-emerald-700 font-medium">{s.freeSlots} huecos libres</span>
+                {cap > 1 && (
+                  <span className="ml-auto text-[11px] text-slate-400">Capacidad {cap}/tramo</span>
+                )}
+              </div>
+            );
+          })()}
           {SLOTS.map(({ h, m, label }) => {
             const slotAppts = getApptStartingInSlot(date, h, m);
-            const occupied = slotOccupied(h, m, date, appointments);
+            const occupancy = slotOccupancy(h, m, date, visibleAppointments);
             const blocked = isBlocked(date);
             const closedDay = isClosedBySchedule(date);
             const inHours = isWithinBusinessHours(date, h, m);
-            const free = !occupied && !blocked && !closedDay && inHours;
+            const state = occupancyState(occupancy, cap);
+            const free = state !== "full" && !blocked && !closedDay && inHours;
             const unavailable = !blocked && !closedDay && !inHours;
             return (
               <div
@@ -316,11 +404,9 @@ export function CalendarView({
                   "flex border-b border-border last:border-b-0 transition-colors group",
                   blocked || closedDay
                     ? "bg-stone-50 cursor-not-allowed"
-                    : occupied
-                      ? "bg-rose-50"
-                      : unavailable
-                        ? "bg-white"
-                        : "bg-emerald-50 hover:bg-emerald-100 cursor-pointer",
+                    : unavailable
+                      ? "bg-white"
+                      : SLOT_BG[state],
                 )}
                 style={{ minHeight: "44px" }}
                 onClick={() => {
@@ -359,10 +445,21 @@ export function CalendarView({
                       </div>
                     );
                   })}
-                  {free && slotAppts.length === 0 && (
+                  {free && state === "free" && slotAppts.length === 0 && (
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <Plus className="h-4 w-4 text-emerald-600" />
                     </div>
+                  )}
+                  {free && state === "partial" && (
+                    <button
+                      className="w-full text-left rounded-md border border-dashed border-amber-400 px-2 py-1 text-xs text-amber-700 font-medium hover:bg-amber-100 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleFreeSlotClick(date, h, m);
+                      }}
+                    >
+                      + Añadir cliente · {cap - occupancy === 1 ? "queda 1 hueco" : `quedan ${cap - occupancy} huecos`}
+                    </button>
                   )}
                 </div>
               </div>
@@ -450,11 +547,12 @@ export function CalendarView({
                 </div>
                 {weekDays.map((day, i) => {
                   const slotAppts = getApptStartingInSlot(day, h, m);
-                  const occupied = slotOccupied(h, m, day, appointments);
+                  const occupancy = slotOccupancy(h, m, day, visibleAppointments);
                   const blocked = isBlocked(day);
                   const closedDay = isClosedBySchedule(day);
                   const inHours = isWithinBusinessHours(day, h, m);
-                  const free = !occupied && !blocked && !closedDay && inHours;
+                  const state = occupancyState(occupancy, cap);
+                  const free = state !== "full" && !blocked && !closedDay && inHours;
                   return (
                     <div
                       key={i}
@@ -462,11 +560,9 @@ export function CalendarView({
                         "border-r border-border last:border-r-0 p-0.5 space-y-0.5 transition-colors group relative",
                         blocked || closedDay
                           ? "bg-stone-50 cursor-not-allowed"
-                          : occupied
-                            ? "bg-rose-50"
-                            : !inHours
-                              ? "bg-white"
-                              : "bg-emerald-50 hover:bg-emerald-100 cursor-pointer",
+                          : !inHours
+                            ? "bg-white"
+                            : SLOT_BG[state],
                       )}
                       onClick={() => {
                         if (free) handleFreeSlotClick(day, h, m);
@@ -492,7 +588,7 @@ export function CalendarView({
                       ))}
                       {free && slotAppts.length === 0 && (
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                          <Plus className="h-3 w-3 text-emerald-500" />
+                          <Plus className={cn("h-3 w-3", state === "partial" ? "text-amber-500" : "text-emerald-500")} />
                         </div>
                       )}
                     </div>

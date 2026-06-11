@@ -5,8 +5,16 @@ import type { BusinessHours, Appointment, BlockedDay } from "@/types";
 const SALON_ID = "salon-1";
 const STAFF_ID = "staff-1";
 
-// Monday 2026-06-01
-const TEST_DATE = "2026-06-01";
+// Un lunes futuro dinámico: computeAvailableSlots descarta horas pasadas,
+// así que el test debe situarse en el futuro para ser determinista.
+function nextMonday(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  while (d.getDay() !== 1) d.setDate(d.getDate() + 1);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+const TEST_DATE = nextMonday();
 
 const MONDAY_HOURS: BusinessHours = {
   id: "bh-1",
@@ -150,6 +158,79 @@ describe("computeAvailableSlots", () => {
       (s) => s.starts_at.getHours() === 10 && s.starts_at.getMinutes() === 0,
     );
     expect(slot).toBeDefined();
+  });
+});
+
+describe("computeAvailableSlots · capacidad multi-cliente", () => {
+  it("con capacidad 2, un solo solapamiento NO bloquea el tramo", () => {
+    const appt = makeAppt(`${TEST_DATE}T10:00:00`, `${TEST_DATE}T11:00:00`);
+    const slots = computeAvailableSlots({
+      date: TEST_DATE,
+      durationMinutes: 60,
+      businessHours: [MONDAY_HOURS],
+      existingAppointments: [appt],
+      blockedDays: [],
+      capacity: 2,
+    });
+    const slot = slots.find((s) => s.starts_at.getHours() === 10 && s.starts_at.getMinutes() === 0);
+    expect(slot).toBeDefined();
+    expect(slot?.remaining).toBe(1);
+  });
+
+  it("con capacidad 2, dos solapamientos SÍ bloquean el tramo", () => {
+    const a = makeAppt(`${TEST_DATE}T10:00:00`, `${TEST_DATE}T11:00:00`);
+    const b = makeAppt(`${TEST_DATE}T10:00:00`, `${TEST_DATE}T11:00:00`);
+    const slots = computeAvailableSlots({
+      date: TEST_DATE,
+      durationMinutes: 60,
+      businessHours: [MONDAY_HOURS],
+      existingAppointments: [a, b],
+      blockedDays: [],
+      capacity: 2,
+    });
+    const slot = slots.find((s) => s.starts_at.getHours() === 10 && s.starts_at.getMinutes() === 0);
+    expect(slot).toBeUndefined();
+  });
+
+  it("expone los huecos restantes en tramos libres", () => {
+    const slots = computeAvailableSlots({
+      date: TEST_DATE,
+      durationMinutes: 60,
+      businessHours: [MONDAY_HOURS],
+      existingAppointments: [],
+      blockedDays: [],
+      capacity: 3,
+    });
+    expect(slots.length).toBeGreaterThan(0);
+    slots.forEach((s) => expect(s.remaining).toBe(3));
+  });
+});
+
+describe("computeAvailableSlots · turno partido", () => {
+  const SPLIT_HOURS: BusinessHours = {
+    ...MONDAY_HOURS,
+    opens_at: "09:00",
+    closes_at: "14:00",
+    opens_at_2: "16:00",
+    closes_at_2: "20:00",
+  };
+
+  it("no genera huecos en la pausa del mediodía", () => {
+    const slots = computeAvailableSlots({
+      date: TEST_DATE,
+      durationMinutes: 30,
+      businessHours: [SPLIT_HOURS],
+      existingAppointments: [],
+      blockedDays: [],
+    });
+    const inBreak = slots.find((s) => {
+      const min = s.starts_at.getHours() * 60 + s.starts_at.getMinutes();
+      return min >= 14 * 60 && min < 16 * 60;
+    });
+    expect(inBreak).toBeUndefined();
+    // sí hay huecos en ambos tramos
+    expect(slots.some((s) => s.starts_at.getHours() < 14)).toBe(true);
+    expect(slots.some((s) => s.starts_at.getHours() >= 16)).toBe(true);
   });
 });
 

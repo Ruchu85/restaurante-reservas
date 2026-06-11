@@ -24,6 +24,12 @@ playwright/.cache/
 *.pem
 npm-debug.log*
 pnpm-debug.log*
+dev-server.log
+*.log
+
+# Local tooling
+.claude/settings.local.json
+supabase/.temp/
 
 # TypeScript
 *.tsbuildinfo

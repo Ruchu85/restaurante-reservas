@@ -1,4 +1,5 @@
 import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
+import { getSalon, salonToTicketInfo } from "@/lib/salon";
 import { CalendarView } from "@/components/dashboard/CalendarView";
 
 export const metadata = { title: "Calendario — PELUQUERIA ALI" };
@@ -11,6 +12,7 @@ export default async function CalendarioPage({
   const params = await searchParams;
   const admin = createAdminClient();
   const salonId = await getSalonId();
+  const salon = await getSalon();
 
   const today = params.date ?? new Date().toISOString().split("T")[0];
 
@@ -66,7 +68,8 @@ export default async function CalendarioPage({
       currentDate={today}
       blockedDays={blockedDays ?? []}
       businessHours={businessHours ?? []}
-
+      capacity={salon?.slot_capacity ?? 1}
+      salonInfo={salonToTicketInfo(salon)}
     />
   );
 }

@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { AppointmentActions } from "@/components/dashboard/AppointmentActions";
 import { PrintButton } from "@/components/dashboard/PrintButton";
-import { SALON_INFO } from "@/lib/salonConfig";
+import { getSalon, salonToTicketInfo } from "@/lib/salon";
 import type { Appointment } from "@/types";
 
 export const metadata = { title: "Citas — Panel admin" };
@@ -15,11 +15,13 @@ export const metadata = { title: "Citas — Panel admin" };
 export default async function CitasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; q?: string }>;
 }) {
   const params = await searchParams;
   const admin = createAdminClient();
   const salonId = await getSalonId();
+  const SALON_INFO = salonToTicketInfo(await getSalon());
+  const q = params.q?.trim() ?? "";
 
   let query = admin
     .from("appointments")
@@ -32,6 +34,10 @@ export default async function CitasPage({
     query = query.eq("status", "cancelled");
   } else {
     query = query.eq("status", "active");
+  }
+
+  if (q) {
+    query = query.ilike("customer_name", `%${q}%`);
   }
 
   const { data: appointments } = await query;
@@ -54,17 +60,39 @@ export default async function CitasPage({
         </div>
       </div>
 
+      {/* Buscador */}
+      <form method="GET" className="mb-3 flex gap-2">
+        {params.status === "cancelled" && <input type="hidden" name="status" value="cancelled" />}
+        <input
+          type="search"
+          name="q"
+          defaultValue={q}
+          placeholder="Buscar por cliente…"
+          className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm"
+        />
+        <button type="submit" className="h-9 px-4 rounded-md bg-slate-900 text-white text-sm font-medium hover:bg-slate-700 transition-colors">
+          Buscar
+        </button>
+      </form>
+
       <div className="mb-4 flex gap-2">
-        <Link href="/dashboard/citas">
+        <Link href={q ? `/dashboard/citas?q=${encodeURIComponent(q)}` : "/dashboard/citas"}>
           <Badge variant={!params.status || params.status === "active" ? "default" : "outline"} className="cursor-pointer">
             Activas
           </Badge>
         </Link>
-        <Link href="/dashboard/citas?status=cancelled">
+        <Link href={q ? `/dashboard/citas?status=cancelled&q=${encodeURIComponent(q)}` : "/dashboard/citas?status=cancelled"}>
           <Badge variant={params.status === "cancelled" ? "default" : "outline"} className="cursor-pointer">
             Canceladas
           </Badge>
         </Link>
+        {q && (
+          <Link href={params.status === "cancelled" ? "/dashboard/citas?status=cancelled" : "/dashboard/citas"}>
+            <Badge variant="outline" className="cursor-pointer">
+              ✕ &ldquo;{q}&rdquo;
+            </Badge>
+          </Link>
+        )}
       </div>
 
       <Card>

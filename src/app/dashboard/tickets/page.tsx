@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatTime } from "@/lib/utils";
 import { PrintButton } from "@/components/dashboard/PrintButton";
-import { SALON_INFO } from "@/lib/salonConfig";
+import { getSalon, salonToTicketInfo } from "@/lib/salon";
 import type { Appointment } from "@/types";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
@@ -28,6 +28,7 @@ export default async function TicketsPage({
 
   const admin = createAdminClient();
   const salonId = await getSalonId();
+  const SALON_INFO = salonToTicketInfo(await getSalon());
 
   const { data: appts } = await admin
     .from("appointments")

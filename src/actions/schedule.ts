@@ -7,21 +7,35 @@ export async function upsertBusinessHours(
   dayOfWeek: number,
   opensAt: string,
   closesAt: string,
-  isOpen: boolean
+  isOpen: boolean,
+  opensAt2?: string | null,
+  closesAt2?: string | null,
 ) {
   const admin = createAdminClient();
   const salonId = await getSalonId();
   if (!salonId) return { error: "No se encontró el salón." };
 
+  // Solo guardamos el segundo tramo si ambos valores están presentes
+  const hasSplit = Boolean(opensAt2 && closesAt2);
+
   const { error } = await admin
     .from("business_hours")
     .upsert(
-      { salon_id: salonId, day_of_week: dayOfWeek, opens_at: opensAt, closes_at: closesAt, is_open: isOpen },
+      {
+        salon_id: salonId,
+        day_of_week: dayOfWeek,
+        opens_at: opensAt,
+        closes_at: closesAt,
+        is_open: isOpen,
+        opens_at_2: hasSplit ? opensAt2 : null,
+        closes_at_2: hasSplit ? closesAt2 : null,
+      },
       { onConflict: "salon_id,day_of_week" }
     );
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/horarios");
+  revalidatePath("/dashboard/calendario");
   return { success: true };
 }
 

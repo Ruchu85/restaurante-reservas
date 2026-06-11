@@ -8,6 +8,11 @@ export interface Salon {
   phone: string | null;
   email: string | null;
   timezone: string;
+  slot_capacity: number;
+  owner: string | null;
+  nif: string | null;
+  city: string | null;
+  ticket_footer: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -39,6 +44,11 @@ export interface BusinessHours {
   opens_at: string;   // HH:MM
   closes_at: string;  // HH:MM
   is_open: boolean;
+  // Turno partido opcional (mañana/tarde): segundo tramo del día
+  opens_at_2?: string | null;
+  closes_at_2?: string | null;
+  // Capacidad opcional por día (null = hereda la del salón)
+  slot_capacity?: number | null;
 }
 
 export interface BlockedDay {
@@ -82,6 +92,8 @@ export interface Customer {
   salon_id: string;
   name: string;
   preferred_service: string | null;
+  phone: string | null;
+  notes: string | null;
   created_at: string;
 }
 
