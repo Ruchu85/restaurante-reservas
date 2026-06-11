@@ -4,12 +4,17 @@ Resumen de lo realmente implementado a partir de [PROPUESTA-MEJORAS.md](./PROPUE
 Todo verificado con: `typecheck` ✅ · `lint` ✅ (0 errores) · `test` ✅ (14/14) · `build` ✅.
 
 > ⚠️ **IMPORTANTE — aplicar migraciones antes de desplegar.** Hay dos migraciones nuevas:
-> - `009_capacity_and_salon.sql` — capacidad por tramo, datos del salón, teléfono/notas de cliente, trigger de capacidad.
+> - `009_capacity_and_salon.sql` — columnas de capacidad por tramo, datos del salón y teléfono/notas de cliente.
 > - `010_split_shift.sql` — turno partido (segundo tramo horario).
 >
-> Aplicar con `supabase db push` (o el flujo de migraciones del proyecto). El código es
-> resiliente a columnas ausentes en lectura (capacidad cae a 1 por defecto), pero las
-> pantallas de Ajustes / Ficha de cliente / Horarios necesitan las columnas para **guardar**.
+> Aplicar con `supabase db push`. Solo añaden columnas (idempotentes con `IF NOT EXISTS`).
+> El código es resiliente a columnas ausentes en lectura (capacidad cae a 1 por defecto).
+>
+> **Garantía de capacidad:** se hace en el server action
+> (`src/actions/appointments.ts → checkCapacity`), NO con un trigger de BD, porque el divisor
+> de sentencias del SQL Editor / CLI de Supabase parte el cuerpo de las funciones plpgsql por
+> los `;` internos. Si además quieres la barrera a nivel de BD, aplica `docs/trigger_capacidad.sql`
+> **con `psql`** (no con el editor ni con `db push`).
 
 ---
 

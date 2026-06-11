@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeAvailableSlots, isWithinBusinessHours } from "@/lib/availability";
+import { computeAvailableSlots, isWithinBusinessHours, peakConcurrency } from "@/lib/availability";
 import type { BusinessHours, Appointment, BlockedDay } from "@/types";
 
 const SALON_ID = "salon-1";
@@ -231,6 +231,38 @@ describe("computeAvailableSlots · turno partido", () => {
     // sí hay huecos en ambos tramos
     expect(slots.some((s) => s.starts_at.getHours() < 14)).toBe(true);
     expect(slots.some((s) => s.starts_at.getHours() >= 16)).toBe(true);
+  });
+});
+
+describe("peakConcurrency", () => {
+  const D = "2026-06-01";
+
+  it("cuenta la concurrencia máxima de citas solapadas", () => {
+    const a = makeAppt(`${D}T10:00:00`, `${D}T11:00:00`);
+    const b = makeAppt(`${D}T10:00:00`, `${D}T11:00:00`);
+    const peak = peakConcurrency([a, b], new Date(`${D}T10:00:00`), new Date(`${D}T11:00:00`));
+    expect(peak).toBe(2);
+  });
+
+  it("no sobreestima con servicios largos (evita falsos completos)", () => {
+    // Mechas 10:00–12:00 y corte 11:00–11:30. Para una nueva cita 10:00–10:30
+    // a las 10:00 solo está la de mechas → pico 1 (no 2).
+    const mechas = makeAppt(`${D}T10:00:00`, `${D}T12:00:00`);
+    const corte = makeAppt(`${D}T11:00:00`, `${D}T11:30:00`);
+    const peak = peakConcurrency([mechas, corte], new Date(`${D}T10:00:00`), new Date(`${D}T10:30:00`));
+    expect(peak).toBe(1);
+  });
+
+  it("excluye la propia cita al editar", () => {
+    const self = makeAppt(`${D}T10:00:00`, `${D}T11:00:00`);
+    const peak = peakConcurrency([self], new Date(`${D}T10:00:00`), new Date(`${D}T11:00:00`), self.id);
+    expect(peak).toBe(0);
+  });
+
+  it("ignora citas canceladas", () => {
+    const cancelled = { ...makeAppt(`${D}T10:00:00`, `${D}T11:00:00`), status: "cancelled" as const };
+    const peak = peakConcurrency([cancelled], new Date(`${D}T10:00:00`), new Date(`${D}T11:00:00`));
+    expect(peak).toBe(0);
   });
 });
 

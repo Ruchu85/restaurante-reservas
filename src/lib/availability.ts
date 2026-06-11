@@ -41,6 +41,45 @@ export function countOverlapping(
   return count;
 }
 
+type ConcurrencyAppt = Pick<Appointment, "id" | "starts_at" | "ends_at" | "status">;
+
+/**
+ * Concurrencia máxima de citas activas en cualquier instante dentro del rango
+ * [start, end). Evalúa en los puntos donde la concurrencia puede aumentar:
+ * el inicio del propio rango y el inicio de cada cita que lo solapa.
+ * Réplica en JS de la garantía de capacidad (antes en un trigger de BD).
+ */
+export function peakConcurrency(
+  appointments: ConcurrencyAppt[],
+  start: Date,
+  end: Date,
+  excludeId?: string,
+): number {
+  const startMs = start.getTime();
+  const endMs = end.getTime();
+  const active = appointments.filter(
+    (a) => a.status === "active" && a.id !== excludeId,
+  );
+
+  const points: number[] = [startMs];
+  for (const a of active) {
+    const s = new Date(a.starts_at).getTime();
+    if (s >= startMs && s < endMs) points.push(s);
+  }
+
+  let peak = 0;
+  for (const t of points) {
+    let c = 0;
+    for (const a of active) {
+      const s = new Date(a.starts_at).getTime();
+      const e = new Date(a.ends_at).getTime();
+      if (s <= t && e > t) c++;
+    }
+    if (c > peak) peak = c;
+  }
+  return peak;
+}
+
 export function computeAvailableSlots(input: SlotInput): TimeSlotResult[] {
   const {
     date,

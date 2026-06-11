@@ -30,74 +30,15 @@ alter table customers add column if not exists phone text;
 alter table customers add column if not exists notes text;
 
 -- ============================================================
--- TRIGGER: control de capacidad por tramo
--- Cuenta las citas activas del salón que solapan con la nueva
--- y rechaza la inserción/actualización si se alcanza la capacidad.
--- Lanza SQLSTATE 23P01 (exclusion_violation) para que el server
--- action lo traduzca a un mensaje claro, reutilizando el manejo
--- existente del constraint de no-solapamiento.
+-- NOTA sobre la garantía de capacidad
 -- ============================================================
-create or replace function check_slot_capacity()
-returns trigger language plpgsql as $capacity$
-declare
-  cap      int;
-  day_cap  int;
-  overlaps int;
-  dow      int;
-begin
-  if new.status <> 'active' then
-    return new;
-  end if;
-
-  dow := extract(dow from (new.starts_at at time zone 'Europe/Madrid'))::int;
-
-  -- Capacidad del día (si está definida) o del salón (o 1 por defecto)
-  select bh.slot_capacity into day_cap
-    from business_hours bh
-   where bh.salon_id = new.salon_id and bh.day_of_week = dow;
-
-  select s.slot_capacity into cap from salons s where s.id = new.salon_id;
-
-  cap := coalesce(day_cap, cap, 1);
-
-  -- Concurrencia máxima de citas EXISTENTES en cualquier instante dentro
-  -- del rango de la nueva cita. Se evalúa en los puntos de inicio de las
-  -- citas solapadas y en el inicio de la nueva (puntos donde la concurrencia
-  -- puede aumentar). Si ese máximo ya alcanza la capacidad, no cabe una más.
-  select coalesce(max(concurrent), 0) into overlaps
-  from (
-    select (
-      select count(*)
-        from appointments a2
-       where a2.salon_id = new.salon_id
-         and a2.status = 'active'
-         and a2.id <> new.id
-         and a2.starts_at <= pts.t
-         and a2.ends_at  >  pts.t
-    ) as concurrent
-    from (
-      select new.starts_at as t
-      union
-      select a.starts_at
-        from appointments a
-       where a.salon_id = new.salon_id
-         and a.status = 'active'
-         and a.id <> new.id
-         and a.starts_at >= new.starts_at
-         and a.starts_at <  new.ends_at
-    ) pts
-  ) c;
-
-  if overlaps >= cap then
-    raise exception 'Tramo completo: capacidad % alcanzada', cap
-      using errcode = '23P01';
-  end if;
-
-  return new;
-end;
-$capacity$;
-
-drop trigger if exists appointments_capacity_check on appointments;
-create trigger appointments_capacity_check
-  before insert or update on appointments
-  for each row execute function check_slot_capacity();
+-- La validación de "no exceder la capacidad del tramo" se realiza en el
+-- server action (src/actions/appointments.ts → checkCapacity), no con un
+-- trigger de BD. Motivo: el divisor de sentencias del SQL Editor / CLI de
+-- Supabase parte el cuerpo de las funciones por los ';' internos y no es
+-- fiable para aplicar funciones plpgsql desde estas migraciones.
+--
+-- Si quieres además la garantía a nivel de base de datos (recomendado en
+-- entornos con alta concurrencia), aplica el trigger opcional incluido en
+-- docs/trigger_capacidad.sql ejecutándolo con psql (no con el SQL Editor):
+--   psql "<connection-string>" -f docs/trigger_capacidad.sql

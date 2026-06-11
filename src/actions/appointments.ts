@@ -3,7 +3,63 @@
 import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { peakConcurrency } from "@/lib/availability";
 import type { Appointment } from "@/types";
+
+/**
+ * Garantía de capacidad en servidor (sustituye al trigger de BD).
+ * Devuelve un mensaje de error si el tramo ya está completo, o null si cabe.
+ */
+async function checkCapacity(
+  admin: ReturnType<typeof createAdminClient>,
+  salonId: string,
+  startsAtISO: string,
+  endsAtISO: string,
+  excludeId?: string,
+): Promise<string | null> {
+  const start = new Date(startsAtISO);
+  const end = new Date(endsAtISO);
+
+  const [{ data: salon }, { data: bh }] = await Promise.all([
+    admin.from("salons").select("slot_capacity").eq("id", salonId).maybeSingle(),
+    admin
+      .from("business_hours")
+      .select("day_of_week, slot_capacity")
+      .eq("salon_id", salonId),
+  ]);
+
+  // Día de la semana en horario de Madrid (0=Domingo)
+  const madridDow = new Date(
+    start.toLocaleString("en-US", { timeZone: "Europe/Madrid" }),
+  ).getDay();
+
+  const dayCap = (bh as { day_of_week: number; slot_capacity: number | null }[] | null)?.find(
+    (h) => h.day_of_week === madridDow,
+  )?.slot_capacity;
+  const salonCap = (salon as { slot_capacity: number | null } | null)?.slot_capacity;
+  const capacity = dayCap ?? salonCap ?? 1;
+
+  // Citas activas que solapan el rango
+  const { data: overlapping } = await admin
+    .from("appointments")
+    .select("id, starts_at, ends_at, status")
+    .eq("salon_id", salonId)
+    .eq("status", "active")
+    .lt("starts_at", endsAtISO)
+    .gt("ends_at", startsAtISO);
+
+  const peak = peakConcurrency(
+    (overlapping ?? []) as { id: string; starts_at: string; ends_at: string; status: "active" | "cancelled" }[],
+    start,
+    end,
+    excludeId,
+  );
+
+  if (peak >= capacity) {
+    return "Este tramo ya está completo (capacidad alcanzada).";
+  }
+  return null;
+}
 
 const CreateSchema = z.object({
   customer_name: z.string().min(2).max(100),
@@ -57,6 +113,15 @@ export async function createAppointment(input: CreateAppointmentInput) {
     return { error: "El salón no abre ese día según el horario configurado." };
   }
 
+  // Garantía de capacidad por tramo
+  const capacityError = await checkCapacity(
+    admin,
+    salonId,
+    parsed.data.starts_at,
+    parsed.data.ends_at,
+  );
+  if (capacityError) return { error: capacityError };
+
   const { data, error } = await admin
     .from("appointments")
     .insert({
@@ -92,6 +157,21 @@ export async function updateAppointment(id: string, input: UpdateAppointmentInpu
   }
 
   const admin = createAdminClient();
+
+  // Si cambia el horario, revalidar capacidad (excluyendo la propia cita)
+  if (parsed.data.starts_at && parsed.data.ends_at) {
+    const salonId = await getSalonId();
+    if (salonId) {
+      const capacityError = await checkCapacity(
+        admin,
+        salonId,
+        parsed.data.starts_at,
+        parsed.data.ends_at,
+        id,
+      );
+      if (capacityError) return { error: capacityError };
+    }
+  }
 
   const { error } = await admin
     .from("appointments")
