@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PELUQUERÍA ALI — Propuesta visual de mejoras</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .phone {
+    width: 375px; border-radius: 2.2rem; border: 10px solid #0f172a;
+    box-shadow: 0 30px 60px -20px rgba(15,23,42,.45); overflow: hidden; background:#f8fafc;
+  }
+  .phone-screen { height: 760px; overflow:hidden; display:flex; flex-direction:column; }
+  .notch { height: 26px; background:#0f172a; }
+  .scroll { overflow-y:auto; flex:1; }
+  .scroll::-webkit-scrollbar { width:0; }
+  .stripe-blocked {
+    background-image: repeating-linear-gradient(45deg, #fecaca, #fecaca 6px, #fee2e2 6px, #fee2e2 12px);
+  }
+  .tag { font-size:10px; font-weight:600; padding:2px 7px; border-radius:9999px; }
+</style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+<!-- ===================== HEADER ===================== -->
+<header class="bg-slate-900 text-white">
+  <div class="max-w-6xl mx-auto px-6 py-10">
+    <p class="text-slate-400 text-sm font-medium tracking-wide uppercase">Propuesta visual · v2</p>
+    <h1 class="text-3xl md:text-4xl font-bold mt-2">PELUQUERÍA ALI — Agenda inteligente</h1>
+    <p class="text-slate-300 mt-3 max-w-2xl">
+      Mockups de los cambios propuestos: <b class="text-white">capacidad multi-cliente por tramo</b>,
+      <b class="text-white">recálculo visual de huecos libres con colores</b> y mejoras orientadas a
+      vender el producto a otras peluquerías, manteniendo la simplicidad.
+    </p>
+  </div>
+</header>
+
+<!-- ===================== LEYENDA DE COLORES ===================== -->
+<section class="max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-xl font-bold mb-1">1 · Nuevo sistema de colores por ocupación</h2>
+  <p class="text-slate-500 mb-5 max-w-3xl text-sm">
+    El color de cada tramo ya no es "libre/ocupado" binario. Ahora refleja cuántos huecos quedan según la
+    <b>capacidad</b> configurada (clientes simultáneos por tramo). Ejemplo con capacidad = 2.
+  </p>
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-3 max-w-4xl">
+    <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+      <div class="w-7 h-7 rounded-md bg-emerald-400 mb-2"></div>
+      <div class="font-semibold text-sm text-emerald-800">Libre</div>
+      <div class="text-xs text-emerald-700 mt-0.5">0 de 2 · 2 huecos</div>
+    </div>
+    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <div class="w-7 h-7 rounded-md bg-amber-400 mb-2"></div>
+      <div class="font-semibold text-sm text-amber-800">Parcial</div>
+      <div class="text-xs text-amber-700 mt-0.5">1 de 2 · queda 1</div>
+    </div>
+    <div class="rounded-xl border border-rose-200 bg-rose-50 p-4">
+      <div class="w-7 h-7 rounded-md bg-rose-400 mb-2"></div>
+      <div class="font-semibold text-sm text-rose-800">Completo</div>
+      <div class="text-xs text-rose-700 mt-0.5">2 de 2 · sin huecos</div>
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <div class="w-7 h-7 rounded-md bg-slate-300 mb-2"></div>
+      <div class="font-semibold text-sm text-slate-700">Cerrado</div>
+      <div class="text-xs text-slate-500 mt-0.5">Fuera de horario</div>
+    </div>
+    <div class="rounded-xl border border-rose-300 stripe-blocked p-4">
+      <div class="w-7 h-7 rounded-md bg-rose-300 mb-2"></div>
+      <div class="font-semibold text-sm text-rose-800">Bloqueado</div>
+      <div class="text-xs text-rose-700 mt-0.5">Vacaciones / festivo</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== MOCKUPS ===================== -->
+<section class="max-w-6xl mx-auto px-6 pb-16">
+  <h2 class="text-xl font-bold mb-6">2 · Pantallas</h2>
+  <div class="flex flex-wrap gap-10 justify-center">
+
+    <!-- ---------- PANTALLA: AJUSTES / CAPACIDAD ---------- -->
+    <figure class="flex flex-col items-center">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <!-- top bar -->
+          <div class="flex items-center gap-2 px-4 h-12 border-b bg-white">
+            <svg class="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span class="font-bold text-sm">Ajustes</span>
+          </div>
+          <div class="scroll p-4 space-y-5">
+
+            <!-- NUEVA tarjeta: capacidad -->
+            <div class="rounded-xl border-2 border-indigo-200 bg-white p-4 relative">
+              <span class="tag bg-indigo-100 text-indigo-700 absolute top-3 right-3">NUEVO</span>
+              <h3 class="font-semibold text-sm">Clientes por tramo horario</h3>
+              <p class="text-xs text-slate-500 mt-1 mb-3">
+                ¿Cuántos clientes puedes atender a la vez en la misma franja?
+              </p>
+              <div class="grid grid-cols-4 gap-2 mb-3">
+                <button class="rounded-lg border py-2 text-sm font-medium text-slate-600">1</button>
+                <button class="rounded-lg border-2 border-indigo-500 bg-indigo-50 py-2 text-sm font-bold text-indigo-700">2</button>
+                <button class="rounded-lg border py-2 text-sm font-medium text-slate-600">3</button>
+                <button class="rounded-lg border py-2 text-sm font-medium text-slate-600">4</button>
+              </div>
+              <label class="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2.5">
+                <span class="text-xs text-slate-600">Capacidad distinta según el día</span>
+                <span class="w-9 h-5 rounded-full bg-slate-300 relative"><span class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow"></span></span>
+              </label>
+            </div>
+
+            <!-- Servicios (existente) -->
+            <div class="rounded-xl border bg-white p-4">
+              <h3 class="font-semibold text-sm mb-1">Tipos de servicio</h3>
+              <p class="text-xs text-slate-500 mb-3">Precio y duración se autocompletan al crear la cita.</p>
+              <div class="divide-y rounded-lg border overflow-hidden">
+                <div class="flex items-center justify-between px-3 py-2.5">
+                  <div><div class="text-sm font-medium">Corte de cabello</div><div class="text-xs text-slate-500">12,00 € · 30 min</div></div>
+                  <span class="text-slate-300">✎</span>
+                </div>
+                <div class="flex items-center justify-between px-3 py-2.5">
+                  <div><div class="text-sm font-medium">Coloración</div><div class="text-xs text-slate-500">35,00 € · 90 min</div></div>
+                  <span class="text-slate-300">✎</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <!-- bottom nav -->
+          <div class="flex border-t bg-white">
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-400"><span>🏠</span>Inicio</div>
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-400"><span>📅</span>Calendario</div>
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-400"><span>📋</span>Citas</div>
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-400"><span>👥</span>Clientes</div>
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-900 font-medium"><span>🧾</span>Tickets</div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="mt-3 text-sm font-medium text-slate-600">Ajustes · Capacidad por tramo (nuevo)</figcaption>
+    </figure>
+
+    <!-- ---------- PANTALLA: CALENDARIO DÍA con colores ---------- -->
+    <figure class="flex flex-col items-center">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <!-- toolbar -->
+          <div class="border-b bg-white">
+            <div class="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
+              <button class="w-8 h-8 grid place-items-center text-slate-500">‹</button>
+              <button class="w-8 h-8 grid place-items-center text-slate-500">›</button>
+              <button class="h-8 px-2 text-xs border rounded-md">Hoy</button>
+              <h2 class="flex-1 text-sm font-semibold text-center">jueves, 11 junio</h2>
+              <button class="w-8 h-8 grid place-items-center text-slate-400">🖨</button>
+              <button class="h-8 px-3 text-xs rounded-md bg-slate-900 text-white">+ </button>
+            </div>
+            <div class="px-3 pb-2.5">
+              <div class="flex rounded-lg border bg-slate-50 p-0.5 gap-0.5 text-xs font-medium">
+                <span class="flex-1 text-center py-1.5 rounded-md bg-white shadow-sm">Día</span>
+                <span class="flex-1 text-center py-1.5 text-slate-500">Semana</span>
+                <span class="flex-1 text-center py-1.5 text-slate-500">Mes</span>
+              </div>
+            </div>
+            <!-- NUEVO: resumen ocupación del día -->
+            <div class="flex items-center gap-3 px-3 py-2 bg-indigo-50 border-t border-indigo-100">
+              <span class="tag bg-indigo-100 text-indigo-700">HOY</span>
+              <span class="text-xs text-slate-600">Ocupación <b>58%</b> · 7 citas · <b class="text-emerald-700">9 huecos libres</b></span>
+            </div>
+          </div>
+          <!-- slots -->
+          <div class="scroll">
+            <!-- 10:00 completo (2/2) -->
+            <div class="flex border-b" style="min-height:54px">
+              <div class="w-12 border-r py-1 pr-2 text-right text-xs font-medium text-slate-600">10:00</div>
+              <div class="flex-1 p-1 space-y-1 bg-rose-50">
+                <div class="rounded-md border border-rose-300 bg-rose-100 px-2 py-1">
+                  <div class="text-xs font-medium text-rose-900">María López</div>
+                  <div class="text-[10px] text-rose-700">10:00–10:30 · Corte</div>
+                </div>
+                <div class="rounded-md border border-rose-300 bg-rose-100 px-2 py-1">
+                  <div class="text-xs font-medium text-rose-900">Ana Ruiz</div>
+                  <div class="text-[10px] text-rose-700">10:00–11:30 · Mechas</div>
+                </div>
+                <div class="text-[10px] text-rose-600 font-semibold pl-0.5">● Completo · 2 de 2</div>
+              </div>
+            </div>
+            <!-- 10:30 parcial (1/2) -->
+            <div class="flex border-b" style="min-height:54px">
+              <div class="w-12 border-r py-1 pr-2 text-right text-xs text-slate-400">10:30</div>
+              <div class="flex-1 p-1 space-y-1 bg-amber-50">
+                <div class="rounded-md border border-amber-300 bg-amber-100 px-2 py-1">
+                  <div class="text-xs font-medium text-amber-900">Ana Ruiz</div>
+                  <div class="text-[10px] text-amber-700">…sigue · Mechas</div>
+                </div>
+                <button class="w-full text-left rounded-md border border-dashed border-amber-400 px-2 py-1 text-[11px] text-amber-700 font-medium">
+                  + Añadir cliente · queda 1 hueco
+                </button>
+              </div>
+            </div>
+            <!-- 11:00 parcial -->
+            <div class="flex border-b" style="min-height:54px">
+              <div class="w-12 border-r py-1 pr-2 text-right text-xs font-medium text-slate-600">11:00</div>
+              <div class="flex-1 p-1 bg-amber-50 flex items-center">
+                <span class="text-[11px] text-amber-700">1 de 2 · queda 1 hueco</span>
+              </div>
+            </div>
+            <!-- 11:30 libre -->
+            <div class="flex border-b" style="min-height:54px">
+              <div class="w-12 border-r py-1 pr-2 text-right text-xs text-slate-400">11:30</div>
+              <div class="flex-1 p-1 bg-emerald-50 flex items-center justify-center text-emerald-600 text-lg">+</div>
+            </div>
+            <!-- 12:00 libre -->
+            <div class="flex border-b" style="min-height:54px">
+              <div class="w-12 border-r py-1 pr-2 text-right text-xs font-medium text-slate-600">12:00</div>
+              <div class="flex-1 p-1 bg-emerald-50 flex items-center justify-center text-emerald-600 text-lg">+</div>
+            </div>
+            <!-- 12:30 libre -->
+            <div class="flex border-b" style="min-height:54px">
+              <div class="w-12 border-r py-1 pr-2 text-right text-xs text-slate-400">12:30</div>
+              <div class="flex-1 p-1 bg-emerald-50"></div>
+            </div>
+            <!-- 13:00 fuera de horario -->
+            <div class="flex border-b" style="min-height:54px">
+              <div class="w-12 border-r py-1 pr-2 text-right text-xs font-medium text-slate-600">13:00</div>
+              <div class="flex-1 p-1 bg-slate-50 flex items-center pl-2"><span class="text-[10px] text-slate-400">Cierre mediodía</span></div>
+            </div>
+          </div>
+          <div class="flex border-t bg-white">
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-400"><span>🏠</span>Inicio</div>
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-900 font-medium"><span>📅</span>Calendario</div>
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-400"><span>📋</span>Citas</div>
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-400"><span>👥</span>Clientes</div>
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-400"><span>🧾</span>Tickets</div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="mt-3 text-sm font-medium text-slate-600">Calendario día · colores por ocupación</figcaption>
+    </figure>
+
+    <!-- ---------- PANTALLA: NUEVA CITA ---------- -->
+    <figure class="flex flex-col items-center">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <div class="flex items-center gap-2 px-4 h-12 border-b bg-white">
+            <span class="text-slate-400">‹</span><span class="font-bold text-sm">Nueva cita</span>
+          </div>
+          <div class="scroll p-4 space-y-4">
+            <div>
+              <label class="text-xs font-medium text-slate-600">Nombre del cliente *</label>
+              <div class="mt-1 rounded-md border px-3 py-2 text-sm flex items-center justify-between">
+                <span>María López</span><span class="text-slate-400 text-xs">▾</span>
+              </div>
+              <div class="mt-1 text-[11px] text-slate-400">Cliente habitual · 8 visitas · suele pedir Corte</div>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-slate-600">Servicio *</label>
+              <div class="mt-1 rounded-md border px-3 py-2 text-sm flex items-center justify-between bg-white">
+                <span>Corte de cabello</span><span class="text-slate-400 text-xs">▾</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-medium text-slate-600">Fecha *</label>
+                <div class="mt-1 rounded-md border px-3 py-2 text-sm">11/06/2026</div>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-600">Precio</label>
+                <div class="mt-1 rounded-md border px-3 py-2 text-sm text-slate-500">12,00 €</div>
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-slate-600">Hora de inicio *</label>
+              <!-- NUEVO: selector con conteo de huecos -->
+              <div class="mt-1 grid grid-cols-3 gap-1.5">
+                <span class="rounded-md border bg-rose-50 text-rose-400 line-through py-1.5 text-center text-xs">10:00</span>
+                <span class="rounded-md border border-amber-300 bg-amber-50 text-amber-700 py-1.5 text-center text-xs">10:30 ·1</span>
+                <span class="rounded-md border-2 border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold py-1.5 text-center text-xs">11:30 ·2</span>
+                <span class="rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 py-1.5 text-center text-xs">12:00 ·2</span>
+                <span class="rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 py-1.5 text-center text-xs">12:30 ·2</span>
+                <span class="rounded-md border bg-slate-50 text-slate-300 py-1.5 text-center text-xs">13:00</span>
+              </div>
+              <div class="mt-1.5 text-[11px] text-slate-400">El número indica huecos libres en ese tramo.</div>
+            </div>
+            <div>
+              <label class="text-xs font-medium text-slate-600">Duración *</label>
+              <div class="mt-1 rounded-md border px-3 py-2 text-sm flex items-center justify-between">
+                <span>30 min</span><span class="text-slate-400 text-xs">▾</span>
+              </div>
+            </div>
+            <div class="flex gap-2 pt-1">
+              <button class="flex-1 rounded-md border py-2.5 text-sm font-medium text-slate-600">Cancelar</button>
+              <button class="flex-1 rounded-md bg-slate-900 text-white py-2.5 text-sm font-medium">Crear cita</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="mt-3 text-sm font-medium text-slate-600">Nueva cita · huecos según capacidad</figcaption>
+    </figure>
+
+    <!-- ---------- PANTALLA: INICIO mejorado ---------- -->
+    <figure class="flex flex-col items-center">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <div class="scroll p-5">
+            <div class="text-center mb-5 mt-2">
+              <h1 class="text-xl font-bold">PELUQUERÍA ALI</h1>
+              <p class="text-xs text-slate-500">Jueves, 11 de junio</p>
+            </div>
+            <!-- NUEVO: resumen del día -->
+            <div class="rounded-2xl bg-slate-900 text-white p-4 mb-4">
+              <div class="text-xs text-slate-400 mb-2">Resumen de hoy</div>
+              <div class="grid grid-cols-3 gap-2 text-center">
+                <div><div class="text-2xl font-bold">7</div><div class="text-[10px] text-slate-400">Citas</div></div>
+                <div><div class="text-2xl font-bold text-emerald-400">9</div><div class="text-[10px] text-slate-400">Huecos</div></div>
+                <div><div class="text-2xl font-bold">168€</div><div class="text-[10px] text-slate-400">Previsto</div></div>
+              </div>
+            </div>
+            <!-- NUEVO: próxima cita -->
+            <div class="rounded-xl border bg-white p-3 mb-4 flex items-center gap-3">
+              <div class="w-11 h-11 rounded-lg bg-emerald-100 grid place-items-center text-emerald-700 font-bold text-xs">12:00</div>
+              <div class="flex-1"><div class="text-sm font-medium">Carmen Gil</div><div class="text-xs text-slate-500">Coloración · 90 min</div></div>
+              <span class="text-slate-300">›</span>
+            </div>
+            <button class="w-full rounded-2xl bg-slate-900 text-white font-semibold py-3.5 mb-4">+ Nueva cita</button>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="rounded-2xl border-2 border-blue-200 bg-blue-50 aspect-square grid place-items-center"><div class="text-center text-blue-700"><div class="text-3xl">📅</div><div class="text-xs font-semibold mt-1">Calendario</div></div></div>
+              <div class="rounded-2xl border-2 border-cyan-200 bg-cyan-50 aspect-square grid place-items-center"><div class="text-center text-cyan-700"><div class="text-3xl">👥</div><div class="text-xs font-semibold mt-1">Clientes</div></div></div>
+              <div class="rounded-2xl border-2 border-violet-200 bg-violet-50 aspect-square grid place-items-center"><div class="text-center text-violet-700"><div class="text-3xl">🧾</div><div class="text-xs font-semibold mt-1">Tickets</div></div></div>
+              <div class="rounded-2xl border-2 border-amber-200 bg-amber-50 aspect-square grid place-items-center"><div class="text-center text-amber-700"><div class="text-3xl">🕑</div><div class="text-xs font-semibold mt-1">Horarios</div></div></div>
+            </div>
+          </div>
+          <div class="flex border-t bg-white">
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-900 font-medium"><span>🏠</span>Inicio</div>
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-400"><span>📅</span>Calendario</div>
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-400"><span>📋</span>Citas</div>
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-400"><span>👥</span>Clientes</div>
+            <div class="flex-1 flex flex-col items-center py-2 text-[10px] text-slate-400"><span>🧾</span>Tickets</div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="mt-3 text-sm font-medium text-slate-600">Inicio · con resumen del día (propuesta)</figcaption>
+    </figure>
+
+    <!-- ---------- PANTALLA: FICHA CLIENTE (propuesta) ---------- -->
+    <figure class="flex flex-col items-center">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <div class="flex items-center gap-2 px-4 h-12 border-b bg-white">
+            <span class="text-slate-400">‹</span><span class="font-bold text-sm">Ficha de cliente</span>
+          </div>
+          <div class="scroll p-4 space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="w-14 h-14 rounded-full bg-cyan-100 grid place-items-center text-cyan-700 font-bold text-lg">ML</div>
+              <div>
+                <div class="font-bold">María López</div>
+                <div class="text-xs text-slate-500">📞 626 000 000</div>
+                <div class="flex gap-1.5 mt-1">
+                  <span class="tag bg-emerald-100 text-emerald-700">8 visitas</span>
+                  <span class="tag bg-violet-100 text-violet-700">VIP</span>
+                </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button class="rounded-lg bg-emerald-600 text-white py-2 text-xs font-medium">💬 WhatsApp</button>
+              <button class="rounded-lg bg-slate-900 text-white py-2 text-xs font-medium">+ Nueva cita</button>
+            </div>
+            <div class="rounded-xl border bg-white p-3">
+              <div class="text-xs font-semibold text-slate-500 mb-2">PREFERENCIAS / NOTAS</div>
+              <p class="text-sm text-slate-700">Tinte 6.0 sin amoniaco. Alérgica a la parafenilendiamina. Le gusta capa corta detrás.</p>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-slate-500 mb-2">HISTORIAL</div>
+              <div class="space-y-2">
+                <div class="rounded-lg border bg-white p-3 flex justify-between"><div><div class="text-sm font-medium">Corte de cabello</div><div class="text-xs text-slate-500">14 may 2026</div></div><span class="text-sm font-semibold">12 €</span></div>
+                <div class="rounded-lg border bg-white p-3 flex justify-between"><div><div class="text-sm font-medium">Mechas + corte</div><div class="text-xs text-slate-500">2 abr 2026</div></div><span class="text-sm font-semibold">47 €</span></div>
+                <div class="rounded-lg border bg-white p-3 flex justify-between"><div><div class="text-sm font-medium">Coloración</div><div class="text-xs text-slate-500">5 mar 2026</div></div><span class="text-sm font-semibold">35 €</span></div>
+              </div>
+              <div class="text-center text-xs text-slate-400 mt-2">Gasto total: <b class="text-slate-600">312 €</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="mt-3 text-sm font-medium text-slate-600">Ficha de cliente con historial (propuesta)</figcaption>
+    </figure>
+
+    <!-- ---------- PANTALLA: RECORDATORIO WHATSAPP (propuesta) ---------- -->
+    <figure class="flex flex-col items-center">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="phone-screen">
+          <div class="flex items-center gap-2 px-4 h-12 border-b bg-white">
+            <span class="text-slate-400">‹</span><span class="font-bold text-sm">Detalle de cita</span>
+          </div>
+          <div class="scroll p-4 space-y-4">
+            <div class="rounded-xl border bg-white p-4">
+              <div class="font-bold">Carmen Gil</div>
+              <div class="text-sm text-slate-500 mt-0.5">Coloración · 90 min · 35 €</div>
+              <div class="mt-2 text-sm">📅 Jueves 11 jun · 🕛 12:00–13:30</div>
+              <span class="tag bg-emerald-100 text-emerald-700 mt-2 inline-block">Activa</span>
+            </div>
+            <!-- NUEVO: recordatorio -->
+            <div class="rounded-xl border-2 border-emerald-200 bg-white p-4">
+              <span class="tag bg-emerald-100 text-emerald-700 mb-2 inline-block">NUEVO</span>
+              <div class="text-sm font-semibold mb-1">Recordatorio al cliente</div>
+              <p class="text-xs text-slate-500 mb-3">Envía un mensaje listo para WhatsApp con un toque.</p>
+              <div class="rounded-lg bg-slate-50 border p-3 text-xs text-slate-600 mb-3">
+                Hola Carmen 👋 Te recordamos tu cita en <b>Peluquería Ali</b> el <b>jueves 11 jun a las 12:00</b>. ¡Te esperamos!
+              </div>
+              <button class="w-full rounded-lg bg-emerald-600 text-white py-2.5 text-sm font-medium">💬 Enviar por WhatsApp</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button class="rounded-lg border py-2.5 text-sm font-medium">✎ Editar</button>
+              <button class="rounded-lg border border-rose-200 text-rose-600 py-2.5 text-sm font-medium">Cancelar cita</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption class="mt-3 text-sm font-medium text-slate-600">Detalle de cita + recordatorio WhatsApp (propuesta)</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<footer class="bg-slate-900 text-slate-400 text-center py-8 text-sm">
+  Mockup no funcional · solo para revisión visual · PELUQUERÍA ALI
+</footer>
+
+</body>
+</html>
