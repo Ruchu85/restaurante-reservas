@@ -1,12 +1,13 @@
 """
-Google Places API (Legacy) source.
+Google Places API (New) source.
 
-Uses Text Search + Place Details endpoints.
+Uses the modern Places API (New) endpoints:
+  - Text Search: POST https://places.googleapis.com/v1/places:searchText
+  - Auth via X-Goog-Api-Key header (not query param)
+  - Field masks via X-Goog-FieldMask header
+
 Docs: https://developers.google.com/maps/documentation/places/web-service/text-search
-
-Rate limits: 600 QPM for Places API.
-Cost: Text Search $17/1000, Place Details $17/1000 (basic fields).
-Free monthly credit: $200 (~11,750 requests).
+Cost: $17/1000 requests. Free credit: $200/month (~11,750 requests free).
 """
 from __future__ import annotations
 
@@ -22,21 +23,22 @@ from src.models.lead import LeadCreate
 from src.sources.base import BaseSource
 from src.utils.rate_limiter import RateLimiter
 
-_TEXT_SEARCH_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json"
-_DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json"
+_TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
 
-_DETAIL_FIELDS = ",".join([
-    "name",
-    "formatted_address",
-    "formatted_phone_number",
-    "website",
-    "rating",
-    "user_ratings_total",
-    "opening_hours",
-    "business_status",
-    "url",
-    "types",
-    "address_components",
+_FIELD_MASK = ",".join([
+    "places.id",
+    "places.displayName",
+    "places.formattedAddress",
+    "places.nationalPhoneNumber",
+    "places.websiteUri",
+    "places.rating",
+    "places.userRatingCount",
+    "places.businessStatus",
+    "places.regularOpeningHours",
+    "places.googleMapsUri",
+    "places.addressComponents",
+    "places.types",
+    "nextPageToken",
 ])
 
 _CHAIN_KEYWORDS = [
@@ -70,28 +72,23 @@ class GooglePlacesSource(BaseSource):
 
         logger.info(f"[Google Places] Buscando: '{location_query}'")
 
-        place_ids: list[str] = []
+        leads: list[LeadCreate] = []
         next_token: str | None = None
 
         for page in range(max_pages):
             self._limiter.wait()
-            results, next_token = self._text_search(location_query, next_token)
-            place_ids.extend(results)
-            logger.debug(f"  Página {page + 1}: {len(results)} resultados")
-            if not next_token:
-                break
-            time.sleep(2)  # Google requires a short delay before using pagetoken
+            places, next_token = self._text_search(location_query, next_token)
 
-        logger.info(f"[Google Places] {len(place_ids)} lugares encontrados — obteniendo detalles...")
-
-        leads: list[LeadCreate] = []
-        for place_id in place_ids:
-            self._limiter.wait()
-            detail = self._get_details(place_id)
-            if detail:
-                lead = self._map_to_lead(detail, city, province)
+            for place in places:
+                lead = self._map_to_lead(place, city, province)
                 if lead:
                     leads.append(lead)
+
+            logger.debug(f"  Página {page + 1}: {len(places)} resultados")
+
+            if not next_token:
+                break
+            time.sleep(2)
 
         logger.info(f"[Google Places] {len(leads)} leads válidos procesados.")
         return leads
@@ -99,80 +96,74 @@ class GooglePlacesSource(BaseSource):
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=2, max=10))
     def _text_search(
         self, query: str, page_token: str | None = None
-    ) -> tuple[list[str], str | None]:
-        params: dict[str, Any] = {
-            "query": query,
-            "type": "hair_salon|beauty_salon",
-            "language": "es",
-            "region": "es",
-            "key": self._api_key,
+    ) -> tuple[list[dict], str | None]:
+        body: dict[str, Any] = {
+            "textQuery": query,
+            "languageCode": "es",
+            "regionCode": "ES",
+            "maxResultCount": 20,
         }
         if page_token:
-            params["pagetoken"] = page_token
+            body["pageToken"] = page_token
 
-        response = self._client.get(_TEXT_SEARCH_URL, params=params)
-        response.raise_for_status()
+        response = self._client.post(
+            _TEXT_SEARCH_URL,
+            headers={
+                "X-Goog-Api-Key": self._api_key,
+                "X-Goog-FieldMask": _FIELD_MASK,
+                "Content-Type": "application/json",
+            },
+            json=body,
+        )
+
+        if response.status_code != 200:
+            logger.warning(
+                f"[Google Places] HTTP {response.status_code}: {response.text[:200]}"
+            )
+            response.raise_for_status()
+
         data = response.json()
+        places = data.get("places", [])
+        next_token = data.get("nextPageToken")
+        return places, next_token
 
-        if data.get("status") not in ("OK", "ZERO_RESULTS"):
-            logger.warning(f"[Google Places] Estado inesperado: {data.get('status')} — {data.get('error_message', '')}")
-            return [], None
-
-        place_ids = [r["place_id"] for r in data.get("results", [])]
-        next_token = data.get("next_page_token")
-        return place_ids, next_token
-
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=2, max=10))
-    def _get_details(self, place_id: str) -> dict | None:
-        params = {
-            "place_id": place_id,
-            "fields": _DETAIL_FIELDS,
-            "language": "es",
-            "key": self._api_key,
-        }
-        response = self._client.get(_DETAILS_URL, params=params)
-        response.raise_for_status()
-        data = response.json()
-
-        if data.get("status") != "OK":
-            return None
-        return data.get("result")
-
-    def _map_to_lead(self, result: dict, city: str, province: str) -> LeadCreate | None:
-        business_status = result.get("business_status", "")
+    def _map_to_lead(self, place: dict, city: str, province: str) -> LeadCreate | None:
+        business_status = place.get("businessStatus", "")
         if business_status in ("CLOSED_PERMANENTLY", "CLOSED_TEMPORARILY"):
-            logger.debug(f"  Ignorado (cerrado): {result.get('name')}")
             return None
 
-        types = result.get("types", [])
-        if not any(t in types for t in ("hair_salon", "beauty_salon", "barber_shop")):
-            if "point_of_interest" not in types:
-                logger.debug(f"  Ignorado (tipo no relevante): {result.get('name')} — {types}")
-                return None
+        types = place.get("types", [])
+        if not any(t in types for t in ("hair_salon", "beauty_salon", "barber_shop", "point_of_interest")):
+            return None
 
-        name = result.get("name", "")
-        address_components = result.get("address_components", [])
+        name = place.get("displayName", {}).get("text", "")
+        if not name:
+            return None
+
+        address_components = place.get("addressComponents", [])
         detected_city, detected_province, postal_code = _extract_address_parts(address_components)
 
         hours_text = None
-        if result.get("opening_hours"):
-            periods = result["opening_hours"].get("weekday_text", [])
-            hours_text = "; ".join(periods)
+        opening_hours = place.get("regularOpeningHours", {})
+        if opening_hours:
+            descriptions = opening_hours.get("weekdayDescriptions", [])
+            hours_text = "; ".join(descriptions)
 
-        estimated_size = _estimate_size(name, result.get("user_ratings_total", 0))
+        review_count = place.get("userRatingCount", 0)
+        estimated_size = _estimate_size(name, review_count)
 
         return LeadCreate(
             name=name,
-            address=result.get("formatted_address"),
+            address=place.get("formattedAddress"),
             city=detected_city or city,
             province=detected_province or province,
             postal_code=postal_code,
-            phone=result.get("formatted_phone_number"),
-            website=result.get("website"),
-            google_place_id=result.get("place_id"),
-            google_maps_url=result.get("url"),
-            rating=result.get("rating"),
-            review_count=result.get("user_ratings_total"),
+            phone=place.get("nationalPhoneNumber"),
+            website=place.get("websiteUri"),
+            google_place_id=place.get("id"),
+            google_maps_url=place.get("googleMapsUri"),
+            rating=place.get("rating"),
+            review_count=review_count,
             hours_text=hours_text,
             source=self.source_name,
             estimated_size=estimated_size,
@@ -182,24 +173,22 @@ class GooglePlacesSource(BaseSource):
         self._client.close()
 
 
-def _extract_address_parts(
-    components: list[dict],
-) -> tuple[str, str, str]:
+def _extract_address_parts(components: list[dict]) -> tuple[str, str, str]:
     city = province = postal_code = ""
     for c in components:
         types = c.get("types", [])
+        long_name = c.get("longText", "") or c.get("long_name", "")
         if "locality" in types:
-            city = c.get("long_name", "")
+            city = long_name
         elif "administrative_area_level_2" in types:
-            province = c.get("long_name", "")
+            province = long_name
         elif "postal_code" in types:
-            postal_code = c.get("long_name", "")
+            postal_code = long_name
     return city, province, postal_code
 
 
 def _estimate_size(name: str, review_count: int) -> str:
-    name_lower = name.lower()
-    if any(k in name_lower for k in _CHAIN_KEYWORDS):
+    if any(k in name.lower() for k in _CHAIN_KEYWORDS):
         return "large"
     if review_count > 200:
         return "medium"
