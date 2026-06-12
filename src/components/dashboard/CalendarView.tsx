@@ -274,9 +274,11 @@ export function CalendarView({
 
   return (
     <>
-    <div className="rounded-xl border border-border bg-white">
-      {/* Toolbar — sticky so the day header stays visible while scrolling */}
-      <div className="sticky top-0 z-20 bg-slate-900 text-white rounded-t-xl border-b border-slate-700">
+    {/* On mobile: fixed height so the toolbar never scrolls away and content scrolls inside.
+        On desktop: auto height, card expands naturally with content. */}
+    <div className="rounded-xl border border-border bg-white flex flex-col h-[calc(100dvh-6rem)] overflow-hidden md:h-auto md:overflow-visible">
+      {/* Toolbar — flex-shrink-0 keeps it pinned at the top; content below scrolls */}
+      <div className="flex-shrink-0 bg-slate-900 text-white rounded-t-xl border-b border-slate-700">
         <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
           <div className="flex items-center gap-0.5 flex-shrink-0">
             <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" onClick={() => navigate(-1)}>
@@ -354,9 +356,12 @@ export function CalendarView({
         </div>
       </div>
 
+      {/* Scrollable content — flex-1 + min-h-0 is the key pair for flex-child overflow scroll */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+
       {/* ===== DAY VIEW ===== */}
       {view === "day" && (
-        <div className="overflow-x-hidden">
+        <div>
           {isBlocked(date) && (
             <div className="bg-red-50 border-b border-red-200 px-4 py-3 text-sm text-red-700 font-medium flex items-center gap-2">
               <span className="text-base">🚫</span>
@@ -703,9 +708,11 @@ export function CalendarView({
         </div>
       )}
 
-      {/* Mobile week strip (day view only) */}
+      </div>{/* end scrollable content */}
+
+      {/* Mobile week strip — flex-shrink-0 keeps it pinned at the bottom of the card */}
       {view === "day" && (
-        <div className="border-t border-border px-2 py-2 flex gap-1 overflow-x-auto md:hidden">
+        <div className="flex-shrink-0 border-t border-border px-2 py-2 flex gap-1 overflow-x-auto md:hidden">
           {weekDays.map((day, i) => {
             const isT = sameDay(day, today);
             const isSelected = sameDay(day, date);
