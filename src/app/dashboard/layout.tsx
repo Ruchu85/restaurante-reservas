@@ -28,7 +28,7 @@ export default async function DashboardLayout({
         userName={profile?.full_name ?? user.email ?? "Usuario"}
         userRole={profile?.role ?? "staff"}
       />
-      <main className="flex-1 overflow-auto pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         <div className="mx-auto max-w-5xl p-4 md:p-6">{children}</div>
       </main>
     </div>

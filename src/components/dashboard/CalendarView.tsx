@@ -274,25 +274,25 @@ export function CalendarView({
 
   return (
     <>
-    <div className="rounded-xl border border-border bg-white overflow-hidden">
-      {/* Toolbar */}
-      <div className="border-b border-border">
+    <div className="rounded-xl border border-border bg-white">
+      {/* Toolbar — sticky so the day header stays visible while scrolling */}
+      <div className="sticky top-0 z-20 bg-slate-900 text-white rounded-t-xl border-b border-slate-700">
         <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
           <div className="flex items-center gap-0.5 flex-shrink-0">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" onClick={() => navigate(-1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(1)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 hover:text-white" onClick={() => navigate(1)}>
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="sm" className="h-8 text-xs px-2" onClick={goToday}>
+            <Button variant="ghost" size="sm" className="h-8 text-xs px-2 text-white/80 hover:bg-white/10 hover:text-white border border-white/20" onClick={goToday}>
               Hoy
             </Button>
           </div>
           <h2
             className={cn(
-              "flex-1 text-sm font-medium text-center truncate capitalize",
-              isToday && view === "day" && "font-semibold",
+              "flex-1 text-sm font-semibold text-center truncate capitalize text-white",
+              isToday && view === "day" && "text-white",
             )}
           >
             {headerTitle}
@@ -301,7 +301,7 @@ export function CalendarView({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-foreground"
+              className="h-8 w-8 flex-shrink-0 text-white/70 hover:bg-white/10 hover:text-white"
               onClick={handlePrintView}
               title="Descargar tickets PDF"
             >
@@ -310,7 +310,7 @@ export function CalendarView({
           )}
           <Button
             size="sm"
-            className="h-8 text-xs px-3 flex-shrink-0"
+            className="h-8 text-xs px-3 flex-shrink-0 bg-white text-slate-900 hover:bg-slate-100"
             onClick={() =>
               router.push(`/dashboard/citas/nueva?date=${toLocalDateString(date)}`)
             }
@@ -320,7 +320,7 @@ export function CalendarView({
           </Button>
         </div>
         <div className="px-3 pb-2.5 flex gap-2">
-          <div className="flex flex-1 rounded-lg border border-border bg-slate-50 p-0.5 gap-0.5">
+          <div className="flex flex-1 rounded-lg border border-white/20 bg-white/10 p-0.5 gap-0.5">
             {(["day", "week", "month"] as ViewMode[]).map((v) => (
               <button
                 key={v}
@@ -329,7 +329,7 @@ export function CalendarView({
                   "flex-1 rounded-md py-1.5 text-xs font-medium transition-colors",
                   view === v
                     ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700",
+                    : "text-white/70 hover:text-white hover:bg-white/10",
                 )}
               >
                 {VIEW_LABELS[v]}
@@ -340,12 +340,12 @@ export function CalendarView({
             <select
               value={staffFilter}
               onChange={(e) => setStaffFilter(e.target.value)}
-              className="rounded-lg border border-border bg-white px-2 text-xs font-medium text-slate-700 max-w-[40%]"
+              className="rounded-lg border border-white/20 bg-white/10 px-2 text-xs font-medium text-white max-w-[40%]"
               aria-label="Filtrar por profesional"
             >
-              <option value="all">Todos</option>
+              <option value="all" className="text-slate-900">Todos</option>
               {staff.map((s) => (
-                <option key={s.id} value={s.id}>
+                <option key={s.id} value={s.id} className="text-slate-900">
                   {s.name}
                 </option>
               ))}
@@ -356,7 +356,7 @@ export function CalendarView({
 
       {/* ===== DAY VIEW ===== */}
       {view === "day" && (
-        <div className="overflow-auto">
+        <div className="overflow-x-hidden">
           {isBlocked(date) && (
             <div className="bg-red-50 border-b border-red-200 px-4 py-3 text-sm text-red-700 font-medium flex items-center gap-2">
               <span className="text-base">🚫</span>
