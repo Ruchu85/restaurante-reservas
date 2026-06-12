@@ -1,31 +1,26 @@
 Hola,
 
-Mi nombre es {{ sender.name }}, y llevo un tiempo desarrollando una aplicación de gestión de citas pensada específicamente para peluquerías y salones de belleza como {{ lead.name }}.
-{% if lead.uses_whatsapp %}
+Me llamo {{ sender.name }} y he desarrollado una aplicación de gestión de agenda pensada para propietarios de peluquerías como tú.
 
-He visto que gestionáis las citas por WhatsApp o teléfono. Sé que funciona, pero acaba siendo una fuente constante de interrupciones: mensajes fuera de horario, reservas duplicadas, cancelaciones de último momento...
-{% elif not lead.has_online_booking %}
+La idea es sencilla: tener el control total de tu negocio desde el móvil, sin depender de agendas en papel ni de herramientas que no están pensadas para salones.
 
-Me he dado cuenta de que {{ lead.name }} todavía no tiene un sistema de reservas online. En muchos salones eso significa gestionar las citas por teléfono o mensajes, lo que consume tiempo que podríais dedicar a vuestros clientes.
-{% else %}
+Con la app puedes:
 
-Me llamó la atención {{ lead.name }}{% if lead.city %} en {{ lead.city }}{% endif %} y me gustaría presentaros una solución que ya está ayudando a otros salones a organizarse mejor.
-{% endif %}
+  • Agendar y gestionar todas las citas en segundos, sin errores ni solapamientos
+  • Ver de un vistazo qué horas son las más ocupadas y cuáles tienes libres
+  • Enviar avisos y recordatorios a tus clientes por WhatsApp automáticamente
+  • Llevar un control claro de la facturación y los servicios más demandados
+  • Acceder a todo desde el móvil, en cualquier momento
 
-Con nuestra app, vuestros clientes pueden reservar cita online en cualquier momento sin necesidad de llamar, y vosotros tenéis la agenda siempre organizada y accesible desde el móvil.
+El resultado: menos tiempo gestionando y más tiempo atendiendo a tus clientes.
 
-Entre otras cosas:
+El precio es realmente asequible para cualquier negocio local, y puedes probarlo sin ningún compromiso. Si durante el periodo de prueba no te convence, te devolvemos el dinero sin preguntas.
 
-  • Reservas online 24/7 sin interrupciones para el equipo
-  • Recordatorios automáticos que reducen las cancelaciones
-  • Agenda visual por profesional y día
-  • Sin complicaciones técnicas — está pensada para negocios locales
-
-Si os parece interesante, estaré encantado de mostraros cómo funciona en una llamada rápida de 15 minutos.
+Si quieres que te cuente más o te explique cómo encajaría en tu negocio concreto, responde a este email y hablamos.
 
 Un saludo,
 {{ sender.name }}
-{{ sender.email }}
+gesticitas@gmail.com
 
 ---
-Si preferís no recibir más mensajes de este tipo, basta con responder «No gracias» y no volveré a escribiros.
+Si prefieres no recibir más mensajes de este tipo, responde "No gracias" y no volveré a escribirte.
