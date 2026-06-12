@@ -38,9 +38,11 @@ def generate_draft(lead: LeadRead) -> EmailDraftCreate | None:
 
     subject = env.get_template("email_subject.j2").render(**ctx).strip()
     body_text = env.get_template("email_body.j2").render(**ctx).strip()
+    body_html = env.get_template("email_body_html.j2").render(**ctx).strip()
 
     return EmailDraftCreate(
         lead_id=lead.id,
         subject=subject,
         body_text=body_text,
+        body_html=body_html,
     )

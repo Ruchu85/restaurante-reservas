@@ -96,6 +96,8 @@ class EmailSender:
             "subject": draft.subject,
             "textContent": draft.body_text,
         }
+        if draft.body_html:
+            payload["htmlContent"] = draft.body_html
         with httpx.Client(timeout=15.0) as client:
             response = client.post(
                 _BREVO_SEND_URL,
@@ -112,7 +114,11 @@ class EmailSender:
         msg["From"] = f"{settings.sender_name} <{settings.sender_email}>"
         msg["To"] = to_email
         msg["Reply-To"] = settings.sender_reply_to or settings.sender_email
+        # En multipart/alternative el último adjunto es el preferido:
+        # texto plano primero (fallback) y HTML después.
         msg.attach(MIMEText(draft.body_text, "plain", "utf-8"))
+        if draft.body_html:
+            msg.attach(MIMEText(draft.body_html, "html", "utf-8"))
 
         with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
             server.ehlo()
