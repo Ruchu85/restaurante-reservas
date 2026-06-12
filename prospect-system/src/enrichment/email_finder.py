@@ -108,7 +108,7 @@ def _fetch_html(url: str) -> str:
 
 
 def _extract_email_from_html(html: str) -> str | None:
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, "html.parser")
 
     # Check mailto links first (most reliable)
     for a in soup.find_all("a", href=re.compile(r"mailto:", re.I)):

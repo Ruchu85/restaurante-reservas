@@ -87,7 +87,7 @@ def _fetch_page(url: str, timeout: float) -> str:
 
 def _analyze_html(html: str, url: str) -> WebAnalysisResult:
     result = WebAnalysisResult()
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, "html.parser")
     full_text = soup.get_text(separator=" ").lower()
 
     # Check all links for known booking platforms
