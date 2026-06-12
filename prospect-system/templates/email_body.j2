@@ -1,0 +1,31 @@
+Hola,
+
+Mi nombre es {{ sender.name }}, y llevo un tiempo desarrollando una aplicación de gestión de citas pensada específicamente para peluquerías y salones de belleza como {{ lead.name }}.
+{% if lead.uses_whatsapp %}
+
+He visto que gestionáis las citas por WhatsApp o teléfono. Sé que funciona, pero acaba siendo una fuente constante de interrupciones: mensajes fuera de horario, reservas duplicadas, cancelaciones de último momento...
+{% elif not lead.has_online_booking %}
+
+Me he dado cuenta de que {{ lead.name }} todavía no tiene un sistema de reservas online. En muchos salones eso significa gestionar las citas por teléfono o mensajes, lo que consume tiempo que podríais dedicar a vuestros clientes.
+{% else %}
+
+Me llamó la atención {{ lead.name }}{% if lead.city %} en {{ lead.city }}{% endif %} y me gustaría presentaros una solución que ya está ayudando a otros salones a organizarse mejor.
+{% endif %}
+
+Con nuestra app, vuestros clientes pueden reservar cita online en cualquier momento sin necesidad de llamar, y vosotros tenéis la agenda siempre organizada y accesible desde el móvil.
+
+Entre otras cosas:
+
+  • Reservas online 24/7 sin interrupciones para el equipo
+  • Recordatorios automáticos que reducen las cancelaciones
+  • Agenda visual por profesional y día
+  • Sin complicaciones técnicas — está pensada para negocios locales
+
+Si os parece interesante, estaré encantado de mostraros cómo funciona en una llamada rápida de 15 minutos.
+
+Un saludo,
+{{ sender.name }}
+{{ sender.email }}
+
+---
+Si preferís no recibir más mensajes de este tipo, basta con responder «No gracias» y no volveré a escribiros.
