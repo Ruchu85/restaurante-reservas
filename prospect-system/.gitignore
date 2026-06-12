@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Configuración y secretos
+.env
+
+# Base de datos local y datos
+data/*.db
+data/*.csv
+
+# Logs
+logs/*.log

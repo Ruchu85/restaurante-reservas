@@ -118,6 +118,8 @@ def prospect(
 def enrich(
     limit: int = typer.Option(50, help="Leads a enriquecer"),
     status: str = typer.Option("new", help="Estado de los leads a procesar"),
+    province: Optional[str] = typer.Option(None, help="Filtrar por provincia. Ej: 'León'"),
+    city: Optional[str] = typer.Option(None, help="Filtrar por ciudad. Ej: 'Ponferrada'"),
 ):
     """
     Enriquece leads: analiza su web, detecta booking platform y busca email.
@@ -128,7 +130,7 @@ def enrich(
 
     with get_session() as session:
         repo = LeadRepository(session)
-        leads = repo.list(status=status, limit=limit)
+        leads = repo.list(status=status, limit=limit, province=province, city=city)
 
     if not leads:
         console.print("[yellow]No hay leads con ese estado para enriquecer.[/yellow]")
@@ -213,6 +215,8 @@ def score(
 def emails_generate(
     min_score: int = typer.Option(50, help="Score mínimo para generar email"),
     limit: int = typer.Option(50, help="Máximo de borradores a generar"),
+    province: Optional[str] = typer.Option(None, help="Filtrar por provincia. Ej: 'León'"),
+    city: Optional[str] = typer.Option(None, help="Filtrar por ciudad. Ej: 'Ponferrada'"),
 ):
     """
     Genera borradores de email para los leads con score suficiente.
@@ -228,6 +232,8 @@ def emails_generate(
             min_score=min_score,
             has_email=True,
             limit=limit,
+            province=province,
+            city=city,
         )
 
     if not leads:

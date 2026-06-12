@@ -2,17 +2,19 @@
 Email sender module.
 
 IMPORTANT: DRY_RUN=true is the hardcoded default.
-Emails are NEVER sent unless the user explicitly sets DRY_RUN=false in .env
-AND email_sending_configured() returns True.
+Emails are NEVER sent unless the user explicitly sets DRY_RUN=false in .env.
 
-This is enforced at two levels:
-  1. Settings.assert_not_dry_run() raises an exception if dry_run=True.
-  2. send() logs the email content and returns early without calling any API.
+Supports two backends (auto-detected from .env):
+  1. Brevo API  — set BREVO_API_KEY
+  2. Gmail SMTP — set SMTP_HOST, SMTP_USER, SMTP_PASSWORD
 """
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta
+import smtplib
+from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 import httpx
 from loguru import logger
@@ -30,10 +32,6 @@ class EmailSender:
         self._settings = get_settings()
 
     def send_approved_drafts(self, limit: int | None = None) -> dict:
-        """
-        Send all approved email drafts.
-        In dry-run mode: logs the emails without sending and returns summary.
-        """
         settings = self._settings
         max_to_send = limit or settings.daily_email_limit
 
@@ -60,7 +58,7 @@ class EmailSender:
 
             if not settings.email_sending_configured():
                 raise RuntimeError(
-                    "Configura BREVO_API_KEY o SMTP en .env para enviar emails reales."
+                    "Configura BREVO_API_KEY o SMTP_HOST+SMTP_USER+SMTP_PASSWORD en .env"
                 )
 
             sent = errors = 0
@@ -73,7 +71,11 @@ class EmailSender:
                     continue
 
                 try:
-                    self._send_via_brevo(draft, lead.email)
+                    if settings.brevo_api_key:
+                        self._send_via_brevo(draft, lead.email)
+                    else:
+                        self._send_via_smtp(draft, lead.email)
+
                     draft_repo.update_status(draft.id, "sent", sent_at=datetime.utcnow())
                     lead_repo.update(lead.id, status="email_sent", email_sent_at=datetime.utcnow(), email_status="sent")
                     logger.success(f"[Sender] Enviado a {lead.name} <{lead.email}>")
@@ -94,19 +96,29 @@ class EmailSender:
             "subject": draft.subject,
             "textContent": draft.body_text,
         }
-        if draft.body_html:
-            payload["htmlContent"] = draft.body_html
-
         with httpx.Client(timeout=15.0) as client:
             response = client.post(
                 _BREVO_SEND_URL,
-                headers={
-                    "api-key": settings.brevo_api_key,
-                    "Content-Type": "application/json",
-                },
+                headers={"api-key": settings.brevo_api_key, "Content-Type": "application/json"},
                 content=json.dumps(payload),
             )
             response.raise_for_status()
+
+    def _send_via_smtp(self, draft: EmailDraftRead, to_email: str) -> None:
+        settings = self._settings
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = draft.subject
+        msg["From"] = f"{settings.sender_name} <{settings.sender_email}>"
+        msg["To"] = to_email
+        msg["Reply-To"] = settings.sender_reply_to or settings.sender_email
+        msg.attach(MIMEText(draft.body_text, "plain", "utf-8"))
+
+        with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(settings.smtp_user, settings.smtp_password)
+            server.sendmail(settings.sender_email, to_email, msg.as_string())
 
 
 def _log_dry_run_email(draft: EmailDraftRead, lead) -> None:
