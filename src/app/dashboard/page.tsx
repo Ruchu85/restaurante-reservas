@@ -47,17 +47,21 @@ export default async function DashboardPage() {
   const todayLabel = now.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
 
   return (
-    <div className="flex flex-col items-center py-1">
-      {/* Header compacto */}
-      <div className="mb-2 text-center">
+    /* Ocupa exactamente el espacio disponible entre el padding superior y el nav inferior.
+       Los elementos fijos (header, resumen, botón) toman su tamaño natural;
+       la rejilla de accesos rellena el espacio restante con flex-1. */
+    <div className="flex flex-col h-[calc(100dvh-6rem)] max-w-xs mx-auto w-full md:h-auto">
+
+      {/* Header */}
+      <div className="text-center py-2">
         <h1 className="text-lg font-bold tracking-tight uppercase leading-tight">{salonName}</h1>
         <p className="text-muted-foreground text-xs capitalize">{todayLabel}</p>
       </div>
 
       {/* Resumen del día */}
-      <div className="w-full max-w-xs rounded-xl bg-slate-900 text-white p-3 mb-2">
+      <div className="rounded-xl bg-slate-900 text-white p-3 mb-2">
         <div className="text-[10px] text-slate-400 mb-1.5">Resumen de hoy</div>
-        <div className="grid grid-cols-3 gap-1 text-center">
+        <div className="grid grid-cols-3 text-center">
           <div>
             <div className="text-xl font-bold">{todays.length}</div>
             <div className="text-[10px] text-slate-400">Citas</div>
@@ -79,7 +83,7 @@ export default async function DashboardPage() {
       {next && (
         <Link
           href={`/dashboard/citas/${next.id}`}
-          className="w-full max-w-xs rounded-xl border bg-white px-3 py-2 mb-2 flex items-center gap-2.5 active:scale-[0.99] transition-transform"
+          className="rounded-xl border bg-white px-3 py-2 mb-2 flex items-center gap-2.5 active:scale-[0.99] transition-transform"
         >
           <div className="w-10 h-8 rounded-md bg-emerald-100 grid place-items-center text-emerald-700 font-bold text-xs flex-shrink-0">
             {formatTime(next.starts_at)}
@@ -95,32 +99,32 @@ export default async function DashboardPage() {
       {/* Nueva cita */}
       <Link
         href="/dashboard/citas/nueva"
-        className="mb-3 flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-white font-semibold text-sm w-full max-w-xs transition-all active:scale-95 hover:bg-slate-700"
+        className="mb-2 flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-white font-semibold text-sm w-full transition-all active:scale-95 hover:bg-slate-700"
       >
         <Plus className="h-4 w-4" />
         Nueva cita
       </Link>
 
-      {/* Rejilla 4×2 — cabe en una sola pantalla */}
-      <div className="grid grid-cols-4 gap-2 w-full max-w-xs">
+      {/* Rejilla 4×2 — ocupa el espacio restante de la pantalla (flex-1 + min-h-0) */}
+      <div className="grid grid-cols-4 grid-rows-2 gap-2 flex-1 min-h-0">
         {cards.map(({ href, icon: Icon, label, bg, fg }) => (
           <Link
             key={href}
             href={href}
-            className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border py-3 transition-all active:scale-95 ${bg}`}
+            className={`flex flex-col items-center justify-center gap-2 rounded-xl border transition-all active:scale-95 ${bg}`}
           >
-            <Icon className={`h-6 w-6 ${fg}`} />
-            <span className={`text-[10px] font-semibold leading-none text-center ${fg}`}>{label}</span>
+            <Icon className={`h-7 w-7 ${fg}`} />
+            <span className={`text-[11px] font-semibold leading-none text-center ${fg}`}>{label}</span>
           </Link>
         ))}
-
-        <form action={signOut}>
+        {/* display:contents hace que el <form> no interrumpa el grid */}
+        <form action={signOut} className="contents">
           <button
             type="submit"
-            className="flex flex-col items-center justify-center gap-1.5 rounded-xl border py-3 w-full transition-all active:scale-95 bg-rose-50 border-rose-200"
+            className="flex flex-col items-center justify-center gap-2 rounded-xl border transition-all active:scale-95 bg-rose-50 border-rose-200"
           >
-            <LogOut className="h-6 w-6 text-rose-600" />
-            <span className="text-[10px] font-semibold leading-none text-rose-600">Salir</span>
+            <LogOut className="h-7 w-7 text-rose-600" />
+            <span className="text-[11px] font-semibold leading-none text-rose-600">Salir</span>
           </button>
         </form>
       </div>
