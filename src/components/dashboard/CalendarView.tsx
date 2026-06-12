@@ -356,8 +356,9 @@ export function CalendarView({
         </div>
       </div>
 
-      {/* Scrollable content — flex-1 + min-h-0 is the key pair for flex-child overflow scroll */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      {/* Scrollable content — overflow-auto handles both axes so week-view horizontal
+          scroll and day-header sticky both resolve to THIS container, not a nested one */}
+      <div className="flex-1 min-h-0 overflow-auto">
 
       {/* ===== DAY VIEW ===== */}
       {view === "day" && (
@@ -475,8 +476,7 @@ export function CalendarView({
 
       {/* ===== WEEK VIEW ===== */}
       {view === "week" && (
-        <div className="overflow-auto">
-          <div className="min-w-[560px]">
+        <div className="min-w-[560px]">
             {/* Day headers */}
             <div
               className="grid sticky top-0 bg-white z-20 border-b border-border"
@@ -602,7 +602,6 @@ export function CalendarView({
               </div>
             ))}
           </div>
-        </div>
       )}
 
       {/* ===== MONTH VIEW ===== */}
