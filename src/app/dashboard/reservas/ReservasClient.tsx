@@ -209,7 +209,13 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
             <ReservationForm
               restaurant={restaurant}
               tables={tables}
-              onClose={() => { setShowNew(false); fetchForDate(date); }}
+              defaultDate={date}
+              onClose={(savedDate) => {
+                setShowNew(false);
+                const target = savedDate ?? date;
+                if (target !== date) setDate(target);
+                fetchForDate(target);
+              }}
             />
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>

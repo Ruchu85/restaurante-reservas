@@ -21,10 +21,11 @@ interface Props {
     notes?: string | null;
     internal_notes?: string | null;
   };
-  onClose?: () => void;
+  defaultDate?: string;
+  onClose?: (savedDate?: string) => void;
 }
 
-export function ReservationForm({ restaurant, tables, defaultValues, onClose }: Props) {
+export function ReservationForm({ restaurant, tables, defaultValues, defaultDate, onClose }: Props) {
   const router = useRouter();
   const isEdit = Boolean(defaultValues?.id);
 
@@ -33,7 +34,7 @@ export function ReservationForm({ restaurant, tables, defaultValues, onClose }: 
   const [guestEmail, setGuestEmail] = useState(defaultValues?.guest_email ?? "");
   const [partySize, setPartySize] = useState(defaultValues?.party_size ?? 2);
   const [tableId, setTableId] = useState(defaultValues?.table_id ?? "");
-  const [date, setDate] = useState(defaultValues?.starts_at?.substring(0, 10) ?? "");
+  const [date, setDate] = useState(defaultValues?.starts_at?.substring(0, 10) ?? defaultDate ?? "");
   const [time, setTime] = useState(
     defaultValues?.starts_at
       ? new Date(defaultValues.starts_at).toLocaleTimeString("es-ES", {
@@ -57,11 +58,17 @@ export function ReservationForm({ restaurant, tables, defaultValues, onClose }: 
 
     setSaving(true);
     try {
-      // Build starts_at in Madrid local time → UTC ISO
+      // Build starts_at: interpret date+time as Europe/Madrid local → UTC ISO
       const [h, m] = time.split(":").map(Number);
-      const localDate = new Date(date + "T00:00:00");
-      localDate.setHours(h, m, 0, 0);
-      const startsAtISO = localDate.toISOString();
+      const hhmm = `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+      const noonMadridHour = parseInt(
+        new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Madrid", hour: "2-digit", hour12: false })
+          .format(new Date(`${date}T12:00:00Z`)), 10,
+      );
+      const offsetHours = noonMadridHour - 12;
+      const sign = offsetHours >= 0 ? "+" : "-";
+      const pad = String(Math.abs(offsetHours)).padStart(2, "0");
+      const startsAtISO = new Date(`${date}T${hhmm}:00${sign}${pad}:00`).toISOString();
 
       if (isEdit && defaultValues?.id) {
         const res = await updateReservation(defaultValues.id, {
@@ -93,13 +100,13 @@ export function ReservationForm({ restaurant, tables, defaultValues, onClose }: 
       }
 
       router.refresh();
-      onClose?.();
+      onClose?.(date);
     } finally {
       setSaving(false);
     }
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" });
   const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() + restaurant.max_advance_days);
 

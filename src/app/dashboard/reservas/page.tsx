@@ -1,6 +1,7 @@
 import { createAdminClient, getRestaurantId } from "@/lib/supabase/admin";
 import { getRestaurant, getActiveTables } from "@/lib/restaurant";
 import { ReservasClient } from "./ReservasClient";
+import { toMadridDate } from "@/lib/utils";
 import type { Reservation } from "@/types";
 
 export default async function ReservasPage({
@@ -9,7 +10,7 @@ export default async function ReservasPage({
   searchParams: Promise<{ date?: string }>;
 }) {
   const { date } = await searchParams;
-  const today = date ?? new Date().toISOString().split("T")[0];
+  const today = date ?? toMadridDate(new Date());
 
   const admin = createAdminClient();
   const restaurantId = await getRestaurantId();
