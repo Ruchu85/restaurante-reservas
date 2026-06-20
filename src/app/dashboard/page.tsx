@@ -127,7 +127,7 @@ export default async function DashboardPage() {
             {todayList.map((r) => (
               <Link
                 key={r.id}
-                href={`/dashboard/reservas/${r.id}`}
+                href={`/dashboard/reservas?date=${r.starts_at.split("T")[0]}`}
                 className="flex items-center gap-4 px-5 py-3.5 hover:bg-stone-50 transition-colors"
               >
                 <div className="flex-shrink-0 w-14">
