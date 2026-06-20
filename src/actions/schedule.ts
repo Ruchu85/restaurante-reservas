@@ -30,20 +30,29 @@ export async function upsertBusinessHours(input: BusinessHoursInput) {
 
   const hasSplit = Boolean(parsed.data.opens_at_2 && parsed.data.closes_at_2);
 
-  const { error } = await admin
+  const row = {
+    restaurant_id: restaurantId,
+    day_of_week: parsed.data.day_of_week,
+    is_open: parsed.data.is_open,
+    opens_at: parsed.data.opens_at ?? null,
+    closes_at: parsed.data.closes_at ?? null,
+    opens_at_2: hasSplit ? parsed.data.opens_at_2 : null,
+    closes_at_2: hasSplit ? parsed.data.closes_at_2 : null,
+  };
+
+  // The unique index on (restaurant_id, day_of_week) is a partial index
+  // (WHERE restaurant_id IS NOT NULL), which Supabase's onConflict doesn't support.
+  // Manual select → update or insert instead.
+  const { data: existing } = await admin
     .from("business_hours")
-    .upsert(
-      {
-        restaurant_id: restaurantId,
-        day_of_week: parsed.data.day_of_week,
-        is_open: parsed.data.is_open,
-        opens_at: parsed.data.opens_at ?? null,
-        closes_at: parsed.data.closes_at ?? null,
-        opens_at_2: hasSplit ? parsed.data.opens_at_2 : null,
-        closes_at_2: hasSplit ? parsed.data.closes_at_2 : null,
-      },
-      { onConflict: "restaurant_id,day_of_week" },
-    );
+    .select("id")
+    .eq("restaurant_id", restaurantId)
+    .eq("day_of_week", parsed.data.day_of_week)
+    .maybeSingle();
+
+  const { error } = existing
+    ? await admin.from("business_hours").update(row).eq("id", existing.id)
+    : await admin.from("business_hours").insert(row);
 
   if (error) return { error: error.message };
 
