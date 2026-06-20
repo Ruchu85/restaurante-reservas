@@ -11,7 +11,10 @@ import {
   isWithinBusinessHours,
 } from "@/lib/availability";
 import { addMinutes } from "@/lib/utils";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
+import { sendConfirmationEmail } from "@/lib/email";
 import { z } from "zod";
+import type { Reservation } from "@/types";
 
 // GET /api/reservations?date=YYYY-MM-DD&party_size=N
 export async function GET(request: NextRequest) {
@@ -48,7 +51,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ slots: [], message: "Para grupos grandes, por favor llámenos." });
   }
 
-  // Get existing reservations for the date
   const { data: existing } = await admin
     .from("reservations")
     .select("*")
@@ -81,13 +83,26 @@ const BookingSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   starts_at: z.string().datetime(),
   party_size: z.number().int().min(1).max(50),
-  guest_name: z.string().min(2).max(100),
-  guest_phone: z.string().min(6).max(30),
-  guest_email: z.string().email().optional(),
+  guest_name: z.string().min(2).max(100).trim(),
+  guest_phone: z
+    .string()
+    .trim()
+    .regex(/^[+\d\s\-().]{6,30}$/, "Teléfono inválido"),
+  guest_email: z.string().email("Email inválido").optional().or(z.literal("")),
   notes: z.string().max(500).optional(),
 });
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 10 booking attempts per IP per 10 minutes
+  const ip = getClientIp(request);
+  const { allowed } = rateLimit(`booking:${ip}`, { limit: 10, windowSeconds: 600 });
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Demasiadas solicitudes. Inténtalo de nuevo en unos minutos." },
+      { status: 429 },
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -97,7 +112,8 @@ export async function POST(request: NextRequest) {
 
   const parsed = BookingSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.message }, { status: 422 });
+    const msg = parsed.error.errors[0]?.message ?? "Datos inválidos";
+    return NextResponse.json({ error: msg }, { status: 422 });
   }
 
   const restaurantId = await getRestaurantId();
@@ -109,7 +125,7 @@ export async function POST(request: NextRequest) {
 
   const { data: restaurant } = await admin
     .from("restaurants")
-    .select("reservation_duration_minutes, min_advance_hours, max_party_size")
+    .select("reservation_duration_minutes, min_advance_hours, max_party_size, name, phone")
     .eq("id", restaurantId)
     .single();
 
@@ -117,12 +133,18 @@ export async function POST(request: NextRequest) {
     reservation_duration_minutes: number;
     min_advance_hours: number;
     max_party_size: number;
+    name: string;
+    phone: string | null;
   } | null;
 
   const startsAt = new Date(parsed.data.starts_at);
   const endsAt = addMinutes(startsAt, r?.reservation_duration_minutes ?? 90);
   const now = new Date();
   const hoursUntil = (startsAt.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+  if (hoursUntil < 0) {
+    return NextResponse.json({ error: "No puedes reservar en el pasado." }, { status: 422 });
+  }
 
   if (hoursUntil < (r?.min_advance_hours ?? 1)) {
     return NextResponse.json(
@@ -138,7 +160,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Validate business hours and blocked days
   const [businessHours, blocked, tables, existing] = await Promise.all([
     getBusinessHours(restaurantId),
     admin.from("blocked_days").select("id").eq("restaurant_id", restaurantId).eq("date", parsed.data.date).maybeSingle(),
@@ -172,6 +193,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const guestEmail = parsed.data.guest_email && parsed.data.guest_email.trim() !== ""
+    ? parsed.data.guest_email
+    : null;
+
   const { data, error } = await admin
     .from("reservations")
     .insert({
@@ -179,7 +204,7 @@ export async function POST(request: NextRequest) {
       table_id: bestTable.id,
       guest_name: parsed.data.guest_name,
       guest_phone: parsed.data.guest_phone,
-      guest_email: parsed.data.guest_email ?? null,
+      guest_email: guestEmail,
       party_size: parsed.data.party_size,
       starts_at: startsAt.toISOString(),
       ends_at: endsAt.toISOString(),
@@ -187,7 +212,7 @@ export async function POST(request: NextRequest) {
       source: "online",
       status: "confirmed",
     })
-    .select("id, confirmation_token, starts_at, ends_at, guest_name, party_size, table_id")
+    .select("*, table:restaurant_tables(id, name, capacity, section)")
     .single();
 
   if (error) {
@@ -200,5 +225,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Error al crear la reserva." }, { status: 500 });
   }
 
-  return NextResponse.json({ reservation: data }, { status: 201 });
+  const reservation = data as Reservation;
+
+  // Send confirmation email (best-effort, non-blocking)
+  if (guestEmail) {
+    void sendConfirmationEmail({
+      reservation,
+      restaurantName: r?.name ?? "Restaurante",
+      restaurantPhone: r?.phone,
+      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
+    });
+  }
+
+  return NextResponse.json(
+    {
+      reservation: {
+        id: reservation.id,
+        confirmation_token: reservation.confirmation_token,
+        starts_at: reservation.starts_at,
+        ends_at: reservation.ends_at,
+        guest_name: reservation.guest_name,
+        party_size: reservation.party_size,
+        table: reservation.table,
+      },
+    },
+    { status: 201 },
+  );
 }

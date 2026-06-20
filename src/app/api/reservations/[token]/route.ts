@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, getRestaurantId } from "@/lib/supabase/admin";
+import { sendCancellationEmail } from "@/lib/email";
+import type { Reservation } from "@/types";
 
 // GET /api/reservations/:token
 export async function GET(
@@ -32,7 +34,7 @@ export async function DELETE(
 
   const { data: reservation } = await admin
     .from("reservations")
-    .select("id, status, starts_at")
+    .select("id, status, starts_at, guest_name, guest_email, guest_phone, party_size, ends_at, confirmation_token, restaurant_id, table_id, notes, internal_notes, source, created_at, updated_at")
     .eq("confirmation_token", token)
     .single();
 
@@ -62,6 +64,21 @@ export async function DELETE(
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Send cancellation email (best-effort)
+  if (reservation.guest_email) {
+    const restaurantId = await getRestaurantId();
+    if (restaurantId) {
+      const { data: rest } = await admin.from("restaurants").select("name").eq("id", restaurantId).single();
+      const restaurantName = (rest as { name: string } | null)?.name ?? "Restaurante";
+
+      void sendCancellationEmail({
+        reservation: { ...reservation, status: "cancelled" } as Reservation,
+        restaurantName,
+        appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
+      });
+    }
   }
 
   return NextResponse.json({ success: true });

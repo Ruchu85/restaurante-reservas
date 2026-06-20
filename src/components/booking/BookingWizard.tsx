@@ -66,8 +66,19 @@ export function BookingWizard({ maxPartySize = 10 }: { maxPartySize?: number }) 
 
   async function handleSubmit() {
     if (!selectedSlot) return;
-    if (!guestName.trim()) { toast.error("Escribe tu nombre"); return; }
-    if (!guestPhone.trim()) { toast.error("Escribe tu teléfono"); return; }
+    if (!guestName.trim() || guestName.trim().length < 2) {
+      toast.error("Escribe tu nombre completo (mínimo 2 caracteres)");
+      return;
+    }
+    const phoneClean = guestPhone.trim();
+    if (!phoneClean || !/^[+\d\s\-().]{6,30}$/.test(phoneClean)) {
+      toast.error("Introduce un número de teléfono válido");
+      return;
+    }
+    if (guestEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
+      toast.error("El email no tiene un formato válido");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -151,12 +162,21 @@ export function BookingWizard({ maxPartySize = 10 }: { maxPartySize?: number }) 
           </div>
         </div>
 
-        <Link
-          href="/"
-          className="text-sm text-amber-600 hover:text-amber-700 font-medium"
-        >
-          ← Volver al inicio
-        </Link>
+        <div className="flex flex-col gap-3 max-w-sm mx-auto">
+          <Link
+            href={`/reservar/${confirmed.confirmation_token}`}
+            className="flex items-center justify-center gap-2 w-full rounded-xl border border-amber-200 bg-white py-3 text-sm font-semibold text-amber-700 hover:bg-amber-50 transition-colors"
+          >
+            Ver o cancelar mi reserva
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+          <Link
+            href="/"
+            className="text-sm text-stone-400 hover:text-stone-600 font-medium"
+          >
+            ← Volver al inicio
+          </Link>
+        </div>
       </div>
     );
   }
