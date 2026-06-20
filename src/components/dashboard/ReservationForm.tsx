@@ -234,7 +234,7 @@ export function ReservationForm({ restaurant, tables, defaultValues, defaultDate
         {onClose && (
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => onClose?.()}
             className="flex-1 rounded-lg border border-stone-200 py-2.5 text-sm font-medium text-stone-600 hover:bg-stone-50 transition-colors"
           >
             Cancelar
