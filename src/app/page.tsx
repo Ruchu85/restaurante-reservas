@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { Calendar, Clock, MapPin, Phone, Star, Users } from "lucide-react";
 import { getRestaurant, getBusinessHours } from "@/lib/restaurant";

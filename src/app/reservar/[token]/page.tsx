@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { getReservationByToken } from "@/actions/reservations";
 import { getRestaurant } from "@/lib/restaurant";

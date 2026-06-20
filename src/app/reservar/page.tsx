@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { BookingWizard } from "@/components/booking/BookingWizard";
