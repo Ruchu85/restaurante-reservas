@@ -152,10 +152,23 @@ export function businessHourRanges(
 }
 
 function parseTimeOnDate(date: string, time: string): Date {
+  // Interpret time as Europe/Madrid local time and return the UTC equivalent.
+  // time may be "HH:MM" or "HH:MM:SS" (Supabase returns time cols as HH:MM:SS).
   const [h, m] = time.split(":").map(Number);
-  const d = new Date(date + "T00:00:00");
-  d.setHours(h, m, 0, 0);
-  return d;
+  const hhmm = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  // Probe at noon to find Madrid's UTC offset (avoids DST-transition edge cases).
+  const noonMadridHour = parseInt(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Madrid",
+      hour: "2-digit",
+      hour12: false,
+    }).format(new Date(`${date}T12:00:00Z`)),
+    10,
+  );
+  const offsetHours = noonMadridHour - 12; // e.g. +2 in CEST, +1 in CET
+  const sign = offsetHours >= 0 ? "+" : "-";
+  const pad = String(Math.abs(offsetHours)).padStart(2, "0");
+  return new Date(`${date}T${hhmm}:00${sign}${pad}:00`);
 }
 
 function roundToSlot(date: Date, intervalMinutes: number): Date {
@@ -171,10 +184,11 @@ export function isWithinBusinessHours(
   endsAt: Date,
   businessHours: BusinessHours[],
 ): boolean {
-  const dayOfWeek = startsAt.getDay();
+  const madridDate = startsAt.toLocaleString("sv-SE", { timeZone: "Europe/Madrid" }).split(" ")[0];
+  const dayOfWeek = new Date(madridDate + "T12:00:00Z").getDay();
   const hours = businessHours.find((h) => h.day_of_week === dayOfWeek);
   if (!hours || !hours.is_open) return false;
-  const date = startsAt.toISOString().split("T")[0];
+  const date = madridDate;
   return businessHourRanges(date, hours).some(
     ({ open, close }) => startsAt >= open && endsAt <= close,
   );
