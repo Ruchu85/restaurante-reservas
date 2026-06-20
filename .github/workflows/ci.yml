@@ -73,6 +73,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Deploy to Vercel
+        if: env.VERCEL_TOKEN != ''
         run: npx vercel deploy --prod --yes
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
