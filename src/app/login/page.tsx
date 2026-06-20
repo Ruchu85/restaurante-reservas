@@ -1,10 +1,10 @@
 import { LoginForm } from "@/components/auth/LoginForm";
-import { Scissors } from "lucide-react";
+import { UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
-export const metadata = { title: "Acceso — Salón Demo" };
+export const metadata = { title: "Acceso — Restaurante Demo" };
 
 export default async function LoginPage({
   searchParams,
@@ -22,8 +22,8 @@ export default async function LoginPage({
       <header className="border-b bg-white">
         <div className="container mx-auto flex h-14 items-center px-4">
           <Link href="/" className="flex items-center gap-2 text-sm font-semibold hover:opacity-80">
-            <Scissors className="h-5 w-5" />
-            Salón Demo
+            <UtensilsCrossed className="h-5 w-5" />
+            Restaurante Demo
           </Link>
         </div>
       </header>
