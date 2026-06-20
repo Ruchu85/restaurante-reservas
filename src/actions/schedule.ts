@@ -1,67 +1,83 @@
 "use server";
 
-import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
+import { createAdminClient, getRestaurantId } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
-export async function upsertBusinessHours(
-  dayOfWeek: number,
-  opensAt: string,
-  closesAt: string,
-  isOpen: boolean,
-  opensAt2?: string | null,
-  closesAt2?: string | null,
-) {
+const BusinessHoursSchema = z.object({
+  day_of_week: z.number().int().min(0).max(6),
+  is_open: z.boolean(),
+  opens_at: z.string().nullable().optional(),
+  closes_at: z.string().nullable().optional(),
+  opens_at_2: z.string().nullable().optional(),
+  closes_at_2: z.string().nullable().optional(),
+});
+
+const BlockedDaySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  reason: z.string().max(200).nullable().optional(),
+});
+
+export type BusinessHoursInput = z.infer<typeof BusinessHoursSchema>;
+
+export async function upsertBusinessHours(input: BusinessHoursInput) {
+  const parsed = BusinessHoursSchema.safeParse(input);
+  if (!parsed.success) return { error: "Datos inválidos." };
+
   const admin = createAdminClient();
-  const salonId = await getSalonId();
-  if (!salonId) return { error: "No se encontró el salón." };
+  const restaurantId = await getRestaurantId();
+  if (!restaurantId) return { error: "Restaurante no encontrado." };
 
-  // Solo guardamos el segundo tramo si ambos valores están presentes
-  const hasSplit = Boolean(opensAt2 && closesAt2);
+  const hasSplit = Boolean(parsed.data.opens_at_2 && parsed.data.closes_at_2);
 
   const { error } = await admin
     .from("business_hours")
     .upsert(
       {
-        salon_id: salonId,
-        day_of_week: dayOfWeek,
-        opens_at: opensAt,
-        closes_at: closesAt,
-        is_open: isOpen,
-        opens_at_2: hasSplit ? opensAt2 : null,
-        closes_at_2: hasSplit ? closesAt2 : null,
+        restaurant_id: restaurantId,
+        day_of_week: parsed.data.day_of_week,
+        is_open: parsed.data.is_open,
+        opens_at: parsed.data.opens_at ?? null,
+        closes_at: parsed.data.closes_at ?? null,
+        opens_at_2: hasSplit ? parsed.data.opens_at_2 : null,
+        closes_at_2: hasSplit ? parsed.data.closes_at_2 : null,
       },
-      { onConflict: "salon_id,day_of_week" }
+      { onConflict: "restaurant_id,day_of_week" },
     );
 
   if (error) return { error: error.message };
+
   revalidatePath("/dashboard/horarios");
   revalidatePath("/dashboard/calendario");
   return { success: true };
 }
 
-export async function addBlockedDay(date: string, reason: string | null) {
-  const admin = createAdminClient();
-  const salonId = await getSalonId();
-  if (!salonId) return { error: "No se encontró el salón." };
+export async function addBlockedDay(input: z.infer<typeof BlockedDaySchema>) {
+  const parsed = BlockedDaySchema.safeParse(input);
+  if (!parsed.success) return { error: "Datos inválidos." };
 
-  const { data, error } = await admin
+  const admin = createAdminClient();
+  const restaurantId = await getRestaurantId();
+  if (!restaurantId) return { error: "Restaurante no encontrado." };
+
+  const { error } = await admin
     .from("blocked_days")
-    .insert({ salon_id: salonId, date, reason })
-    .select()
-    .single();
+    .insert({ ...parsed.data, restaurant_id: restaurantId });
 
   if (error) {
-    if (error.code === "23505") return { error: "Ya existe un cierre para esa fecha." };
+    if (error.code === "23505") return { error: "Ese día ya está bloqueado." };
     return { error: error.message };
   }
+
   revalidatePath("/dashboard/horarios");
-  return { data };
+  return { success: true };
 }
 
 export async function removeBlockedDay(id: string) {
   const admin = createAdminClient();
   const { error } = await admin.from("blocked_days").delete().eq("id", id);
   if (error) return { error: error.message };
+
   revalidatePath("/dashboard/horarios");
   return { success: true };
 }

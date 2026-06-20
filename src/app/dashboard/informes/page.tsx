@@ -1,198 +1,166 @@
-import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
-import { Card, CardContent } from "@/components/ui/card";
-import Link from "next/link";
-import { ChevronLeft, TrendingUp, Receipt, Users, Scissors } from "lucide-react";
-import type { Appointment } from "@/types";
+import { createAdminClient, getRestaurantId } from "@/lib/supabase/admin";
+import { toMadridDate } from "@/lib/utils";
+import { BarChart3, TrendingDown, TrendingUp, Users, Calendar } from "lucide-react";
 
-export const metadata = { title: "Informes — PELUQUERIA ALI" };
+export const metadata = { title: "Informes" };
 
-function monthRange() {
-  const d = new Date();
-  const first = new Date(d.getFullYear(), d.getMonth(), 1);
-  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-  const fmt = (x: Date) => {
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
-  };
-  return { from: fmt(first), to: fmt(last) };
-}
-
-export default async function InformesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ from?: string; to?: string }>;
-}) {
-  const params = await searchParams;
-  const def = monthRange();
-  const from = params.from ?? def.from;
-  const to = params.to ?? def.to;
-
+export default async function InformesPage() {
   const admin = createAdminClient();
-  const salonId = await getSalonId();
+  const restaurantId = await getRestaurantId();
 
-  const { data } = await admin
-    .from("appointments")
-    .select("*")
-    .eq("salon_id", salonId ?? "")
-    .eq("status", "active")
-    .gte("starts_at", from + "T00:00:00+00:00")
-    .lte("starts_at", to + "T23:59:59+00:00")
-    .order("starts_at");
+  const today = toMadridDate(new Date());
+  const thisMonthStart = today.slice(0, 8) + "01";
+  const prev30Start = new Date(today + "T00:00:00");
+  prev30Start.setDate(prev30Start.getDate() - 29);
+  const prev30Str = toMadridDate(prev30Start);
 
-  const appts = (data ?? []) as Appointment[];
+  const [{ data: thisMonth }, { data: last30 }, { data: todayRsvs }] =
+    await Promise.all([
+      admin
+        .from("reservations")
+        .select("status, party_size, source, starts_at")
+        .eq("restaurant_id", restaurantId ?? "")
+        .gte("starts_at", thisMonthStart + "T00:00:00.000Z")
+        .lte("starts_at", today + "T23:59:59.999Z"),
+      admin
+        .from("reservations")
+        .select("status, party_size, source, starts_at")
+        .eq("restaurant_id", restaurantId ?? "")
+        .gte("starts_at", prev30Str + "T00:00:00.000Z")
+        .lte("starts_at", today + "T23:59:59.999Z"),
+      admin
+        .from("reservations")
+        .select("status, party_size")
+        .eq("restaurant_id", restaurantId ?? "")
+        .gte("starts_at", today + "T00:00:00.000Z")
+        .lte("starts_at", today + "T23:59:59.999Z"),
+    ]);
 
-  const totalRevenue = appts.reduce((s, a) => s + (a.price ?? 0), 0);
-  const count = appts.length;
-  const avgTicket = count > 0 ? totalRevenue / count : 0;
+  type Row = { status: string; party_size: number; source: string; starts_at: string };
+  const monthData = (thisMonth ?? []) as Row[];
+  const last30Data = (last30 ?? []) as Row[];
+  const todayData = (todayRsvs ?? []) as Row[];
 
-  // Top servicios
-  const byService = new Map<string, { count: number; revenue: number }>();
-  for (const a of appts) {
-    const cur = byService.get(a.service) ?? { count: 0, revenue: 0 };
-    cur.count++;
-    cur.revenue += a.price ?? 0;
-    byService.set(a.service, cur);
-  }
-  const topServices = [...byService.entries()]
-    .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 6);
+  const activeStatuses = ["confirmed", "seated", "completed"];
+  const monthActive = monthData.filter((r) => activeStatuses.includes(r.status));
+  const monthCovers = monthActive.reduce((s, r) => s + r.party_size, 0);
+  const monthNoShow = monthData.filter((r) => r.status === "no_show").length;
+  const monthCancelled = monthData.filter((r) => r.status === "cancelled").length;
+  const noShowRate =
+    monthData.length > 0 ? ((monthNoShow / monthData.length) * 100).toFixed(1) : "0";
 
-  // Top clientes
-  const byClient = new Map<string, { count: number; revenue: number }>();
-  for (const a of appts) {
-    const cur = byClient.get(a.customer_name) ?? { count: 0, revenue: 0 };
-    cur.count++;
-    cur.revenue += a.price ?? 0;
-    byClient.set(a.customer_name, cur);
-  }
-  const topClients = [...byClient.entries()]
-    .sort((a, b) => b[1].revenue - a[1].revenue)
-    .slice(0, 6);
+  const last30Active = last30Data.filter((r) => activeStatuses.includes(r.status));
+  const last30Covers = last30Active.reduce((s, r) => s + r.party_size, 0);
+  const todayCovers = todayData
+    .filter((r) => r.status !== "cancelled")
+    .reduce((s, r) => s + r.party_size, 0);
 
-  const maxServiceCount = Math.max(1, ...topServices.map(([, v]) => v.count));
+  const sourceCount = last30Data.reduce<Record<string, number>>((acc, r) => {
+    acc[r.source] = (acc[r.source] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const dowCount = last30Active.reduce<Record<number, number>>((acc, r) => {
+    const dow = new Date(r.starts_at).getDay();
+    acc[dow] = (acc[dow] ?? 0) + 1;
+    return acc;
+  }, {});
+  const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+  const maxDow = Math.max(...Object.values(dowCount), 1);
 
   return (
-    <div>
-      <div className="mb-5">
-        <Link
-          href="/dashboard"
-          className="mb-3 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Panel
-        </Link>
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <h1 className="text-xl font-bold md:text-2xl flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Informes
-            </h1>
-            <p className="text-sm text-muted-foreground">Resumen de actividad e ingresos</p>
-          </div>
-          <Link
-            href="/dashboard/caja"
-            className="flex-shrink-0 h-9 px-3 rounded-md border bg-white text-sm font-medium hover:bg-slate-50 transition-colors flex items-center gap-1.5"
-          >
-            <Receipt className="h-4 w-4" />
-            Cierre de caja
-          </Link>
-        </div>
-      </div>
-
-      {/* Filtro de fechas */}
-      <form method="GET" className="mb-5 flex flex-wrap gap-3 items-end">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-muted-foreground">Desde</label>
-          <input type="date" name="from" defaultValue={from} className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-muted-foreground">Hasta</label>
-          <input type="date" name="to" defaultValue={to} className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
-        </div>
-        <button type="submit" className="h-9 px-4 rounded-md bg-slate-900 text-white text-sm font-medium hover:bg-slate-700 transition-colors">
-          Filtrar
-        </button>
-      </form>
+    <div className="space-y-6">
+      <h1 className="text-xl font-bold text-stone-800">Informes</h1>
 
       {/* KPIs */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Receipt className="h-5 w-5 mx-auto text-emerald-600 mb-1" />
-            <div className="text-2xl font-bold">{totalRevenue.toFixed(0)}€</div>
-            <div className="text-[11px] text-muted-foreground">Ingresos</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Users className="h-5 w-5 mx-auto text-blue-600 mb-1" />
-            <div className="text-2xl font-bold">{count}</div>
-            <div className="text-[11px] text-muted-foreground">Citas</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <TrendingUp className="h-5 w-5 mx-auto text-violet-600 mb-1" />
-            <div className="text-2xl font-bold">{avgTicket.toFixed(0)}€</div>
-            <div className="text-[11px] text-muted-foreground">Ticket medio</div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { label: "Reservas este mes", value: monthActive.length, icon: Calendar, cls: "text-amber-600 bg-amber-50" },
+          { label: "Comensales hoy", value: todayCovers, icon: Users, cls: "text-blue-600 bg-blue-50" },
+          { label: "Comensales (30 días)", value: last30Covers, icon: TrendingUp, cls: "text-green-600 bg-green-50" },
+          { label: "Tasa no-show", value: noShowRate + "%", icon: TrendingDown, cls: "text-red-500 bg-red-50" },
+        ].map(({ label, value, icon: Icon, cls }) => (
+          <div key={label} className="rounded-2xl bg-white border border-stone-100 p-4 shadow-sm">
+            <div className={`p-1.5 rounded-lg inline-flex mb-3 ${cls.split(" ")[1]}`}>
+              <Icon className={`h-4 w-4 ${cls.split(" ")[0]}`} />
+            </div>
+            <div className="text-2xl font-bold text-stone-800">{value}</div>
+            <div className="text-xs text-stone-400 mt-0.5">{label}</div>
+          </div>
+        ))}
       </div>
 
-      {count === 0 ? (
-        <div className="rounded-xl border border-dashed p-10 text-center text-muted-foreground text-sm">
-          No hay citas en este rango de fechas.
+      {/* Month summary */}
+      <div className="rounded-2xl bg-white border border-stone-100 shadow-sm p-5">
+        <h2 className="font-semibold text-stone-800 mb-4 flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-amber-600" />
+          Resumen del mes · {monthCovers} comensales
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: "Total reservas", value: monthData.length },
+            { label: "Confirmadas/completadas", value: monthActive.length },
+            { label: "Canceladas", value: monthCancelled },
+            { label: "No presentados", value: monthNoShow },
+          ].map(({ label, value }) => (
+            <div key={label} className="text-center p-3 rounded-xl bg-stone-50">
+              <div className="text-2xl font-bold text-stone-800">{value}</div>
+              <div className="text-xs text-stone-400 mt-0.5">{label}</div>
+            </div>
+          ))}
         </div>
-      ) : (
-        <div className="grid gap-5 md:grid-cols-2">
-          {/* Top servicios */}
-          <Card>
-            <CardContent className="p-4">
-              <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <Scissors className="h-4 w-4" /> Servicios más solicitados
-              </h2>
-              <div className="space-y-2.5">
-                {topServices.map(([name, v]) => (
-                  <div key={name}>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="font-medium truncate pr-2">{name}</span>
-                      <span className="text-muted-foreground flex-shrink-0">
-                        {v.count} · {v.revenue.toFixed(0)}€
-                      </span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                      <div
-                        className="h-full bg-slate-900 rounded-full"
-                        style={{ width: `${(v.count / maxServiceCount) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+      </div>
 
-          {/* Top clientes */}
-          <Card>
-            <CardContent className="p-4">
-              <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <Users className="h-4 w-4" /> Mejores clientes
-              </h2>
-              <div className="divide-y">
-                {topClients.map(([name, v], i) => (
-                  <div key={name} className="flex items-center justify-between py-2 text-sm">
-                    <span className="flex items-center gap-2 min-w-0">
-                      <span className="text-xs font-bold text-slate-400 w-4">{i + 1}</span>
-                      <span className="truncate">{name}</span>
-                    </span>
-                    <span className="text-muted-foreground text-xs flex-shrink-0">
-                      {v.count} cita{v.count !== 1 ? "s" : ""} · {v.revenue.toFixed(0)}€
-                    </span>
-                  </div>
-                ))}
+      {/* Weekday chart */}
+      <div className="rounded-2xl bg-white border border-stone-100 shadow-sm p-5">
+        <h2 className="font-semibold text-stone-800 mb-4">Reservas por día de la semana (30 días)</h2>
+        <div className="flex items-end gap-2 h-24">
+          {DAYS.map((name, i) => {
+            const count = dowCount[i] ?? 0;
+            const pct = maxDow > 0 ? (count / maxDow) * 100 : 0;
+            return (
+              <div key={name} className="flex-1 flex flex-col items-center gap-1">
+                <div
+                  className="w-full rounded-t-lg bg-amber-400 transition-all"
+                  style={{ height: `${Math.max(pct, 4)}%` }}
+                />
+                <div className="text-xs text-stone-400">{name}</div>
+                <div className="text-xs font-medium text-stone-600">{count}</div>
               </div>
-            </CardContent>
-          </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Source breakdown */}
+      {Object.keys(sourceCount).length > 0 && (
+        <div className="rounded-2xl bg-white border border-stone-100 shadow-sm p-5">
+          <h2 className="font-semibold text-stone-800 mb-4">Origen de reservas (30 días)</h2>
+          <div className="space-y-3">
+            {(["online", "phone", "admin"] as const)
+              .filter((s) => sourceCount[s])
+              .map((source) => {
+                const count = sourceCount[source] ?? 0;
+                const total = last30Data.length;
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                const labels: Record<string, string> = {
+                  online: "Online (web)",
+                  phone: "Teléfono",
+                  admin: "Manual (staff)",
+                };
+                return (
+                  <div key={source}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="font-medium text-stone-700">{labels[source]}</span>
+                      <span className="text-stone-500">{count} ({pct}%)</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-stone-100 overflow-hidden">
+                      <div className="h-full bg-amber-500 rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
         </div>
       )}
     </div>

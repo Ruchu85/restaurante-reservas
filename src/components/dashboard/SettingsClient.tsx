@@ -2,385 +2,117 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, Check, X, Users, Store } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { createService, deleteService, updateService } from "@/actions/services";
-import { updateSalonInfo, updateSlotCapacity } from "@/actions/salon";
-import type { Salon, Service } from "@/types";
+import { Loader2 } from "lucide-react";
+import { updateRestaurant } from "@/actions/restaurant";
+import type { Restaurant } from "@/types";
 
-interface SettingsClientProps {
-  initialServices: Service[];
-  salon: Salon | null;
-}
-
-export function SettingsClient({ initialServices, salon }: SettingsClientProps) {
-  const [services, setServices] = useState<Service[]>(initialServices);
+export function SettingsClient({ restaurant }: { restaurant: Restaurant | null }) {
   const [isPending, startTransition] = useTransition();
-
-  // ---- Capacidad ----
-  const [capacity, setCapacity] = useState<number>(salon?.slot_capacity ?? 1);
-
-  function handleCapacity(n: number) {
-    const prev = capacity;
-    setCapacity(n);
-    startTransition(async () => {
-      const result = await updateSlotCapacity(n);
-      if (result.error) {
-        toast.error(result.error);
-        setCapacity(prev);
-      } else {
-        toast.success(
-          n === 1 ? "1 cliente por tramo" : `${n} clientes por tramo`,
-        );
-      }
-    });
-  }
-
-  // ---- Datos del salón ----
-  const [salonForm, setSalonForm] = useState({
-    name: salon?.name ?? "",
-    owner: salon?.owner ?? "",
-    nif: salon?.nif ?? "",
-    address: salon?.address ?? "",
-    phone: salon?.phone ?? "",
-    city: salon?.city ?? "",
+  const [form, setForm] = useState({
+    name: restaurant?.name ?? "",
+    address: restaurant?.address ?? "",
+    phone: restaurant?.phone ?? "",
+    email: restaurant?.email ?? "",
+    description: restaurant?.description ?? "",
+    website: restaurant?.website ?? "",
+    max_party_size: restaurant?.max_party_size ?? 10,
+    min_advance_hours: restaurant?.min_advance_hours ?? 1,
+    max_advance_days: restaurant?.max_advance_days ?? 30,
+    reservation_duration_minutes: restaurant?.reservation_duration_minutes ?? 90,
   });
 
-  function updateSalonField<K extends keyof typeof salonForm>(key: K, value: string) {
-    setSalonForm((f) => ({ ...f, [key]: value }));
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    const { name, value, type } = e.target;
+    setForm((f) => ({
+      ...f,
+      [name]: type === "number" ? parseInt(value) || 0 : value,
+    }));
   }
 
-  function handleSaveSalon(e: React.FormEvent) {
+  function handleSave(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const result = await updateSalonInfo({
-        name: salonForm.name.trim(),
-        owner: salonForm.owner.trim() || null,
-        nif: salonForm.nif.trim() || null,
-        address: salonForm.address.trim() || null,
-        phone: salonForm.phone.trim() || null,
-        city: salonForm.city.trim() || null,
+      const res = await updateRestaurant({
+        ...form,
+        address: form.address || null,
+        phone: form.phone || null,
+        email: form.email || null,
+        description: form.description || null,
+        website: form.website || null,
       });
-      if (result.error) toast.error(result.error);
-      else toast.success("Datos del salón guardados");
-    });
-  }
-
-  const [newName, setNewName] = useState("");
-  const [newPrice, setNewPrice] = useState("");
-  const [newDuration, setNewDuration] = useState("");
-
-  const [editId, setEditId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editPrice, setEditPrice] = useState("");
-  const [editDuration, setEditDuration] = useState("");
-
-  function handleAddService(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newName.trim()) return;
-    startTransition(async () => {
-      const result = await createService({
-        name: newName.trim(),
-        price: newPrice ? parseFloat(newPrice) : null,
-        duration_minutes: newDuration ? parseInt(newDuration) : null,
-      });
-      if (result.error) {
-        toast.error(result.error);
+      if (res.error) {
+        toast.error(res.error);
       } else {
-        toast.success("Servicio añadido");
-        setServices((prev) => [
-          ...prev,
-          result.service as Service,
-        ]);
-        setNewName("");
-        setNewPrice("");
-        setNewDuration("");
-      }
-    });
-  }
-
-  function handleDelete(id: string) {
-    startTransition(async () => {
-      const result = await deleteService(id);
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        setServices((prev) => prev.filter((s) => s.id !== id));
-        toast.success("Servicio eliminado");
-      }
-    });
-  }
-
-  function startEdit(s: Service) {
-    setEditId(s.id);
-    setEditName(s.name);
-    setEditPrice(s.price != null ? String(s.price) : "");
-    setEditDuration(s.duration_minutes != null ? String(s.duration_minutes) : "");
-  }
-
-  function handleSaveEdit(id: string) {
-    startTransition(async () => {
-      const result = await updateService(id, {
-        name: editName.trim(),
-        price: editPrice ? parseFloat(editPrice) : null,
-        duration_minutes: editDuration ? parseInt(editDuration) : null,
-      });
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        setServices((prev) =>
-          prev.map((s) =>
-            s.id === id
-              ? {
-                  ...s,
-                  name: editName.trim(),
-                  price: editPrice ? parseFloat(editPrice) : null,
-                  duration_minutes: editDuration ? parseInt(editDuration) : null,
-                }
-              : s,
-          ),
-        );
-        setEditId(null);
-        toast.success("Servicio actualizado");
+        toast.success("Ajustes guardados");
       }
     });
   }
 
   return (
-    <div className="space-y-8 max-w-2xl">
-      {/* ---- Capacidad por tramo ---- */}
-      <section className="rounded-xl border bg-white p-5">
-        <h2 className="text-base font-semibold mb-1 flex items-center gap-2">
-          <Users className="h-4 w-4" />
-          Clientes por tramo horario
-        </h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          ¿Cuántos clientes puedes atender a la vez en la misma franja? La agenda
-          calculará los huecos libres y los colores según este valor.
-        </p>
-        <div className="grid grid-cols-4 gap-2 max-w-xs">
-          {[1, 2, 3, 4].map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => handleCapacity(n)}
-              disabled={isPending}
-              className={cn(
-                "rounded-lg border-2 py-2.5 text-sm font-semibold transition-colors",
-                capacity === n
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "border-border bg-white text-slate-600 hover:bg-slate-50",
-              )}
-            >
-              {n}
-            </button>
+    <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
+      <div className="rounded-2xl bg-white border border-stone-100 p-5 shadow-sm space-y-4">
+        <h2 className="text-sm font-semibold text-stone-700">Información del restaurante</h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-stone-500 mb-1.5">Nombre *</label>
+            <input name="name" value={form.name} onChange={handleChange} required
+              className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-500 mb-1.5">Teléfono</label>
+            <input name="phone" value={form.phone} onChange={handleChange}
+              className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-xs font-medium text-stone-500 mb-1.5">Dirección</label>
+            <input name="address" value={form.address} onChange={handleChange}
+              className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-500 mb-1.5">Email</label>
+            <input name="email" type="email" value={form.email} onChange={handleChange}
+              className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-500 mb-1.5">Web</label>
+            <input name="website" type="url" value={form.website} onChange={handleChange} placeholder="https://…"
+              className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-xs font-medium text-stone-500 mb-1.5">Descripción</label>
+            <textarea name="description" value={form.description} onChange={handleChange} rows={2}
+              className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none resize-none" />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl bg-white border border-stone-100 p-5 shadow-sm space-y-4">
+        <h2 className="text-sm font-semibold text-stone-700">Configuración de reservas</h2>
+
+        <div className="grid grid-cols-2 gap-4">
+          {[
+            { name: "max_party_size", label: "Máx. comensales por reserva", min: 1, max: 50 },
+            { name: "reservation_duration_minutes", label: "Duración por reserva (min)", min: 30, max: 480 },
+            { name: "min_advance_hours", label: "Antelación mínima (horas)", min: 0, max: 72 },
+            { name: "max_advance_days", label: "Días máximos de antelación", min: 1, max: 365 },
+          ].map(({ name, label, min, max }) => (
+            <div key={name}>
+              <label className="block text-xs font-medium text-stone-500 mb-1.5">{label}</label>
+              <input type="number" name={name}
+                value={(form as Record<string, string | number>)[name] as number}
+                onChange={handleChange} min={min} max={max}
+                className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-amber-400 focus:outline-none" />
+            </div>
           ))}
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          {capacity === 1
-            ? "Una cita ocupa el tramo por completo (modo clásico)."
-            : `Cada tramo admite ${capacity} citas simultáneas antes de marcarse como completo.`}
-        </p>
-      </section>
+      </div>
 
-      {/* ---- Datos del salón ---- */}
-      <section className="rounded-xl border bg-white p-5">
-        <h2 className="text-base font-semibold mb-1 flex items-center gap-2">
-          <Store className="h-4 w-4" />
-          Datos del salón
-        </h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          Aparecen en los tickets impresos y en la cabecera de la app.
-        </p>
-        <form onSubmit={handleSaveSalon} className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="sm:col-span-2">
-              <Label htmlFor="salon-name" className="text-xs">Nombre *</Label>
-              <Input
-                id="salon-name" value={salonForm.name}
-                onChange={(e) => updateSalonField("name", e.target.value)}
-                placeholder="Peluquería Ali" className="text-sm" required
-              />
-            </div>
-            <div>
-              <Label htmlFor="salon-owner" className="text-xs">Titular</Label>
-              <Input
-                id="salon-owner" value={salonForm.owner}
-                onChange={(e) => updateSalonField("owner", e.target.value)}
-                placeholder="Alicia Quintana" className="text-sm"
-              />
-            </div>
-            <div>
-              <Label htmlFor="salon-nif" className="text-xs">NIF / CIF</Label>
-              <Input
-                id="salon-nif" value={salonForm.nif}
-                onChange={(e) => updateSalonField("nif", e.target.value)}
-                placeholder="10.200.117-P" className="text-sm"
-              />
-            </div>
-            <div>
-              <Label htmlFor="salon-address" className="text-xs">Dirección</Label>
-              <Input
-                id="salon-address" value={salonForm.address}
-                onChange={(e) => updateSalonField("address", e.target.value)}
-                placeholder="C/ Real, 16" className="text-sm"
-              />
-            </div>
-            <div>
-              <Label htmlFor="salon-city" className="text-xs">Población</Label>
-              <Input
-                id="salon-city" value={salonForm.city}
-                onChange={(e) => updateSalonField("city", e.target.value)}
-                placeholder="24717 Val de San Román (León)" className="text-sm"
-              />
-            </div>
-            <div>
-              <Label htmlFor="salon-phone" className="text-xs">Teléfono</Label>
-              <Input
-                id="salon-phone" value={salonForm.phone}
-                onChange={(e) => updateSalonField("phone", e.target.value)}
-                placeholder="626 758 515" className="text-sm"
-              />
-            </div>
-          </div>
-          <Button type="submit" size="sm" disabled={isPending || !salonForm.name.trim()}>
-            Guardar datos
-          </Button>
-        </form>
-      </section>
-
-      <section className="rounded-xl border bg-white p-5">
-        <h2 className="text-base font-semibold mb-1">Tipos de servicio</h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          Configura los servicios y sus precios. Al crear citas, el precio se
-          autocompletará según el servicio elegido.
-        </p>
-
-        {services.length > 0 ? (
-          <div className="divide-y rounded-lg border mb-4 overflow-hidden">
-            {services.map((s) =>
-              editId === s.id ? (
-                <div key={s.id} className="p-3 bg-slate-50 space-y-2">
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="col-span-3 sm:col-span-1">
-                      <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        placeholder="Nombre del servicio"
-                        className="text-sm"
-                      />
-                    </div>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={editPrice}
-                        onChange={(e) => setEditPrice(e.target.value)}
-                        placeholder="Precio"
-                        className="pr-7 text-sm"
-                      />
-                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
-                    </div>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        min="5"
-                        step="5"
-                        value={editDuration}
-                        onChange={(e) => setEditDuration(e.target.value)}
-                        placeholder="Minutos"
-                        className="pr-8 text-sm"
-                      />
-                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">min</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button size="sm" variant="ghost" onClick={() => setEditId(null)} disabled={isPending}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" onClick={() => handleSaveEdit(s.id)} disabled={isPending || !editName.trim()}>
-                      <Check className="h-4 w-4 mr-1" />
-                      Guardar
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div key={s.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{s.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {s.price != null ? `${s.price.toFixed(2)} €` : "Sin precio"}
-                      {s.duration_minutes ? ` · ${s.duration_minutes} min` : ""}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost" size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground flex-shrink-0"
-                    onClick={() => startEdit(s)} disabled={isPending}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost" size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-red-600 flex-shrink-0"
-                    onClick={() => handleDelete(s.id)} disabled={isPending}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              ),
-            )}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground italic mb-4">
-            No hay servicios configurados. Añade el primero.
-          </p>
-        )}
-
-        <form onSubmit={handleAddService} className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <div className="sm:col-span-1">
-              <Label htmlFor="new-name" className="text-xs">Nombre *</Label>
-              <Input
-                id="new-name" value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Ej: Corte de cabello"
-                className="text-sm" required
-              />
-            </div>
-            <div>
-              <Label htmlFor="new-price" className="text-xs">Precio (€)</Label>
-              <div className="relative">
-                <Input
-                  id="new-price" type="number" min="0" step="0.01"
-                  value={newPrice} onChange={(e) => setNewPrice(e.target.value)}
-                  placeholder="0.00" className="pr-7 text-sm"
-                />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="new-duration" className="text-xs">Duración (min)</Label>
-              <div className="relative">
-                <Input
-                  id="new-duration" type="number" min="5" step="5"
-                  value={newDuration} onChange={(e) => setNewDuration(e.target.value)}
-                  placeholder="30" className="pr-8 text-sm"
-                />
-                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">min</span>
-              </div>
-            </div>
-          </div>
-          <Button type="submit" size="sm" disabled={isPending || !newName.trim()}>
-            <Plus className="h-4 w-4 mr-1.5" />
-            Añadir servicio
-          </Button>
-        </form>
-      </section>
-    </div>
+      <button type="submit" disabled={isPending}
+        className="w-full rounded-xl bg-amber-600 py-3 font-semibold text-white hover:bg-amber-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+        {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+        Guardar ajustes
+      </button>
+    </form>
   );
 }

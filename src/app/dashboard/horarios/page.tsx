@@ -1,79 +1,57 @@
-import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createAdminClient, getRestaurantId } from "@/lib/supabase/admin";
 import { BusinessHoursForm } from "@/components/dashboard/BusinessHoursForm";
 import { BlockedDayForm } from "@/components/dashboard/BlockedDayForm";
-import { StaffManager } from "@/components/dashboard/StaffManager";
-import type { StaffMember } from "@/types";
+import type { BusinessHours, BlockedDay } from "@/types";
 
-export const metadata = { title: "Horarios — Panel admin" };
+export const metadata = { title: "Horarios del Restaurante" };
 
 const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 export default async function HorariosPage() {
   const admin = createAdminClient();
-  const salonId = await getSalonId();
+  const restaurantId = await getRestaurantId();
 
-  const [{ data: hours }, { data: blockedDays }, { data: staff }] = await Promise.all([
+  const [{ data: hours }, { data: blockedDays }] = await Promise.all([
     admin
       .from("business_hours")
       .select("*")
-      .eq("salon_id", salonId ?? "")
+      .eq("restaurant_id", restaurantId ?? "")
       .order("day_of_week"),
     admin
       .from("blocked_days")
       .select("*")
-      .eq("salon_id", salonId ?? "")
+      .eq("restaurant_id", restaurantId ?? "")
       .gte("date", new Date().toISOString().split("T")[0])
       .order("date"),
-    admin
-      .from("staff_members")
-      .select("*")
-      .eq("salon_id", salonId ?? "")
-      .eq("active", true)
-      .order("name"),
   ]);
 
-  const hoursMap = new Map(hours?.map((h) => [h.day_of_week, h]) ?? []);
+  const hoursMap = new Map<number, BusinessHours>(
+    (hours as BusinessHours[] ?? []).map((h) => [h.day_of_week, h]),
+  );
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold md:text-2xl">Horarios</h1>
+      <h1 className="text-xl font-bold text-stone-800">Horarios</h1>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Horario semanal</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {DAYS.map((dayName, dayIndex) => (
-              <BusinessHoursForm
-                key={dayIndex}
-                dayOfWeek={dayIndex}
-                dayName={dayName}
-                existing={hoursMap.get(dayIndex)}
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl bg-stone-50 border border-stone-100 p-5 space-y-2">
+        <h2 className="text-sm font-semibold text-stone-700 mb-3">Horario semanal</h2>
+        <p className="text-xs text-stone-400 mb-4">
+          Configura almuerzo y cena por separado. Cada franja es el rango en el que se aceptan reservas.
+        </p>
+        {DAYS.map((dayName, dayIndex) => (
+          <BusinessHoursForm
+            key={dayIndex}
+            dayOfWeek={dayIndex}
+            dayName={dayName}
+            existing={hoursMap.get(dayIndex)}
+          />
+        ))}
+      </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Cierres y días no laborables</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <BlockedDayForm blockedDays={blockedDays ?? []} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Profesionales</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <StaffManager staff={(staff as StaffMember[]) ?? []} />
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl bg-stone-50 border border-stone-100 p-5">
+        <h2 className="text-sm font-semibold text-stone-700 mb-3">Cierres y días no laborables</h2>
+        <BlockedDayForm blockedDays={(blockedDays as BlockedDay[]) ?? []} />
+      </div>
     </div>
   );
 }

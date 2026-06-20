@@ -1,161 +1,147 @@
-import { addMinutes, roundToInterval } from "@/lib/utils";
-import type { BusinessHours, Appointment, BlockedDay } from "@/types";
+import { addMinutes } from "@/lib/utils";
+import type { BusinessHours, BlockedDay, RestaurantTable, Reservation, TimeSlot } from "@/types";
 
-export interface SlotInput {
+export interface AvailabilityInput {
   date: string;             // YYYY-MM-DD
-  durationMinutes: number;
+  partySize: number;
   businessHours: BusinessHours[];
-  existingAppointments: Appointment[];
+  existingReservations: Reservation[];
   blockedDays: BlockedDay[];
-  staffId?: string;
+  tables: RestaurantTable[];
+  durationMinutes: number;
   slotIntervalMinutes?: number;
-  /** Clientes simultáneos permitidos por tramo (capacidad). Por defecto 1. */
-  capacity?: number;
-}
-
-export interface TimeSlotResult {
-  starts_at: Date;
-  ends_at: Date;
-  /** Huecos libres restantes en el tramo (capacidad − ocupación). */
-  remaining: number;
 }
 
 /**
- * Cuenta cuántas citas activas solapan el rango [start, end).
- * Si se pasa staffId, solo cuenta las de ese profesional.
+ * Devuelve slots disponibles para la fecha + party size dada.
+ * Un slot está disponible si existe al menos una mesa con capacity >= partySize
+ * y que no tenga reserva activa solapando ese tramo.
  */
-export function countOverlapping(
-  appointments: Pick<Appointment, "starts_at" | "ends_at" | "status" | "staff_id">[],
-  start: Date,
-  end: Date,
-  staffId?: string,
-): number {
-  let count = 0;
-  for (const appt of appointments) {
-    if (appt.status !== "active") continue;
-    if (staffId && appt.staff_id !== staffId) continue;
-    const s = new Date(appt.starts_at);
-    const e = new Date(appt.ends_at);
-    if (start < e && end > s) count++;
-  }
-  return count;
-}
-
-type ConcurrencyAppt = Pick<Appointment, "id" | "starts_at" | "ends_at" | "status">;
-
-/**
- * Concurrencia máxima de citas activas en cualquier instante dentro del rango
- * [start, end). Evalúa en los puntos donde la concurrencia puede aumentar:
- * el inicio del propio rango y el inicio de cada cita que lo solapa.
- * Réplica en JS de la garantía de capacidad (antes en un trigger de BD).
- */
-export function peakConcurrency(
-  appointments: ConcurrencyAppt[],
-  start: Date,
-  end: Date,
-  excludeId?: string,
-): number {
-  const startMs = start.getTime();
-  const endMs = end.getTime();
-  const active = appointments.filter(
-    (a) => a.status === "active" && a.id !== excludeId,
-  );
-
-  const points: number[] = [startMs];
-  for (const a of active) {
-    const s = new Date(a.starts_at).getTime();
-    if (s >= startMs && s < endMs) points.push(s);
-  }
-
-  let peak = 0;
-  for (const t of points) {
-    let c = 0;
-    for (const a of active) {
-      const s = new Date(a.starts_at).getTime();
-      const e = new Date(a.ends_at).getTime();
-      if (s <= t && e > t) c++;
-    }
-    if (c > peak) peak = c;
-  }
-  return peak;
-}
-
-export function computeAvailableSlots(input: SlotInput): TimeSlotResult[] {
+export function computeAvailableSlots(input: AvailabilityInput): TimeSlot[] {
   const {
     date,
-    durationMinutes,
+    partySize,
     businessHours,
-    existingAppointments,
+    existingReservations,
     blockedDays,
-    staffId,
-    slotIntervalMinutes = 15,
-    capacity = 1,
+    tables,
+    durationMinutes,
+    slotIntervalMinutes = 30,
   } = input;
 
-  // Reject blocked days
-  const isBlocked = blockedDays.some((d) => d.date === date);
-  if (isBlocked) return [];
+  if (blockedDays.some((d) => d.date === date)) return [];
 
-  // Find salon hours for this day
   const dayOfWeek = new Date(date + "T12:00:00").getDay();
   const hours = businessHours.find((h) => h.day_of_week === dayOfWeek);
   if (!hours || !hours.is_open) return [];
 
+  const eligibleTables = tables.filter(
+    (t) => t.active && t.capacity >= partySize,
+  );
+  if (eligibleTables.length === 0) return [];
+
   const ranges = businessHourRanges(date, hours);
-  const cap = capacity > 0 ? capacity : 1;
   const now = new Date();
-  const slots: TimeSlotResult[] = [];
+  const slots: TimeSlot[] = [];
+  const seen = new Set<string>();
 
-  for (const { open: openTime, close: closeTime } of ranges) {
-    let cursor = roundToInterval(openTime, slotIntervalMinutes);
-
-    while (addMinutes(cursor, durationMinutes) <= closeTime) {
+  for (const { open, close } of ranges) {
+    let cursor = roundToSlot(open, slotIntervalMinutes);
+    while (addMinutes(cursor, durationMinutes) <= close) {
       const slotEnd = addMinutes(cursor, durationMinutes);
-
+      // Skip past slots
       if (cursor <= now) {
         cursor = addMinutes(cursor, slotIntervalMinutes);
         continue;
       }
-
-      const occupied = countOverlapping(existingAppointments, cursor, slotEnd, staffId);
-      const remaining = cap - occupied;
-
-      if (remaining > 0) {
-        slots.push({ starts_at: cursor, ends_at: slotEnd, remaining });
+      const key = cursor.toISOString();
+      if (!seen.has(key)) {
+        seen.add(key);
+        const availableCount = countAvailableTables(
+          eligibleTables,
+          existingReservations,
+          cursor,
+          slotEnd,
+        );
+        slots.push({
+          starts_at: cursor,
+          ends_at: slotEnd,
+          available: availableCount > 0,
+          available_tables: availableCount,
+        });
       }
-
       cursor = addMinutes(cursor, slotIntervalMinutes);
     }
   }
 
-  return slots;
-}
-
-export function isWithinBusinessHours(
-  startsAt: Date,
-  endsAt: Date,
-  businessHours: BusinessHours[],
-): boolean {
-  const dayOfWeek = startsAt.getDay();
-  const hours = businessHours.find((h) => h.day_of_week === dayOfWeek);
-  if (!hours || !hours.is_open) return false;
-
-  const date = startsAt.toISOString().split("T")[0];
-  return businessHourRanges(date, hours).some(
-    ({ open, close }) => startsAt >= open && endsAt <= close,
-  );
+  return slots.filter((s) => s.available);
 }
 
 /**
- * Devuelve los tramos abiertos del día (uno o dos si hay turno partido).
+ * Cuenta cuántas mesas elegibles están libres en [start, end).
  */
+function countAvailableTables(
+  tables: RestaurantTable[],
+  reservations: Reservation[],
+  start: Date,
+  end: Date,
+): number {
+  const startMs = start.getTime();
+  const endMs = end.getTime();
+  let free = 0;
+  for (const table of tables) {
+    const hasOverlap = reservations.some((r) => {
+      if (r.table_id !== table.id) return false;
+      if (r.status === "cancelled" || r.status === "no_show") return false;
+      const rs = new Date(r.starts_at).getTime();
+      const re = new Date(r.ends_at).getTime();
+      return rs < endMs && re > startMs;
+    });
+    if (!hasOverlap) free++;
+  }
+  return free;
+}
+
+/**
+ * Devuelve la mejor mesa disponible para el tramo (la más pequeña que cabe).
+ */
+export function findBestTable(
+  tables: RestaurantTable[],
+  reservations: Reservation[],
+  partySize: number,
+  start: Date,
+  end: Date,
+): RestaurantTable | null {
+  const startMs = start.getTime();
+  const endMs = end.getTime();
+  const eligible = tables
+    .filter((t) => t.active && t.capacity >= partySize)
+    .sort((a, b) => a.capacity - b.capacity);
+
+  for (const table of eligible) {
+    const occupied = reservations.some((r) => {
+      if (r.table_id !== table.id) return false;
+      if (r.status === "cancelled" || r.status === "no_show") return false;
+      const rs = new Date(r.starts_at).getTime();
+      const re = new Date(r.ends_at).getTime();
+      return rs < endMs && re > startMs;
+    });
+    if (!occupied) return table;
+  }
+  return null;
+}
+
 export function businessHourRanges(
   date: string,
   hours: BusinessHours,
 ): { open: Date; close: Date }[] {
-  const ranges = [
-    { open: parseTimeOnDate(date, hours.opens_at), close: parseTimeOnDate(date, hours.closes_at) },
-  ];
+  const ranges: { open: Date; close: Date }[] = [];
+  if (hours.opens_at && hours.closes_at) {
+    ranges.push({
+      open: parseTimeOnDate(date, hours.opens_at),
+      close: parseTimeOnDate(date, hours.closes_at),
+    });
+  }
   if (hours.opens_at_2 && hours.closes_at_2) {
     ranges.push({
       open: parseTimeOnDate(date, hours.opens_at_2),
@@ -170,4 +156,26 @@ function parseTimeOnDate(date: string, time: string): Date {
   const d = new Date(date + "T00:00:00");
   d.setHours(h, m, 0, 0);
   return d;
+}
+
+function roundToSlot(date: Date, intervalMinutes: number): Date {
+  const ms = intervalMinutes * 60 * 1000;
+  return new Date(Math.ceil(date.getTime() / ms) * ms);
+}
+
+/**
+ * Verifica si el restaurante está abierto en el tramo dado.
+ */
+export function isWithinBusinessHours(
+  startsAt: Date,
+  endsAt: Date,
+  businessHours: BusinessHours[],
+): boolean {
+  const dayOfWeek = startsAt.getDay();
+  const hours = businessHours.find((h) => h.day_of_week === dayOfWeek);
+  if (!hours || !hours.is_open) return false;
+  const date = startsAt.toISOString().split("T")[0];
+  return businessHourRanges(date, hours).some(
+    ({ open, close }) => startsAt >= open && endsAt <= close,
+  );
 }

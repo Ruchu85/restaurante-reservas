@@ -1,75 +1,41 @@
-import { createAdminClient, getSalonId } from "@/lib/supabase/admin";
-import { getSalon, salonToTicketInfo } from "@/lib/salon";
-import { CalendarView } from "@/components/dashboard/CalendarView";
+import { createAdminClient, getRestaurantId } from "@/lib/supabase/admin";
+import { toMadridDate } from "@/lib/utils";
+import { CalendarClient } from "./CalendarClient";
+import type { Reservation } from "@/types";
 
-export const metadata = { title: "Calendario — PELUQUERIA ALI" };
+export const metadata = { title: "Calendario de Reservas" };
 
 export default async function CalendarioPage({
   searchParams,
 }: {
   searchParams: Promise<{ date?: string }>;
 }) {
-  const params = await searchParams;
+  const { date: paramDate } = await searchParams;
+  const today = paramDate ?? toMadridDate(new Date());
+
   const admin = createAdminClient();
-  const salonId = await getSalonId();
-  const salon = await getSalon();
+  const restaurantId = await getRestaurantId();
 
-  const today = params.date ?? new Date().toISOString().split("T")[0];
+  // Load ±45 days for calendar navigation
+  const center = new Date(today + "T12:00:00");
+  const from = new Date(center);
+  from.setDate(center.getDate() - 45);
+  const to = new Date(center);
+  to.setDate(center.getDate() + 45);
 
-  const dateObj = new Date(today + "T12:00:00");
-  const rangeStart = new Date(dateObj);
-  rangeStart.setDate(dateObj.getDate() - 60);
-  const rangeEnd = new Date(dateObj);
-  rangeEnd.setDate(dateObj.getDate() + 60);
-
-  const [
-    { data: appointments },
-    { data: staff },
-    { data: blockedDays },
-    { data: businessHours },
-  ] = await Promise.all([
-    admin
-      .from("appointments")
-      .select("*, staff:staff_members(id, name)")
-      .eq("salon_id", salonId ?? "")
-      .eq("status", "active")
-      .gte("starts_at", rangeStart.toISOString())
-      .lte("starts_at", rangeEnd.toISOString())
-      .order("starts_at"),
-    admin
-      .from("staff_members")
-      .select("id, name")
-      .eq("salon_id", salonId ?? "")
-      .eq("active", true)
-      .order("name"),
-    admin
-      .from("blocked_days")
-      .select("*")
-      .eq("salon_id", salonId ?? "")
-      .gte("date", rangeStart.toISOString().split("T")[0])
-      .lte("date", rangeEnd.toISOString().split("T")[0]),
-    admin
-      .from("business_hours")
-      .select("*")
-      .eq("salon_id", salonId ?? "")
-      .order("day_of_week"),
-  ]);
+  const { data: reservations } = await admin
+    .from("reservations")
+    .select("*, table:restaurant_tables(id, name, section)")
+    .eq("restaurant_id", restaurantId ?? "")
+    .gte("starts_at", from.toISOString().split("T")[0] + "T00:00:00.000Z")
+    .lte("starts_at", to.toISOString().split("T")[0] + "T23:59:59.999Z")
+    .in("status", ["confirmed", "seated", "completed"])
+    .order("starts_at");
 
   return (
-    <CalendarView
-      appointments={
-        (appointments ?? []).map((a) => ({
-          ticket_number: null,
-          price: null,
-          ...a,
-        })) as Parameters<typeof CalendarView>[0]["appointments"]
-      }
-      staff={staff ?? []}
-      currentDate={today}
-      blockedDays={blockedDays ?? []}
-      businessHours={businessHours ?? []}
-      capacity={salon?.slot_capacity ?? 1}
-      salonInfo={salonToTicketInfo(salon)}
+    <CalendarClient
+      initialReservations={(reservations ?? []) as Reservation[]}
+      today={today}
     />
   );
 }

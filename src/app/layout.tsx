@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PELUQUERIA ALI",
-  description: "Gestión interna de citas — Peluquería Ali",
+  title: "Restaurante Demo — Reservas Online",
+  description: "Reserva tu mesa en Restaurante Demo. Cocina mediterránea de autor en Madrid.",
 };
 
 export default function RootLayout({

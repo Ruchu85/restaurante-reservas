@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, Calendar, ClipboardList, Clock, Home, LogOut, Receipt, Scissors, Settings, Users } from "lucide-react";
+import {
+  BarChart3, Calendar, ClipboardList, Clock,
+  ExternalLink, Home, ListOrdered, LogOut, Settings, TableProperties,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -10,10 +13,10 @@ import { toast } from "sonner";
 const navItems = [
   { href: "/dashboard", label: "Inicio", icon: Home, exact: true },
   { href: "/dashboard/calendario", label: "Calendario", icon: Calendar },
-  { href: "/dashboard/citas", label: "Citas", icon: ClipboardList },
-  { href: "/dashboard/clientes", label: "Clientes", icon: Users },
+  { href: "/dashboard/reservas", label: "Reservas", icon: ClipboardList },
+  { href: "/dashboard/mesas", label: "Mesas", icon: TableProperties },
+  { href: "/dashboard/lista-espera", label: "Lista de espera", icon: ListOrdered },
   { href: "/dashboard/informes", label: "Informes", icon: BarChart3 },
-  { href: "/dashboard/tickets", label: "Tickets", icon: Receipt },
   { href: "/dashboard/horarios", label: "Horarios", icon: Clock },
   { href: "/dashboard/ajustes", label: "Ajustes", icon: Settings },
 ];
@@ -21,9 +24,10 @@ const navItems = [
 interface DashboardNavProps {
   userName: string;
   userRole: string;
+  restaurantName?: string;
 }
 
-export function DashboardNav({ userName, userRole }: DashboardNavProps) {
+export function DashboardNav({ userName, userRole, restaurantName = "Restaurante" }: DashboardNavProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -43,13 +47,15 @@ export function DashboardNav({ userName, userRole }: DashboardNavProps) {
   return (
     <>
       {/* Sidebar — desktop */}
-      <aside className="hidden md:flex w-56 flex-col border-r bg-white">
+      <aside className="hidden md:flex w-60 flex-col border-r bg-white">
         <div className="flex h-14 items-center gap-2 border-b px-4">
-          <Scissors className="h-5 w-5 flex-shrink-0" />
-          <span className="font-bold truncate">PELUQUERIA ALI</span>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-stone-800 truncate text-sm">{restaurantName}</div>
+            <div className="text-xs text-stone-400">Panel de gestión</div>
+          </div>
         </div>
 
-        <nav className="flex-1 p-2 space-y-0.5">
+        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
           {navItems.map(({ href, label, icon: Icon, exact }) => (
             <Link
               key={href}
@@ -57,24 +63,32 @@ export function DashboardNav({ userName, userRole }: DashboardNavProps) {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                 isActive(href, exact)
-                  ? "bg-slate-100 font-medium text-slate-900"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+                  ? "bg-amber-50 font-medium text-amber-800"
+                  : "text-stone-600 hover:bg-stone-50 hover:text-stone-900",
               )}
             >
-              <Icon className="h-4 w-4 flex-shrink-0" />
+              <Icon className={cn("h-4 w-4 flex-shrink-0", isActive(href, exact) ? "text-amber-600" : "")} />
               {label}
             </Link>
           ))}
         </nav>
 
         <div className="border-t p-3 space-y-1">
+          <Link
+            href="/"
+            target="_blank"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-stone-500 hover:bg-stone-50 transition-colors"
+          >
+            <ExternalLink className="h-4 w-4 flex-shrink-0" />
+            Ver página pública
+          </Link>
           <div className="px-3 pb-1">
-            <div className="text-sm font-medium truncate">{userName}</div>
-            <div className="text-xs text-muted-foreground capitalize">{userRole}</div>
+            <div className="text-sm font-medium truncate text-stone-800">{userName}</div>
+            <div className="text-xs text-stone-400 capitalize">{userRole}</div>
           </div>
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-stone-600 hover:bg-stone-50 hover:text-stone-900 transition-colors"
           >
             <LogOut className="h-4 w-4 flex-shrink-0" />
             Cerrar sesión
@@ -90,11 +104,11 @@ export function DashboardNav({ userName, userRole }: DashboardNavProps) {
             href={href}
             className={cn(
               "flex flex-1 flex-col items-center gap-0.5 py-2 text-xs transition-colors",
-              isActive(href, exact) ? "text-slate-900 font-medium" : "text-slate-500",
+              isActive(href, exact) ? "text-amber-700 font-medium" : "text-stone-500",
             )}
           >
             <Icon className={cn("h-5 w-5", isActive(href, exact) ? "stroke-[2.5px]" : "")} />
-            <span>{label}</span>
+            <span className="truncate max-w-full px-0.5">{label}</span>
           </Link>
         ))}
       </nav>
