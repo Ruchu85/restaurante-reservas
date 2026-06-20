@@ -151,7 +151,7 @@ export function businessHourRanges(
   return ranges;
 }
 
-function parseTimeOnDate(date: string, time: string): Date {
+export function parseTimeOnDate(date: string, time: string): Date {
   // Interpret time as Europe/Madrid local time and return the UTC equivalent.
   // time may be "HH:MM" or "HH:MM:SS" (Supabase returns time cols as HH:MM:SS).
   const [h, m] = time.split(":").map(Number);

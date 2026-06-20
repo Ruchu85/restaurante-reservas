@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeAvailableSlots, isWithinBusinessHours } from "@/lib/availability";
+import { computeAvailableSlots, isWithinBusinessHours, parseTimeOnDate } from "@/lib/availability";
 import type { BusinessHours, BlockedDay, RestaurantTable, Reservation } from "@/types";
 
 const RESTAURANT_ID = "rest-1";
@@ -23,6 +23,19 @@ const TUESDAY_HOURS: BusinessHours = {
   opens_at_2: "20:30",
   closes_at_2: "23:30",
 };
+
+// Returns minutes since midnight in Europe/Madrid timezone for a given Date.
+function madridMins(d: Date): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Madrid",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const h = parseInt(parts.find((p) => p.type === "hour")!.value, 10);
+  const m = parseInt(parts.find((p) => p.type === "minute")!.value, 10);
+  return h * 60 + m;
+}
 
 function makeTable(id: string, capacity: number): RestaurantTable {
   return {
@@ -76,8 +89,8 @@ describe("computeAvailableSlots", () => {
     const slots = computeAvailableSlots(BASE_INPUT);
     expect(slots.length).toBeGreaterThan(0);
     slots.forEach((slot) => {
-      const startMin = slot.starts_at.getHours() * 60 + slot.starts_at.getMinutes();
-      const endMin = slot.ends_at.getHours() * 60 + slot.ends_at.getMinutes();
+      const startMin = madridMins(slot.starts_at);
+      const endMin = madridMins(slot.ends_at);
       const inLunch = startMin >= 13 * 60 + 30 && endMin <= 16 * 60;
       const inDinner = startMin >= 20 * 60 + 30 && endMin <= 23 * 60 + 30;
       expect(inLunch || inDinner).toBe(true);
@@ -108,15 +121,16 @@ describe("computeAvailableSlots", () => {
   });
 
   it("shows fewer available_tables when one table is reserved", () => {
-    const rsv = makeReservation("t1", `${TEST_DATE}T13:30:00`, `${TEST_DATE}T15:00:00`);
+    // Use parseTimeOnDate so reservation times match the UTC-normalised slot cursors.
+    const rsv = makeReservation(
+      "t1",
+      parseTimeOnDate(TEST_DATE, "13:30").toISOString(),
+      parseTimeOnDate(TEST_DATE, "15:00").toISOString(),
+    );
     const slotsNoRsv = computeAvailableSlots(BASE_INPUT);
-    const slotsWithRsv = computeAvailableSlots({
-      ...BASE_INPUT,
-      existingReservations: [rsv],
-    });
-    // First lunch slot should have one fewer table available
-    const firstSlotNoRsv = slotsNoRsv.find((s) => s.starts_at.getHours() === 13);
-    const firstSlotWithRsv = slotsWithRsv.find((s) => s.starts_at.getHours() === 13);
+    const slotsWithRsv = computeAvailableSlots({ ...BASE_INPUT, existingReservations: [rsv] });
+    const firstSlotNoRsv = slotsNoRsv.find((s) => Math.floor(madridMins(s.starts_at) / 60) === 13);
+    const firstSlotWithRsv = slotsWithRsv.find((s) => Math.floor(madridMins(s.starts_at) / 60) === 13);
     if (firstSlotNoRsv && firstSlotWithRsv) {
       expect(firstSlotWithRsv.available_tables).toBe(firstSlotNoRsv.available_tables - 1);
     }
@@ -124,32 +138,34 @@ describe("computeAvailableSlots", () => {
 
   it("returns no slots when all tables are occupied", () => {
     const table = makeTable("solo", 2);
-    const rsv = makeReservation("solo", `${TEST_DATE}T13:30:00`, `${TEST_DATE}T15:00:00`);
-    const slots = computeAvailableSlots({
-      ...BASE_INPUT,
-      tables: [table],
-      existingReservations: [rsv],
-    });
-    // The slot at 13:30 should not appear
-    const conflictSlot = slots.find((s) => s.starts_at.getHours() === 13 && s.starts_at.getMinutes() === 30);
+    const rsv = makeReservation(
+      "solo",
+      parseTimeOnDate(TEST_DATE, "13:30").toISOString(),
+      parseTimeOnDate(TEST_DATE, "15:00").toISOString(),
+    );
+    const slots = computeAvailableSlots({ ...BASE_INPUT, tables: [table], existingReservations: [rsv] });
+    const conflictSlot = slots.find((s) => madridMins(s.starts_at) === 13 * 60 + 30);
     expect(conflictSlot).toBeUndefined();
   });
 
   it("does not exclude slots for cancelled reservations", () => {
     const table = makeTable("solo", 2);
-    const rsv = { ...makeReservation("solo", `${TEST_DATE}T13:30:00`, `${TEST_DATE}T15:00:00`), status: "cancelled" as const };
-    const slots = computeAvailableSlots({
-      ...BASE_INPUT,
-      tables: [table],
-      existingReservations: [rsv],
-    });
-    expect(slots.some((s) => s.starts_at.getHours() === 13)).toBe(true);
+    const rsv = {
+      ...makeReservation(
+        "solo",
+        parseTimeOnDate(TEST_DATE, "13:30").toISOString(),
+        parseTimeOnDate(TEST_DATE, "15:00").toISOString(),
+      ),
+      status: "cancelled" as const,
+    };
+    const slots = computeAvailableSlots({ ...BASE_INPUT, tables: [table], existingReservations: [rsv] });
+    expect(slots.some((s) => Math.floor(madridMins(s.starts_at) / 60) === 13)).toBe(true);
   });
 
   it("does not generate slots during the lunch/dinner break", () => {
     const slots = computeAvailableSlots(BASE_INPUT);
     const inBreak = slots.find((s) => {
-      const min = s.starts_at.getHours() * 60 + s.starts_at.getMinutes();
+      const min = madridMins(s.starts_at);
       return min >= 16 * 60 && min < 20 * 60 + 30;
     });
     expect(inBreak).toBeUndefined();
@@ -158,33 +174,33 @@ describe("computeAvailableSlots", () => {
 
 describe("isWithinBusinessHours", () => {
   it("returns true for a slot within lunch hours", () => {
-    const starts = new Date(`${TEST_DATE}T13:30:00`);
-    const ends = new Date(`${TEST_DATE}T15:00:00`);
+    const starts = parseTimeOnDate(TEST_DATE, "13:30");
+    const ends = parseTimeOnDate(TEST_DATE, "15:00");
     expect(isWithinBusinessHours(starts, ends, [TUESDAY_HOURS])).toBe(true);
   });
 
   it("returns true for a slot within dinner hours", () => {
-    const starts = new Date(`${TEST_DATE}T20:30:00`);
-    const ends = new Date(`${TEST_DATE}T22:00:00`);
+    const starts = parseTimeOnDate(TEST_DATE, "20:30");
+    const ends = parseTimeOnDate(TEST_DATE, "22:00");
     expect(isWithinBusinessHours(starts, ends, [TUESDAY_HOURS])).toBe(true);
   });
 
   it("returns false for a slot outside hours", () => {
-    const starts = new Date(`${TEST_DATE}T11:00:00`);
-    const ends = new Date(`${TEST_DATE}T12:00:00`);
+    const starts = parseTimeOnDate(TEST_DATE, "11:00");
+    const ends = parseTimeOnDate(TEST_DATE, "12:00");
     expect(isWithinBusinessHours(starts, ends, [TUESDAY_HOURS])).toBe(false);
   });
 
   it("returns false during the break between shifts", () => {
-    const starts = new Date(`${TEST_DATE}T17:00:00`);
-    const ends = new Date(`${TEST_DATE}T18:00:00`);
+    const starts = parseTimeOnDate(TEST_DATE, "17:00");
+    const ends = parseTimeOnDate(TEST_DATE, "18:00");
     expect(isWithinBusinessHours(starts, ends, [TUESDAY_HOURS])).toBe(false);
   });
 
   it("returns false when restaurant is closed", () => {
     const closed: BusinessHours = { ...TUESDAY_HOURS, is_open: false };
-    const starts = new Date(`${TEST_DATE}T13:30:00`);
-    const ends = new Date(`${TEST_DATE}T15:00:00`);
+    const starts = parseTimeOnDate(TEST_DATE, "13:30");
+    const ends = parseTimeOnDate(TEST_DATE, "15:00");
     expect(isWithinBusinessHours(starts, ends, [closed])).toBe(false);
   });
 });
