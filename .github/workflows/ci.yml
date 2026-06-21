@@ -10,7 +10,7 @@ on:
 env:
   NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://mwdfcutheftumrxexxgz.supabase.co' }}
   NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
-  NEXT_PUBLIC_APP_URL: https://peluqueria-app-ashy.vercel.app
+  NEXT_PUBLIC_APP_URL: https://reservas-restaurante-demo.vercel.app
   NEXT_PUBLIC_SALON_SLUG: salon-demo
 
 jobs:
