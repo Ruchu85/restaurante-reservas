@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3, Calendar, ClipboardList, Clock,
-  ExternalLink, Home, ListOrdered, LogOut, Settings, TableProperties,
+  ExternalLink, Home, ListOrdered, LogOut, Settings, TableProperties, Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -14,6 +14,7 @@ const navItems = [
   { href: "/dashboard", label: "Inicio", icon: Home, exact: true },
   { href: "/dashboard/calendario", label: "Calendario", icon: Calendar },
   { href: "/dashboard/reservas", label: "Reservas", icon: ClipboardList },
+  { href: "/dashboard/comensales", label: "Comensales", icon: Users },
   { href: "/dashboard/mesas", label: "Mesas", icon: TableProperties },
   { href: "/dashboard/lista-espera", label: "Lista de espera", icon: ListOrdered },
   { href: "/dashboard/informes", label: "Informes", icon: BarChart3 },

@@ -7,6 +7,9 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { addToWaitlist, updateWaitlistStatus } from "@/actions/waitlist";
+import { WhatsAppButton } from "@/components/dashboard/WhatsAppButton";
+import { formatPhone } from "@/lib/phone";
+import { toLocalDate } from "@/lib/dates";
 import type { WaitlistEntry } from "@/types";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -32,7 +35,7 @@ export function ListaEsperaClient({ entries: initialEntries }: { entries: Waitli
     guest_name: "",
     guest_phone: "",
     party_size: 2,
-    preferred_date: new Date().toISOString().split("T")[0],
+    preferred_date: toLocalDate(new Date()),
     preferred_time: "",
     notes: "",
   });
@@ -52,7 +55,7 @@ export function ListaEsperaClient({ entries: initialEntries }: { entries: Waitli
         preferred_time: form.preferred_time || null,
         notes: form.notes.trim() || null,
       });
-      if (res.error) { toast.error(res.error); return; }
+      if ("error" in res && res.error) { toast.error(res.error); return; }
       toast.success("Añadido a la lista de espera");
       router.refresh();
       setShowNew(false);
@@ -63,7 +66,7 @@ export function ListaEsperaClient({ entries: initialEntries }: { entries: Waitli
 
   async function handleStatus(id: string, status: WaitlistEntry["status"]) {
     const res = await updateWaitlistStatus(id, status);
-    if (res.error) { toast.error(res.error); return; }
+    if ("error" in res && res.error) { toast.error(res.error); return; }
     toast.success("Estado actualizado");
     setEntries((prev) =>
       status === "seated" || status === "removed"
@@ -101,7 +104,7 @@ export function ListaEsperaClient({ entries: initialEntries }: { entries: Waitli
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold text-stone-800">{e.guest_name}</div>
                   <div className="text-xs text-stone-500 flex flex-wrap gap-2 mt-0.5">
-                    <span>{e.guest_phone}</span>
+                    <span>{formatPhone(e.guest_phone)}</span>
                     <span className="flex items-center gap-0.5"><Users className="h-3 w-3" />{e.party_size}</span>
                     <span className="flex items-center gap-0.5"><Clock className="h-3 w-3" />{e.preferred_date}{e.preferred_time && ` ${e.preferred_time}`}</span>
                   </div>
@@ -111,10 +114,18 @@ export function ListaEsperaClient({ entries: initialEntries }: { entries: Waitli
                   <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STATUS_COLORS[e.status])}>
                     {STATUS_LABELS[e.status]}
                   </span>
+                  {/* Avisar de que se ha liberado mesa es la razón de ser de la lista. */}
+                  <WhatsAppButton
+                    phone={e.guest_phone}
+                    guestName={e.guest_name}
+                    partySize={e.party_size}
+                    template="waitlist"
+                  />
                   {e.status === "waiting" && (
                     <button
                       onClick={() => handleStatus(e.id, "notified")}
                       title="Marcar como notificado"
+                      aria-label={`Marcar ${e.guest_name} como notificado`}
                       className="p-1.5 rounded-lg hover:bg-blue-50 text-stone-400 hover:text-blue-600 transition-colors"
                     >
                       <Bell className="h-3.5 w-3.5" />

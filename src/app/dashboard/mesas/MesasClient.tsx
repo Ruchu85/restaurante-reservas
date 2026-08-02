@@ -30,6 +30,7 @@ interface TableFormValues {
   capacity: number;
   min_capacity: number;
   section: TableSection;
+  combinable: boolean;
 }
 
 const DEFAULT_FORM: TableFormValues = {
@@ -37,11 +38,17 @@ const DEFAULT_FORM: TableFormValues = {
   capacity: 4,
   min_capacity: 1,
   section: "interior",
+  combinable: true,
 };
 
-export function MesasClient({ tables: initialTables }: { tables: RestaurantTable[] }) {
+export function MesasClient({
+  tables,
+  canEdit,
+}: {
+  tables: RestaurantTable[];
+  canEdit: boolean;
+}) {
   const router = useRouter();
-  const [tables, setTables] = useState<RestaurantTable[]>(initialTables);
   const [editTarget, setEditTarget] = useState<RestaurantTable | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<TableFormValues>(DEFAULT_FORM);
@@ -61,23 +68,29 @@ export function MesasClient({ tables: initialTables }: { tables: RestaurantTable
 
   function openEdit(t: RestaurantTable) {
     setEditTarget(t);
-    setForm({ name: t.name, capacity: t.capacity, min_capacity: t.min_capacity, section: t.section });
+    setForm({
+      name: t.name,
+      capacity: t.capacity,
+      min_capacity: t.min_capacity,
+      section: t.section,
+      combinable: t.combinable ?? true,
+    });
     setShowForm(true);
   }
 
   async function handleSave() {
     if (!form.name.trim()) { toast.error("Introduce un nombre para la mesa"); return; }
+    if (form.min_capacity > form.capacity) {
+      toast.error("La capacidad mínima no puede superar a la máxima");
+      return;
+    }
     setSaving(true);
     try {
-      if (editTarget) {
-        const res = await updateTable(editTarget.id, form);
-        if (res.error) { toast.error(res.error); return; }
-        toast.success("Mesa actualizada");
-      } else {
-        const res = await createTable(form);
-        if (res.error) { toast.error(res.error); return; }
-        toast.success("Mesa creada");
-      }
+      const res = editTarget
+        ? await updateTable(editTarget.id, form)
+        : await createTable(form);
+      if ("error" in res && res.error) { toast.error(res.error); return; }
+      toast.success(editTarget ? "Mesa actualizada" : "Mesa creada");
       router.refresh();
       setShowForm(false);
     } finally {
@@ -86,31 +99,39 @@ export function MesasClient({ tables: initialTables }: { tables: RestaurantTable
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("¿Eliminar esta mesa? Las reservas existentes no se borrarán.")) return;
+    if (!confirm("¿Eliminar esta mesa? Solo se puede si no tiene reservas futuras.")) return;
     const res = await deleteTable(id);
-    if (res.error) { toast.error(res.error); return; }
+    if ("error" in res && res.error) { toast.error(res.error); return; }
     toast.success("Mesa eliminada");
-    setTables((prev) => prev.filter((t) => t.id !== id));
+    router.refresh();
   }
 
   async function handleToggleActive(t: RestaurantTable) {
     const res = await toggleTableActive(t.id, !t.active);
-    if (res.error) { toast.error(res.error); return; }
-    setTables((prev) => prev.map((x) => x.id === t.id ? { ...x, active: !x.active } : x));
+    if ("error" in res && res.error) { toast.error(res.error); return; }
+    router.refresh();
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-stone-800">Mesas</h1>
-        <button
-          onClick={openNew}
-          className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Añadir mesa
-        </button>
+        {canEdit && (
+          <button
+            onClick={openNew}
+            className="flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Añadir mesa
+          </button>
+        )}
       </div>
+
+      {!canEdit && (
+        <p className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-800">
+          Solo un administrador puede crear o editar mesas. Sí puedes activarlas y desactivarlas.
+        </p>
+      )}
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3">
@@ -131,9 +152,11 @@ export function MesasClient({ tables: initialTables }: { tables: RestaurantTable
         <div className="rounded-2xl bg-white border border-stone-100 p-12 text-center shadow-sm">
           <TableProperties className="h-10 w-10 text-stone-300 mx-auto mb-3" />
           <p className="text-stone-400">Aún no hay mesas configuradas</p>
-          <button onClick={openNew} className="mt-3 text-sm text-amber-600 hover:text-amber-700">
-            Añadir la primera mesa
-          </button>
+          {canEdit && (
+            <button onClick={openNew} className="mt-3 text-sm text-amber-600 hover:text-amber-700">
+              Añadir la primera mesa
+            </button>
+          )}
         </div>
       ) : (
         groupedBySection.map(({ section, tables: sectionTables }) => (
@@ -153,10 +176,12 @@ export function MesasClient({ tables: initialTables }: { tables: RestaurantTable
                     </div>
                     <div className="text-xs text-stone-400">
                       {t.capacity} personas máx. · mín. {t.min_capacity}
+                      {t.combinable === false && " · no juntable"}
                     </div>
                   </div>
                   <button
                     onClick={() => handleToggleActive(t)}
+                    aria-label={`${t.name}: ${t.active ? "desactivar" : "activar"}`}
                     className={cn(
                       "text-xs rounded-full px-2.5 py-1 font-medium transition-colors",
                       t.active
@@ -166,12 +191,24 @@ export function MesasClient({ tables: initialTables }: { tables: RestaurantTable
                   >
                     {t.active ? "Activa" : "Inactiva"}
                   </button>
-                  <button onClick={() => openEdit(t)} className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-500 transition-colors">
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </button>
-                  <button onClick={() => handleDelete(t.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-600 transition-colors">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  {canEdit && (
+                    <>
+                      <button
+                        onClick={() => openEdit(t)}
+                        aria-label={`Editar ${t.name}`}
+                        className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-500 transition-colors"
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(t.id)}
+                        aria-label={`Eliminar ${t.name}`}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -250,6 +287,19 @@ export function MesasClient({ tables: initialTables }: { tables: RestaurantTable
                   ))}
                 </div>
               </div>
+
+              <label className="flex items-start gap-2.5 rounded-lg border border-stone-200 bg-stone-50 p-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.combinable}
+                  onChange={(e) => setForm((f) => ({ ...f, combinable: e.target.checked }))}
+                  className="mt-0.5 rounded border-stone-300 accent-amber-600"
+                />
+                <span className="text-xs text-stone-600">
+                  <span className="block font-medium text-stone-700">Se puede juntar</span>
+                  Permite unirla con otras mesas de la misma zona para grupos grandes.
+                </span>
+              </label>
 
               <div className="flex gap-3 pt-2">
                 <DialogPrimitive.Close asChild>

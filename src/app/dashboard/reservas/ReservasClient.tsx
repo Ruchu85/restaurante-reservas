@@ -1,11 +1,16 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Plus, Search, ChevronRight, Calendar, Users, Clock, X } from "lucide-react";
+import Link from "next/link";
+import { Plus, Search, ChevronRight, Calendar, Users, Clock, X, UserRound, Pencil } from "lucide-react";
 import { cn, formatTime, formatShortDate } from "@/lib/utils";
 import { toast } from "sonner";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { ReservationForm } from "@/components/dashboard/ReservationForm";
+import { GuestSignalBadges } from "@/components/dashboard/GuestSignalBadges";
+import { WhatsAppButton } from "@/components/dashboard/WhatsAppButton";
+import { guestSignals } from "@/lib/guestSignals";
+import { formatPhone, normalizePhone } from "@/lib/phone";
 import type { Reservation, Restaurant, RestaurantTable } from "@/types";
 import { updateReservationStatus } from "@/actions/reservations";
 
@@ -50,6 +55,7 @@ interface Props {
 }
 
 export function ReservasClient({ restaurant, tables, initialReservations, initialDate }: Props) {
+  const timeZone = restaurant.timezone || "Europe/Madrid";
   const [date, setDate] = useState(initialDate);
   const [reservations, setReservations] = useState<Reservation[]>(initialReservations);
   const [loading, setLoading] = useState(false);
@@ -57,6 +63,7 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
   const [search, setSearch] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [selected, setSelected] = useState<Reservation | null>(null);
+  const [editing, setEditing] = useState<Reservation | null>(null);
 
   const fetchForDate = useCallback(async (d: string) => {
     setLoading(true);
@@ -79,18 +86,30 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
   const filtered = reservations.filter((r) => {
     if (statusFilter && r.status !== statusFilter) return false;
     if (search) {
-      const q = search.toLowerCase();
-      return r.guest_name.toLowerCase().includes(q) || r.guest_phone.includes(q);
+      const q = search.trim().toLowerCase();
+      if (r.guest_name.toLowerCase().includes(q)) return true;
+      // Buscar "600 11 22 33" debe encontrar "+34600112233".
+      const digits = q.replace(/\D/g, "");
+      return digits.length > 0 && normalizePhone(r.guest_phone).includes(digits);
     }
     return true;
   });
 
   async function handleStatusChange(id: string, status: Reservation["status"]) {
     const res = await updateReservationStatus(id, status);
-    if (res.error) { toast.error(res.error); return; }
+    if ("error" in res && res.error) { toast.error(res.error); return; }
     toast.success("Estado actualizado");
     setReservations((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
     setSelected((prev) => prev?.id === id ? { ...prev, status } : prev);
+  }
+
+  /** Nombres de todas las mesas asignadas (una reserva de grupo puede ocupar varias). */
+  function tableLabel(r: Reservation): string {
+    const ids = r.table_ids?.length ? r.table_ids : r.table_id ? [r.table_id] : [];
+    const names = ids
+      .map((id) => tables.find((t) => t.id === id)?.name ?? r.table?.name)
+      .filter((n): n is string => Boolean(n));
+    return names.length > 0 ? [...new Set(names)].join(" + ") : "Sin asignar";
   }
 
   return (
@@ -164,30 +183,39 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
         ) : (
           <div className="divide-y divide-stone-50">
             {filtered.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => setSelected(r)}
-                className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-stone-50 transition-colors text-left"
-              >
-                <div className="flex-shrink-0 w-14">
-                  <div className="text-sm font-bold text-stone-800">{formatTime(r.starts_at)}</div>
-                  <div className="text-xs text-stone-400 flex items-center gap-0.5">
-                    <Clock className="h-3 w-3" />
-                    {formatTime(r.ends_at)}
+              <div key={r.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-stone-50 transition-colors">
+                <button
+                  onClick={() => setSelected(r)}
+                  className="flex flex-1 items-center gap-4 text-left min-w-0"
+                >
+                  <div className="flex-shrink-0 w-14">
+                    <div className="text-sm font-bold text-stone-800">{formatTime(r.starts_at, timeZone)}</div>
+                    <div className="text-xs text-stone-400 flex items-center gap-0.5">
+                      <Clock className="h-3 w-3" />
+                      {formatTime(r.ends_at, timeZone)}
+                    </div>
                   </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-stone-800 truncate">{r.guest_name}</div>
-                  <div className="text-xs text-stone-400 flex items-center gap-2">
-                    <span className="flex items-center gap-0.5">
-                      <Users className="h-3 w-3" />{r.party_size}
-                    </span>
-                    {r.table && <span>· {r.table.name}</span>}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-stone-800 truncate">{r.guest_name}</div>
+                    <div className="text-xs text-stone-400 flex items-center gap-2">
+                      <span className="flex items-center gap-0.5">
+                        <Users className="h-3 w-3" />{r.party_size}
+                      </span>
+                      <span>· {tableLabel(r)}</span>
+                    </div>
+                    <GuestSignalBadges signals={guestSignals(r.guest)} className="mt-1" />
                   </div>
-                </div>
+                </button>
+                <WhatsAppButton
+                  phone={r.guest_phone}
+                  guestName={r.guest_name}
+                  partySize={r.party_size}
+                  startsAt={r.starts_at}
+                  timeZone={timeZone}
+                />
                 <StatusBadge status={r.status} />
                 <ChevronRight className="h-4 w-4 text-stone-300 flex-shrink-0" />
-              </button>
+              </div>
             ))}
           </div>
         )}
@@ -221,6 +249,51 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
 
+      {/* Edit dialog */}
+      <DialogPrimitive.Root open={Boolean(editing)} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Overlay className="fixed inset-0 bg-black/50 z-50" />
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <DialogPrimitive.Title className="text-lg font-bold text-stone-800">
+                Editar reserva
+              </DialogPrimitive.Title>
+              <DialogPrimitive.Close className="p-1 rounded-lg hover:bg-stone-100">
+                <X className="h-4 w-4 text-stone-500" />
+              </DialogPrimitive.Close>
+            </div>
+            {editing && (
+              <ReservationForm
+                restaurant={restaurant}
+                tables={tables}
+                defaultValues={{
+                  id: editing.id,
+                  guest_name: editing.guest_name,
+                  guest_phone: editing.guest_phone,
+                  guest_email: editing.guest_email,
+                  party_size: editing.party_size,
+                  starts_at: editing.starts_at,
+                  // Una reserva con mesas juntadas no cabe en el desplegable de
+                  // mesa única: precargarla enviaba "mesa elegida a mano" con
+                  // solo la primera, y la validación la rechazaba por capacidad.
+                  // Se deja en "Auto-asignar" para que se recalcule la combinación.
+                  table_id:
+                    editing.table_ids && editing.table_ids.length > 1 ? null : editing.table_id,
+                  notes: editing.notes,
+                  internal_notes: editing.internal_notes,
+                }}
+                onClose={(savedDate) => {
+                  setEditing(null);
+                  const target = savedDate ?? date;
+                  if (target !== date) setDate(target);
+                  fetchForDate(target);
+                }}
+              />
+            )}
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
+
       {/* Detail dialog */}
       <DialogPrimitive.Root open={Boolean(selected)} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogPrimitive.Portal>
@@ -237,17 +310,69 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
                   </DialogPrimitive.Close>
                 </div>
 
-                <p className="text-sm text-stone-500 mb-4">
-                  {formatShortDate(selected.starts_at)} · {formatTime(selected.starts_at)} · {selected.party_size} personas
+                <p className="text-sm text-stone-500 mb-3">
+                  {formatShortDate(selected.starts_at, timeZone)} · {formatTime(selected.starts_at, timeZone)} · {selected.party_size} personas
                 </p>
 
+                <GuestSignalBadges signals={guestSignals(selected.guest)} className="mb-4" />
+
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(selected);
+                      setSelected(null);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Editar
+                  </button>
+                  <WhatsAppButton
+                    phone={selected.guest_phone}
+                    guestName={selected.guest_name}
+                    partySize={selected.party_size}
+                    startsAt={selected.starts_at}
+                    timeZone={timeZone}
+                    label="Recordar por WhatsApp"
+                  />
+                  <a
+                    href={`tel:${normalizePhone(selected.guest_phone)}`}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-100"
+                  >
+                    Llamar
+                  </a>
+                  {selected.guest_id && (
+                    <Link
+                      href={`/dashboard/comensales/${selected.guest_id}`}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-100"
+                    >
+                      <UserRound className="h-3.5 w-3.5" />
+                      Ver ficha
+                    </Link>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-                  <div><div className="text-xs text-stone-400">Teléfono</div><div className="font-medium">{selected.guest_phone}</div></div>
+                  <div><div className="text-xs text-stone-400">Teléfono</div><div className="font-medium">{formatPhone(selected.guest_phone)}</div></div>
                   {selected.guest_email && <div><div className="text-xs text-stone-400">Email</div><div className="font-medium truncate">{selected.guest_email}</div></div>}
-                  <div><div className="text-xs text-stone-400">Mesa</div><div className="font-medium">{selected.table?.name ?? "Sin asignar"}</div></div>
+                  <div><div className="text-xs text-stone-400">Mesa</div><div className="font-medium">{tableLabel(selected)}</div></div>
                   <div><div className="text-xs text-stone-400">Estado</div><div className="mt-0.5"><StatusBadge status={selected.status} /></div></div>
                   <div><div className="text-xs text-stone-400">Origen</div><div className="font-medium capitalize">{selected.source}</div></div>
                 </div>
+
+                {selected.guest?.allergies && (
+                  <div className="mb-3 rounded-lg bg-red-50 border border-red-100 p-3 text-sm text-red-800">
+                    <div className="text-xs font-semibold uppercase tracking-wide mb-1">Alergias</div>
+                    {selected.guest.allergies}
+                  </div>
+                )}
+                {selected.guest?.notes && (
+                  <div className="mb-3 rounded-lg bg-stone-50 p-3 text-sm text-stone-600">
+                    <div className="text-xs font-medium text-stone-400 mb-1">Ficha del comensal</div>
+                    {selected.guest.notes}
+                  </div>
+                )}
 
                 {selected.notes && (
                   <div className="mb-3 p-3 rounded-lg bg-amber-50 text-sm text-stone-600">

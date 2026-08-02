@@ -43,6 +43,7 @@ export default async function ReservationTokenPage({ params }: Props) {
     <ReservationDetailClient
       reservation={reservation}
       restaurantName={restaurant?.name ?? "Restaurante"}
+      timeZone={restaurant?.timezone ?? "Europe/Madrid"}
     />
   );
 }

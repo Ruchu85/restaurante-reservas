@@ -1,37 +1,35 @@
-import { createAdminClient, getRestaurantId } from "@/lib/supabase/admin";
-import { getRestaurant, getActiveTables } from "@/lib/restaurant";
+import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getCurrentRestaurant, getActiveTables } from "@/lib/restaurant";
+import { getReservationsForServiceDay } from "@/lib/reservations";
+import { toLocalDate } from "@/lib/dates";
 import { ReservasClient } from "./ReservasClient";
-import { toMadridDate } from "@/lib/utils";
-import type { Reservation } from "@/types";
 
 export default async function ReservasPage({
   searchParams,
 }: {
   searchParams: Promise<{ date?: string }>;
 }) {
+  const context = await getCurrentRestaurant();
+  if (!context) redirect("/login");
+
   const { date } = await searchParams;
-  const today = date ?? toMadridDate(new Date());
+  const today = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : toLocalDate(new Date(), context.session.timezone);
 
   const admin = createAdminClient();
-  const restaurantId = await getRestaurantId();
-  const [restaurant, tables] = await Promise.all([
-    getRestaurant(),
-    getActiveTables(restaurantId ?? ""),
+  const [tables, reservations] = await Promise.all([
+    getActiveTables(admin, context.restaurant.id),
+    getReservationsForServiceDay(admin, context.restaurant.id, today, {
+      withRelations: true,
+      timeZone: context.session.timezone,
+    }),
   ]);
-
-  const { data: reservations } = await admin
-    .from("reservations")
-    .select("*, table:restaurant_tables(id, name, capacity, section)")
-    .eq("restaurant_id", restaurantId ?? "")
-    .gte("starts_at", today + "T00:00:00.000Z")
-    .lte("starts_at", today + "T23:59:59.999Z")
-    .order("starts_at");
 
   return (
     <ReservasClient
-      restaurant={restaurant!}
+      restaurant={context.restaurant}
       tables={tables}
-      initialReservations={(reservations ?? []) as Reservation[]}
+      initialReservations={reservations}
       initialDate={today}
     />
   );

@@ -1,8 +1,10 @@
-import { createAdminClient, getRestaurantId } from "@/lib/supabase/admin";
-import { toMadridDate } from "@/lib/utils";
+import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getStaffSession } from "@/lib/auth";
 import { getBusinessHours, getBlockedDays, getActiveTables } from "@/lib/restaurant";
+import { getReservationsForRange } from "@/lib/reservations";
+import { toLocalDate, addDays } from "@/lib/dates";
 import { CalendarClient } from "./CalendarClient";
-import type { Reservation } from "@/types";
 
 export const metadata = { title: "Calendario de Reservas" };
 
@@ -11,43 +13,40 @@ export default async function CalendarioPage({
 }: {
   searchParams: Promise<{ date?: string }>;
 }) {
+  const session = await getStaffSession();
+  if (!session) redirect("/login");
+
   const { date: paramDate } = await searchParams;
-  const today = paramDate ?? toMadridDate(new Date());
+  const today =
+    paramDate && /^\d{4}-\d{2}-\d{2}$/.test(paramDate) ? paramDate : toLocalDate(new Date(), session.timezone);
 
   const admin = createAdminClient();
-  const restaurantId = await getRestaurantId();
-  const rid = restaurantId ?? "";
+  const rid = session.restaurantId;
 
-  // Load ±60 days for calendar navigation
-  const center = new Date(today + "T12:00:00");
-  const from = new Date(center);
-  from.setDate(center.getDate() - 60);
-  const to = new Date(center);
-  to.setDate(center.getDate() + 60);
-  const fromStr = from.toISOString().split("T")[0];
-  const toStr = to.toISOString().split("T")[0];
+  // ±60 días alrededor del día visible, para poder navegar sin recargar.
+  const fromStr = addDays(today, -60);
+  const toStr = addDays(today, 60);
 
-  const [reservationsRes, businessHours, blockedDays, tables] = await Promise.all([
-    admin
-      .from("reservations")
-      .select("*, table:restaurant_tables(id, name, capacity, section)")
-      .eq("restaurant_id", rid)
-      .gte("starts_at", fromStr + "T00:00:00.000Z")
-      .lte("starts_at", toStr + "T23:59:59.999Z")
-      .in("status", ["confirmed", "seated", "completed"])
-      .order("starts_at"),
-    getBusinessHours(rid),
-    getBlockedDays(rid, fromStr, toStr),
-    getActiveTables(rid),
+  const [reservations, businessHours, blockedDays, tables] = await Promise.all([
+    getReservationsForRange(admin, rid, fromStr, toStr, {
+      withRelations: true,
+      timeZone: session.timezone,
+    }),
+    getBusinessHours(admin, rid),
+    getBlockedDays(admin, rid, fromStr, toStr),
+    getActiveTables(admin, rid),
   ]);
 
   return (
     <CalendarClient
-      initialReservations={(reservationsRes.data ?? []) as Reservation[]}
+      initialReservations={reservations.filter((r) =>
+        ["confirmed", "seated", "completed"].includes(r.status),
+      )}
       businessHours={businessHours}
       blockedDays={blockedDays}
       tables={tables}
       today={today}
+      timeZone={session.timezone}
     />
   );
 }

@@ -1,39 +1,48 @@
-import { createAdminClient, getRestaurantId } from "@/lib/supabase/admin";
-import { toMadridDate } from "@/lib/utils";
+import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getStaffSession } from "@/lib/auth";
+import { toLocalDate, addDays, dayOfWeek, madridRangeUtc, madridDayRangeUtc } from "@/lib/dates";
 import { BarChart3, TrendingDown, TrendingUp, Users, Calendar } from "lucide-react";
 
 export const metadata = { title: "Informes" };
 
 export default async function InformesPage() {
-  const admin = createAdminClient();
-  const restaurantId = await getRestaurantId();
+  const session = await getStaffSession();
+  if (!session) redirect("/login");
 
-  const today = toMadridDate(new Date());
+  const admin = createAdminClient();
+  const restaurantId = session.restaurantId;
+
+  const tz = session.timezone;
+  const today = toLocalDate(new Date(), tz);
   const thisMonthStart = today.slice(0, 8) + "01";
-  const prev30Start = new Date(today + "T00:00:00");
-  prev30Start.setDate(prev30Start.getDate() - 29);
-  const prev30Str = toMadridDate(prev30Start);
+  const prev30Str = addDays(today, -29);
+
+  // Todas las ventanas se calculan sobre el día natural de Madrid.
+  const monthRange = madridRangeUtc(thisMonthStart, today, tz);
+  const last30Range = madridRangeUtc(prev30Str, today, tz);
+  const todayRange = madridDayRangeUtc(today, tz);
 
   const [{ data: thisMonth }, { data: last30 }, { data: todayRsvs }] =
     await Promise.all([
       admin
         .from("reservations")
         .select("status, party_size, source, starts_at")
-        .eq("restaurant_id", restaurantId ?? "")
-        .gte("starts_at", thisMonthStart + "T00:00:00.000Z")
-        .lte("starts_at", today + "T23:59:59.999Z"),
+        .eq("restaurant_id", restaurantId)
+        .gte("starts_at", monthRange.from)
+        .lt("starts_at", monthRange.to),
       admin
         .from("reservations")
         .select("status, party_size, source, starts_at")
-        .eq("restaurant_id", restaurantId ?? "")
-        .gte("starts_at", prev30Str + "T00:00:00.000Z")
-        .lte("starts_at", today + "T23:59:59.999Z"),
+        .eq("restaurant_id", restaurantId)
+        .gte("starts_at", last30Range.from)
+        .lt("starts_at", last30Range.to),
       admin
         .from("reservations")
         .select("status, party_size")
-        .eq("restaurant_id", restaurantId ?? "")
-        .gte("starts_at", today + "T00:00:00.000Z")
-        .lte("starts_at", today + "T23:59:59.999Z"),
+        .eq("restaurant_id", restaurantId)
+        .gte("starts_at", todayRange.from)
+        .lt("starts_at", todayRange.to),
     ]);
 
   type Row = { status: string; party_size: number; source: string; starts_at: string };
@@ -61,7 +70,7 @@ export default async function InformesPage() {
   }, {});
 
   const dowCount = last30Active.reduce<Record<number, number>>((acc, r) => {
-    const dow = new Date(r.starts_at).getDay();
+    const dow = dayOfWeek(toLocalDate(new Date(r.starts_at), tz));
     acc[dow] = (acc[dow] ?? 0) + 1;
     return acc;
   }, {});

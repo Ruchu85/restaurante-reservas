@@ -15,21 +15,22 @@ const STATUS_LABELS: Record<string, { label: string; color: string; icon: React.
   no_show: { label: "No presentado", color: "bg-orange-100 text-orange-600", icon: <XCircle className="h-4 w-4" /> },
 };
 
-function formatDate(iso: string) {
+function formatDate(iso: string, timeZone: string) {
   return new Date(iso).toLocaleDateString("es-ES", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
-    timeZone: "Europe/Madrid",
+    timeZone,
   });
 }
 
-function formatTime(iso: string) {
+function formatTime(iso: string, timeZone: string) {
   return new Date(iso).toLocaleTimeString("es-ES", {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "Europe/Madrid",
+    hour12: false,
+    timeZone,
   });
 }
 
@@ -40,9 +41,15 @@ function hoursUntil(iso: string) {
 interface Props {
   reservation: Reservation;
   restaurantName: string;
+  /** Zona horaria del restaurante: la hora que ve el cliente debe ser la suya. */
+  timeZone?: string;
 }
 
-export function ReservationDetailClient({ reservation, restaurantName }: Props) {
+export function ReservationDetailClient({
+  reservation,
+  restaurantName,
+  timeZone = "Europe/Madrid",
+}: Props) {
   const [cancelled, setCancelled] = useState(reservation.status === "cancelled");
   const [showConfirm, setShowConfirm] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -107,7 +114,7 @@ export function ReservationDetailClient({ reservation, restaurantName }: Props) 
             <div>
               <div className="text-xs font-medium text-stone-400 uppercase tracking-wide">Fecha</div>
               <div className="font-semibold text-stone-800 capitalize mt-0.5">
-                {formatDate(reservation.starts_at)}
+                {formatDate(reservation.starts_at, timeZone)}
               </div>
             </div>
           </div>
@@ -119,7 +126,7 @@ export function ReservationDetailClient({ reservation, restaurantName }: Props) 
             <div>
               <div className="text-xs font-medium text-stone-400 uppercase tracking-wide">Hora</div>
               <div className="font-semibold text-stone-800 mt-0.5">
-                {formatTime(reservation.starts_at)} — {formatTime(reservation.ends_at)}
+                {formatTime(reservation.starts_at, timeZone)} — {formatTime(reservation.ends_at, timeZone)}
               </div>
             </div>
           </div>

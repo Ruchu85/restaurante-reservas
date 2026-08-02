@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Check, ChevronRight, Loader2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toLocalDate, addDays } from "@/lib/dates";
 import { toast } from "sonner";
 
 type Step = "date-party" | "time" | "contact" | "done";
@@ -24,7 +25,15 @@ interface ConfirmedReservation {
 
 const PARTY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
-export function BookingWizard({ maxPartySize = 10 }: { maxPartySize?: number }) {
+export function BookingWizard({
+  maxPartySize = 10,
+  maxAdvanceDays = 30,
+  timeZone = "Europe/Madrid",
+}: {
+  maxPartySize?: number;
+  maxAdvanceDays?: number;
+  timeZone?: string;
+}) {
   const [step, setStep] = useState<Step>("date-party");
   const [date, setDate] = useState("");
   const [partySize, setPartySize] = useState(2);
@@ -38,10 +47,11 @@ export function BookingWizard({ maxPartySize = 10 }: { maxPartySize?: number }) 
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState<ConfirmedReservation | null>(null);
 
-  const today = new Date().toISOString().split("T")[0];
-  const maxDate = new Date();
-  maxDate.setDate(maxDate.getDate() + 30);
-  const maxDateStr = maxDate.toISOString().split("T")[0];
+  // Día natural del restaurante: con `toISOString()` a las 00:30 de Madrid en
+  // verano el mínimo del selector era ayer. El máximo sale de la configuración
+  // del restaurante, para no ofrecer fechas que el servidor va a rechazar.
+  const today = toLocalDate(new Date(), timeZone);
+  const maxDateStr = addDays(today, maxAdvanceDays);
 
   const loadSlots = useCallback(async (d: string, ps: number) => {
     setLoadingSlots(true);
@@ -116,7 +126,7 @@ export function BookingWizard({ maxPartySize = 10 }: { maxPartySize?: number }) 
     new Date(iso).toLocaleTimeString("es-ES", {
       hour: "2-digit",
       minute: "2-digit",
-      timeZone: "Europe/Madrid",
+      timeZone,
     });
 
   const formatDateDisplay = (d: string) =>

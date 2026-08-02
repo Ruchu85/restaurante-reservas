@@ -2,13 +2,16 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { Calendar, Clock, MapPin, Phone, Star, Users } from "lucide-react";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getRestaurant, getBusinessHours } from "@/lib/restaurant";
 
 const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 export default async function HomePage() {
   const restaurant = await getRestaurant();
-  const hoursData = restaurant ? await getBusinessHours(restaurant.id) : [];
+  const hoursData = restaurant
+    ? await getBusinessHours(createAdminClient(), restaurant.id)
+    : [];
 
   return (
     <div className="min-h-screen bg-stone-50">

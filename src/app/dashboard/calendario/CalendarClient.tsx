@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Calendar, Users, Clock, Moon, AlertCircle } from "lucide-react";
 import { cn, formatTime } from "@/lib/utils";
+import { toLocalDate, dayOfWeek } from "@/lib/dates";
+import { resolveServiceDate } from "@/lib/availability";
 import type { Reservation, BusinessHours, BlockedDay, RestaurantTable } from "@/types";
 
 // ─── constants ───────────────────────────────────────────────────────────────
@@ -51,10 +53,10 @@ function getMonthDays(year: number, month: number): (Date | null)[] {
   return cells;
 }
 
-function madridMins(isoStr: string): number {
+function localMins(isoStr: string, timeZone: string): number {
   const d = new Date(isoStr);
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit", hour12: false,
+    timeZone, hour: "2-digit", minute: "2-digit", hour12: false,
   }).formatToParts(d);
   const h = parseInt(parts.find(p => p.type === "hour")!.value, 10);
   const m = parseInt(parts.find(p => p.type === "minute")!.value, 10);
@@ -71,6 +73,27 @@ function minsToLabel(mins: number): string {
   const m = mins % 60;
   return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
 }
+
+/**
+ * Límites de un turno en minutos desde medianoche.
+ *
+ * Si el cierre es menor o igual que la apertura, el turno termina de madrugada
+ * y se le suman 24 h. Sin esto, un turno de cena 20:30–01:00 daba
+ * `openMins=1230, closeMins=60`: ninguna reserva cumplía `m >= 1230 && m < 60`,
+ * así que el servicio de noche entero aparecía vacío.
+ */
+function shiftBounds(open: string, close: string): { openMins: number; closeMins: number } {
+  const openMins = timeToMins(open);
+  let closeMins = timeToMins(close);
+  if (closeMins <= openMins) closeMins += 1440;
+  return { openMins, closeMins };
+}
+
+/** Lleva un minuto de madrugada al mismo eje que el turno que cruza medianoche. */
+function normalizeToShift(mins: number, openMins: number): number {
+  return mins < openMins ? mins + 1440 : mins;
+}
+
 
 function occupancyLevel(covers: number, totalSeats: number, shifts: number): 0|1|2|3|4 {
   if (totalSeats === 0 || covers === 0) return 0;
@@ -96,27 +119,45 @@ interface Props {
   blockedDays: BlockedDay[];
   tables: RestaurantTable[];
   today: string;
+  /** Zona horaria del restaurante: todo lo que se pinta debe usarla. */
+  timeZone?: string;
 }
 
 // ─── component ───────────────────────────────────────────────────────────────
 
-export function CalendarClient({ initialReservations, businessHours, blockedDays, tables, today }: Props) {
+export function CalendarClient({
+  initialReservations,
+  businessHours,
+  blockedDays,
+  tables,
+  today,
+  timeZone = "Europe/Madrid",
+}: Props) {
   const [view, setView] = useState<"month" | "day">("month");
   const [viewDate, setViewDate] = useState(new Date(today + "T12:00:00"));
   const [selectedDate, setSelectedDate] = useState(today);
 
   const totalSeats = useMemo(() => tables.reduce((s, t) => s + t.capacity, 0), [tables]);
 
-  // Reservations grouped by YYYY-MM-DD (using the UTC date from starts_at)
+  // Agrupadas por DÍA DE SERVICIO, no por el día del reloj.
+  //
+  // Una reserva de las 00:15 del domingo es la cola de la cena del sábado: si
+  // se agrupa por el día natural, no encaja en ningún turno del domingo (que
+  // abre a las 13:30) y desaparece de la vista, además de sumar su ocupación
+  // al día equivocado. `resolveServiceDate` es la misma función que usa el
+  // motor de reservas, así que panel y validación cuentan lo mismo.
   const byDate = useMemo(() => {
     const m = new Map<string, Reservation[]>();
     for (const r of initialReservations) {
-      const d = r.starts_at.substring(0, 10);
+      const d =
+        resolveServiceDate(new Date(r.starts_at), new Date(r.ends_at), businessHours, {
+          timeZone,
+        }) ?? toLocalDate(new Date(r.starts_at), timeZone);
       if (!m.has(d)) m.set(d, []);
       m.get(d)!.push(r);
     }
     return m;
-  }, [initialReservations]);
+  }, [initialReservations, businessHours, timeZone]);
 
   const blockedSet = useMemo(() => new Set(blockedDays.map(b => b.date)), [blockedDays]);
   const blockedReasonMap = useMemo(() => {
@@ -133,7 +174,7 @@ export function CalendarClient({ initialReservations, businessHours, blockedDays
 
   function getDayState(ds: string) {
     const isBlocked = blockedSet.has(ds);
-    const dow = new Date(ds + "T12:00:00").getDay();
+    const dow = dayOfWeek(ds);
     const bh = bhByDow.get(dow);
     const isClosed = isBlocked || !bh || !bh.is_open;
     const shifts = bh?.is_open ? (bh.opens_at_2 ? 2 : 1) : 0;
@@ -150,32 +191,25 @@ export function CalendarClient({ initialReservations, businessHours, blockedDays
       .filter(r => r.status !== "cancelled")
       .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
 
+    const build = (label: string, open: string, close: string): Shift => {
+      const { openMins, closeMins } = shiftBounds(open, close);
+      return {
+        label,
+        open: open.slice(0, 5),
+        close: close.slice(0, 5),
+        reservations: dayRsvs.filter(r => {
+          const m = normalizeToShift(localMins(r.starts_at, timeZone), openMins);
+          return m >= openMins && m < closeMins;
+        }),
+      };
+    };
+
     const shifts: Shift[] = [];
     if (bh.opens_at && bh.closes_at) {
-      const openMins = timeToMins(bh.opens_at);
-      const closeMins = timeToMins(bh.closes_at);
-      shifts.push({
-        label: bh.opens_at_2 ? "Comida" : "Turno",
-        open: bh.opens_at.slice(0, 5),
-        close: bh.closes_at.slice(0, 5),
-        reservations: dayRsvs.filter(r => {
-          const m = madridMins(r.starts_at);
-          return m >= openMins && m < closeMins;
-        }),
-      });
+      shifts.push(build(bh.opens_at_2 ? "Comida" : "Turno", bh.opens_at, bh.closes_at));
     }
     if (bh.opens_at_2 && bh.closes_at_2) {
-      const openMins = timeToMins(bh.opens_at_2);
-      const closeMins = timeToMins(bh.closes_at_2);
-      shifts.push({
-        label: "Cena",
-        open: bh.opens_at_2.slice(0, 5),
-        close: bh.closes_at_2.slice(0, 5),
-        reservations: dayRsvs.filter(r => {
-          const m = madridMins(r.starts_at);
-          return m >= openMins && m < closeMins;
-        }),
-      });
+      shifts.push(build("Cena", bh.opens_at_2, bh.closes_at_2));
     }
     return shifts;
   }
@@ -198,30 +232,32 @@ export function CalendarClient({ initialReservations, businessHours, blockedDays
   const selShifts = getShiftsForDay(selectedDate);
   const selBlocked = blockedSet.has(selectedDate);
   const selBlockReason = blockedReasonMap.get(selectedDate);
-  const selDateLabel = new Date(selectedDate + "T12:00:00").toLocaleDateString("es-ES", {
-    weekday: "long", day: "numeric", month: "long",
+  // Mediodía UTC para que la etiqueta no dependa de la zona del servidor.
+  const selDateLabel = new Date(selectedDate + "T12:00:00Z").toLocaleDateString("es-ES", {
+    weekday: "long", day: "numeric", month: "long", timeZone: "UTC",
   });
 
   // ── Slot occupancy for a shift ──────────────────────────────────────────────
   function slotOccupancy(shift: Shift): Array<{ label: string; free: number; occupied: number; total: number }> {
     const result: Array<{ label: string; free: number; occupied: number; total: number }> = [];
-    let cur = timeToMins(shift.open);
-    const end = timeToMins(shift.close);
+    const { openMins, closeMins } = shiftBounds(shift.open, shift.close);
     const INTERVAL = 30;
-    while (cur < end) {
+    const total = tables.filter(t => t.active).length;
+
+    for (let cur = openMins; cur < closeMins; cur += INTERVAL) {
       const slotEnd = cur + INTERVAL;
       const occupiedTableIds = new Set<string>();
       for (const r of shift.reservations) {
-        const rStart = madridMins(r.starts_at);
-        const rEnd   = madridMins(r.ends_at);
+        const rStart = normalizeToShift(localMins(r.starts_at, timeZone), openMins);
+        const rEnd = normalizeToShift(localMins(r.ends_at, timeZone), rStart);
         if (rStart < slotEnd && rEnd > cur) {
-          if (r.table_id) occupiedTableIds.add(r.table_id);
+          // Una reserva de grupo puede ocupar varias mesas juntadas.
+          const ids = r.table_ids?.length ? r.table_ids : r.table_id ? [r.table_id] : [];
+          for (const id of ids) occupiedTableIds.add(id);
         }
       }
       const occupied = occupiedTableIds.size;
-      const total    = tables.length;
-      result.push({ label: minsToLabel(cur), free: total - occupied, occupied, total });
-      cur += INTERVAL;
+      result.push({ label: minsToLabel(cur % 1440), free: total - occupied, occupied, total });
     }
     return result;
   }
@@ -299,7 +335,6 @@ export function CalendarClient({ initialReservations, businessHours, blockedDays
         {selShifts.map((shift) => {
           const slots = slotOccupancy(shift);
           const shiftCovers = shift.reservations.reduce((s, r) => s + r.party_size, 0);
-          const maxOccSlot = slots.reduce((max, s) => s.occupied > max ? s.occupied : max, 0);
           const shiftOcc = occupancyLevel(shiftCovers, totalSeats, 1);
 
           return (
@@ -381,8 +416,8 @@ export function CalendarClient({ initialReservations, businessHours, blockedDays
                   {shift.reservations.map(r => (
                     <div key={r.id} className="flex items-center gap-3 px-5 py-3">
                       <div className="flex-shrink-0 text-center w-12">
-                        <div className="text-sm font-bold text-stone-800">{formatTime(r.starts_at)}</div>
-                        <div className="text-[10px] text-stone-400">{formatTime(r.ends_at)}</div>
+                        <div className="text-sm font-bold text-stone-800">{formatTime(r.starts_at, timeZone)}</div>
+                        <div className="text-[10px] text-stone-400">{formatTime(r.ends_at, timeZone)}</div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-stone-800 truncate">{r.guest_name}</div>
@@ -574,7 +609,7 @@ export function CalendarClient({ initialReservations, businessHours, blockedDays
               .map(r => (
                 <div key={r.id} className="flex items-center gap-3 px-5 py-2.5">
                   <span className="text-xs font-bold text-stone-700 w-10 flex-shrink-0">
-                    {formatTime(r.starts_at)}
+                    {formatTime(r.starts_at, timeZone)}
                   </span>
                   <span className="text-sm text-stone-700 truncate flex-1">{r.guest_name}</span>
                   <span className="text-xs text-stone-400 flex items-center gap-0.5 flex-shrink-0">

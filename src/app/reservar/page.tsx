@@ -29,7 +29,11 @@ export default async function ReservarPage() {
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-8">
-        <BookingWizard maxPartySize={restaurant?.max_party_size ?? 10} />
+        <BookingWizard
+          maxPartySize={restaurant?.max_party_size ?? 10}
+          maxAdvanceDays={restaurant?.max_advance_days ?? 30}
+          timeZone={restaurant?.timezone ?? "Europe/Madrid"}
+        />
       </main>
     </div>
   );
