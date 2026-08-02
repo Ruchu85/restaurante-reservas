@@ -7,22 +7,39 @@ function getResend(): Resend | null {
   return new Resend(process.env.RESEND_API_KEY);
 }
 
-function formatDate(iso: string) {
+const DEFAULT_TZ = "Europe/Madrid";
+
+function formatDate(iso: string, timeZone = DEFAULT_TZ) {
   return new Date(iso).toLocaleDateString("es-ES", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
-    timeZone: "Europe/Madrid",
+    timeZone,
   });
 }
 
-function formatTime(iso: string) {
+function formatTime(iso: string, timeZone = DEFAULT_TZ) {
   return new Date(iso).toLocaleTimeString("es-ES", {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "Europe/Madrid",
+    hour12: false,
+    timeZone,
   });
+}
+
+/**
+ * Escapa el texto que se interpola en el HTML del email.
+ * `guest_name` es entrada pública: sin escapar, un "<" rompe el render.
+ */
+function esc(value: string | null | undefined): string {
+  if (!value) return "";
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 interface SendConfirmationParams {
@@ -30,6 +47,7 @@ interface SendConfirmationParams {
   restaurantName: string;
   restaurantPhone?: string | null;
   appUrl: string;
+  timeZone?: string;
 }
 
 export async function sendConfirmationEmail({
@@ -37,14 +55,19 @@ export async function sendConfirmationEmail({
   restaurantName,
   restaurantPhone,
   appUrl,
+  timeZone = DEFAULT_TZ,
 }: SendConfirmationParams): Promise<void> {
   if (!process.env.RESEND_API_KEY || !reservation.guest_email) return;
   if (!process.env.RESEND_FROM_EMAIL) return;
 
   const cancelUrl = `${appUrl}/reservar/${reservation.confirmation_token}`;
-  const date = formatDate(reservation.starts_at);
-  const startTime = formatTime(reservation.starts_at);
-  const endTime = formatTime(reservation.ends_at);
+  const date = formatDate(reservation.starts_at, timeZone);
+  const startTime = formatTime(reservation.starts_at, timeZone);
+  const endTime = formatTime(reservation.ends_at, timeZone);
+  const safeName = esc(reservation.guest_name);
+  const safeRestaurant = esc(restaurantName);
+  const safePhone = esc(restaurantPhone);
+  const safeNotes = esc(reservation.notes);
 
   const html = `
 <!DOCTYPE html>
@@ -52,14 +75,14 @@ export async function sendConfirmationEmail({
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reserva confirmada — ${restaurantName}</title>
+  <title>Reserva confirmada — ${safeRestaurant}</title>
 </head>
 <body style="margin:0;padding:0;background:#f9f6f2;font-family:'Segoe UI',sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
     <!-- Header -->
     <tr>
       <td style="background:#d97706;padding:28px 32px;">
-        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">${restaurantName}</h1>
+        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">${safeRestaurant}</h1>
         <p style="margin:6px 0 0;color:#fde68a;font-size:14px;">Reserva confirmada ✓</p>
       </td>
     </tr>
@@ -68,7 +91,7 @@ export async function sendConfirmationEmail({
     <tr>
       <td style="padding:32px;">
         <p style="margin:0 0 24px;color:#44403c;font-size:16px;">
-          Hola <strong>${reservation.guest_name}</strong>, tu reserva ha sido confirmada. Te esperamos.
+          Hola <strong>${safeName}</strong>, tu reserva ha sido confirmada. Te esperamos.
         </p>
 
         <!-- Details box -->
@@ -105,7 +128,7 @@ export async function sendConfirmationEmail({
         ${reservation.notes ? `
         <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 18px;margin-bottom:24px;">
           <div style="color:#92400e;font-size:12px;font-weight:600;margin-bottom:4px;">NOTA</div>
-          <div style="color:#78350f;font-size:14px;">${reservation.notes}</div>
+          <div style="color:#78350f;font-size:14px;">${safeNotes}</div>
         </div>
         ` : ""}
 
@@ -121,7 +144,7 @@ export async function sendConfirmationEmail({
         <p style="margin:0 0 8px;color:#78716c;font-size:13px;">
           Si necesitas cancelar, por favor hazlo con al menos <strong>2 horas de antelación</strong>
           desde el enlace de arriba.
-          ${restaurantPhone ? `También puedes llamarnos al <strong>${restaurantPhone}</strong>.` : ""}
+          ${restaurantPhone ? `También puedes llamarnos al <strong>${safePhone}</strong>.` : ""}
         </p>
 
         <!-- Token -->
@@ -138,7 +161,7 @@ export async function sendConfirmationEmail({
     <tr>
       <td style="background:#fafaf9;border-top:1px solid #e7e5e4;padding:20px 32px;">
         <p style="margin:0;color:#a8a29e;font-size:12px;text-align:center;">
-          ${restaurantName} · Reservas online en <a href="${appUrl}" style="color:#d97706;">${appUrl.replace(/^https?:\/\//, "")}</a>
+          ${safeRestaurant} · Reservas online en <a href="${appUrl}" style="color:#d97706;">${appUrl.replace(/^https?:\/\//, "")}</a>
         </p>
       </td>
     </tr>
@@ -163,12 +186,15 @@ export async function sendCancellationEmail({
   reservation,
   restaurantName,
   appUrl,
+  timeZone = DEFAULT_TZ,
 }: Omit<SendConfirmationParams, "restaurantPhone">): Promise<void> {
   if (!process.env.RESEND_API_KEY || !reservation.guest_email) return;
   if (!process.env.RESEND_FROM_EMAIL) return;
 
-  const date = formatDate(reservation.starts_at);
-  const startTime = formatTime(reservation.starts_at);
+  const date = formatDate(reservation.starts_at, timeZone);
+  const startTime = formatTime(reservation.starts_at, timeZone);
+  const safeName = esc(reservation.guest_name);
+  const safeRestaurant = esc(restaurantName);
 
   const html = `
 <!DOCTYPE html>
@@ -178,14 +204,14 @@ export async function sendCancellationEmail({
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
     <tr>
       <td style="background:#78716c;padding:28px 32px;">
-        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">${restaurantName}</h1>
+        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">${safeRestaurant}</h1>
         <p style="margin:6px 0 0;color:#d6d3d1;font-size:14px;">Reserva cancelada</p>
       </td>
     </tr>
     <tr>
       <td style="padding:32px;">
         <p style="margin:0 0 16px;color:#44403c;font-size:16px;">
-          Hola <strong>${reservation.guest_name}</strong>, hemos cancelado tu reserva del
+          Hola <strong>${safeName}</strong>, hemos cancelado tu reserva del
           <strong style="text-transform:capitalize;">${date}</strong> a las <strong>${startTime}</strong>.
         </p>
         <p style="margin:0 0 28px;color:#78716c;font-size:14px;">
@@ -202,7 +228,7 @@ export async function sendCancellationEmail({
     </tr>
     <tr>
       <td style="background:#fafaf9;border-top:1px solid #e7e5e4;padding:16px 32px;">
-        <p style="margin:0;color:#a8a29e;font-size:12px;text-align:center;">${restaurantName}</p>
+        <p style="margin:0;color:#a8a29e;font-size:12px;text-align:center;">${safeRestaurant}</p>
       </td>
     </tr>
   </table>
