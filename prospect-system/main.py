@@ -17,9 +17,16 @@ from rich.table import Table
 # Ensure src/ is importable when running from project root
 sys.path.insert(0, str(Path(__file__).parent))
 
+# La consola de Windows usa cp1252 por defecto y revienta con acentos o flechas.
+# run.bat ya fuerza PYTHONIOENCODING, pero esto cubre `python main.py` directo.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 from src.config.settings import get_settings
 from src.dedup.deduplicator import deduplicate_batch, is_duplicate
 from src.enrichment.email_finder import extract_domain, find_email
+from src.enrichment.phone_finder import find_phone, normalize_phone
 from src.enrichment.web_analyzer import analyze_website
 from src.export.csv_exporter import export_to_csv
 from src.models.lead import LeadStatus
@@ -28,17 +35,19 @@ from src.outreach.sender import EmailSender
 from src.scoring.scorer import score_lead
 from src.storage.database import get_session, init_db
 from src.storage.repository import EmailDraftRepository, LeadRepository
+from src.cli.whatsapp import whatsapp_app
 from src.utils.geo import resolve_location
 from src.utils.logger import setup_logger
 from src.utils.rate_limiter import RateLimiter
 
 app = typer.Typer(
     name="prospect",
-    help="Sistema de prospección de peluquerías en España.",
+    help="Sistema de prospección de restaurantes en España.",
     add_completion=False,
 )
 emails_app = typer.Typer(help="Gestión de emails de outreach.")
 app.add_typer(emails_app, name="emails")
+app.add_typer(whatsapp_app, name="whatsapp")
 
 console = Console()
 
@@ -58,9 +67,13 @@ def prospect(
     location: str = typer.Argument(..., help="Ciudad, provincia o comunidad autónoma. Ej: 'Madrid', 'Sevilla', 'Andalucía'"),
     limit: int = typer.Option(60, help="Máximo de leads a obtener por ciudad"),
     pages: int = typer.Option(3, help="Páginas de resultados de Google Places (max 3 = 60 resultados)"),
+    query: str = typer.Option("restaurante", help="Término de búsqueda. Ej: 'restaurante', 'bar de tapas', 'marisquería'"),
 ):
     """
-    Busca peluquerías en España mediante Google Places API y guarda los leads.
+    Busca restaurantes en España mediante Google Places API y guarda los leads.
+
+    La ubicación admite ciudad ('Ponferrada'), provincia ('León') o comunidad
+    autónoma ('Andalucía'): se expande a las ciudades principales de cada una.
     """
     _bootstrap()
     settings = get_settings()
@@ -88,7 +101,7 @@ def prospect(
             for city, province, community in targets:
                 console.print(f"\n  >> {city} ({province})")
                 raw_leads = source.search(
-                    query="peluquería",
+                    query=query,
                     city=city,
                     province=province,
                     max_pages=pages,
@@ -158,11 +171,27 @@ def enrich(
                 if email:
                     updates["email"] = email
 
+            # El teléfono es la vía de contacto principal en restauración:
+            # se normaliza el de Google y, si falta, se busca en la web.
+            normalized = normalize_phone(lead.phone)
+            if normalized and normalized != lead.phone:
+                updates["phone"] = normalized
+            elif not lead.phone and lead.website:
+                found = find_phone(lead.website)
+                if found:
+                    updates["phone"] = found
+
             if updates:
                 updates["status"] = LeadStatus.enriched.value
                 repo.update(lead.id, **updates)
                 updated += 1
-                console.print(f"  ✓ {lead.name[:40]:<40} | {updates.get('booking_platform', '')} | email: {updates.get('email', '–')}")
+                phone = updates.get("phone", lead.phone) or "–"
+                console.print(
+                    f"  ✓ {lead.name[:36]:<36} | "
+                    f"{(updates.get('booking_platform') or '–')[:14]:<14} | "
+                    f"tel: {phone:<14} | "
+                    f"email: {updates.get('email', '–')}"
+                )
             else:
                 repo.update(lead.id, status=LeadStatus.enriched.value)
 
