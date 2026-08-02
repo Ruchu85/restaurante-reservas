@@ -1,8 +1,8 @@
 """
-Analyzes a business website to detect:
-- Online booking platform
-- WhatsApp usage for bookings
-- Level of digitalization
+Analiza la web del restaurante para detectar:
+- Qué plataforma de reservas usa (si usa alguna)
+- Si canaliza las reservas por WhatsApp
+- Su nivel de digitalización
 """
 from __future__ import annotations
 
@@ -15,29 +15,32 @@ from bs4 import BeautifulSoup
 from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_fixed
 
+# Dominios de widgets de reserva de restauración. Detectarlos nos dice si el
+# local ya tiene motor de reservas y con quién compite la propuesta.
 _BOOKING_PLATFORMS = {
-    "treatwell.es": "treatwell",
-    "treatwell.com": "treatwell",
-    "booksy.com": "booksy",
-    "fresha.com": "fresha",
+    "covermanager.com": "covermanager",
+    "thefork.com": "thefork",
+    "thefork.es": "thefork",
+    "eltenedor.es": "thefork",
+    "opentable.com": "opentable",
+    "opentable.es": "opentable",
+    "sevenrooms.com": "sevenrooms",
+    "resy.com": "resy",
+    "zenchef.com": "zenchef",
+    "bookline.ai": "bookline",
+    "restoo.es": "restoo",
     "simplybook.me": "simplybook",
-    "calendly.com": "calendly",
-    "acuityscheduling.com": "acuity",
-    "reservio.com": "reservio",
-    "appointy.com": "other_platform",
-    "vagaro.com": "other_platform",
-    "setmore.com": "other_platform",
-    "glofox.com": "other_platform",
-    "mindbodyonline.com": "other_platform",
-    "styleseat.com": "other_platform",
-    "boulevard.io": "other_platform",
-    "shortcuts.net": "other_platform",
+    "mesa247.com": "other_platform",
+    "quandoo.es": "other_platform",
+    "resmio.com": "other_platform",
+    "formitable.com": "other_platform",
+    "tableo.com": "other_platform",
 }
 
 _BOOKING_KEYWORDS_ES = [
-    "reservar cita", "reserva online", "reservar online", "pide cita",
-    "pedir cita", "book now", "book appointment", "reservar ahora",
-    "haz tu reserva", "reserva tu cita", "cita online", "agenda online",
+    "reservar mesa", "reserva online", "reservar online", "reserva tu mesa",
+    "haz tu reserva", "reservar ahora", "book a table", "book now",
+    "reservas online", "reserva de mesa", "pedir mesa",
 ]
 
 _WHATSAPP_PATTERNS = [

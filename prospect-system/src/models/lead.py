@@ -21,21 +21,23 @@ class LeadStatus(str, Enum):
 
 class BookingPlatform(str, Enum):
     none = "none"
-    treatwell = "treatwell"
-    booksy = "booksy"
-    fresha = "fresha"
+    covermanager = "covermanager"
+    thefork = "thefork"
+    opentable = "opentable"
+    sevenrooms = "sevenrooms"
+    resy = "resy"
+    zenchef = "zenchef"
+    restoo = "restoo"
+    bookline = "bookline"
     simplybook = "simplybook"
-    calendly = "calendly"
-    acuity = "acuity"
-    reservio = "reservio"
     other_platform = "other_platform"
     unknown = "unknown"
 
 
 class EstimatedSize(str, Enum):
-    solo = "solo"        # 1 persona
-    small = "small"      # 2-5 personas
-    medium = "medium"    # 6-15 personas
+    solo = "solo"        # local pequeño / familiar
+    small = "small"      # restaurante de barrio consolidado
+    medium = "medium"    # restaurante con volumen alto
     large = "large"      # cadena / franquicia
 
 
@@ -97,5 +99,21 @@ class EmailDraftRead(EmailDraftCreate):
     created_at: datetime
     sent_at: Optional[datetime] = None
     error_message: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class WhatsAppDraftCreate(BaseModel):
+    lead_id: str
+    phone: str
+    message_text: str
+    wa_link: str
+
+
+class WhatsAppDraftRead(WhatsAppDraftCreate):
+    id: str
+    whatsapp_status: str
+    created_at: datetime
+    sent_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}

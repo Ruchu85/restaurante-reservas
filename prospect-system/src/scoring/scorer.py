@@ -2,7 +2,7 @@
 Lead scoring engine.
 
 Score range: 0–100.
-A higher score means a better prospect for our appointment management app.
+A higher score means a better prospect for our restaurant reservation app.
 """
 from __future__ import annotations
 
@@ -11,12 +11,17 @@ from dataclasses import dataclass, field
 from src.models.lead import LeadRead, LeadScore
 
 _CHAIN_KEYWORDS = [
-    "eurostop", "franquicia", "tony&guy", "tony and guy", "supercuts",
-    "llongueras", "klippan", "pelu express", "cadena", "franquicia",
+    "mcdonald", "burger king", "kfc", "telepizza", "domino", "papa john",
+    "vips", "ginos", "foster's hollywood", "fosters hollywood", "tgb",
+    "goiko", "100 montaditos", "la sureña", "rodilla", "starbucks", "subway",
+    "pans & company", "pans and company", "tony roma", "grupo vips",
+    "muerde la pasta", "tagliatella", "udon", "cadena", "franquicia",
 ]
 
-_ADVANCED_PLATFORMS = {"booksy", "treatwell", "fresha", "acuity", "mindbody"}
-_BASIC_PLATFORMS = {"simplybook", "calendly", "reservio", "other_platform"}
+# Plataformas de reservas de restauración ya consolidadas: si el local usa una
+# de estas, el coste de cambio es alto y deja de ser un buen prospecto.
+_ADVANCED_PLATFORMS = {"covermanager", "thefork", "opentable", "sevenrooms", "resy", "zenchef"}
+_BASIC_PLATFORMS = {"restoo", "bookline", "simplybook", "calendly", "reservio", "other_platform"}
 
 
 @dataclass

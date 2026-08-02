@@ -1,5 +1,5 @@
 """
-Google Places API (New) source.
+Fuente de datos: Google Places API (New) — restaurantes en España.
 
 Uses the modern Places API (New) endpoints:
   - Text Search: POST https://places.googleapis.com/v1/places:searchText
@@ -41,10 +41,45 @@ _FIELD_MASK = ",".join([
     "nextPageToken",
 ])
 
+# Cadenas y franquicias: tienen su propio software corporativo, no son cliente.
 _CHAIN_KEYWORDS = [
-    "eurostop", "franquicia", "tony&guy", "tony and guy", "supercuts",
-    "salon llongueras", "llongueras", "pelu express", "klippan", "cabello express",
+    "mcdonald", "burger king", "kfc", "telepizza", "domino", "papa john",
+    "vips", "ginos", "foster's hollywood", "fosters hollywood", "tgb",
+    "goiko", "100 montaditos", "cervecería la sureña", "la sureña",
+    "rodilla", "pans & company", "pans and company", "starbucks", "subway",
+    "tony roma", "lateral", "grupo vips", "muerde la pasta", "tagliatella",
+    "udon", "wok", "franquicia",
 ]
+
+# Tipos de Google Places que consideramos restauración con servicio de mesa.
+_ACCEPTED_TYPES = {
+    "restaurant",
+    "bar",
+    "cafe",
+    "meal_takeaway",
+    "food",
+    "bar_and_grill",
+    "fine_dining_restaurant",
+    "spanish_restaurant",
+    "italian_restaurant",
+    "japanese_restaurant",
+    "seafood_restaurant",
+    "steak_house",
+    "pizza_restaurant",
+    "tapas_restaurant",
+    "brunch_restaurant",
+}
+
+# Tipos que descartamos aunque Google los mezcle con "restaurant".
+_EXCLUDED_TYPES = {
+    "lodging",
+    "hotel",
+    "gas_station",
+    "supermarket",
+    "convenience_store",
+    "shopping_mall",
+    "night_club",
+}
 
 
 class GooglePlacesSource(BaseSource):
@@ -132,8 +167,10 @@ class GooglePlacesSource(BaseSource):
         if business_status in ("CLOSED_PERMANENTLY", "CLOSED_TEMPORARILY"):
             return None
 
-        types = place.get("types", [])
-        if not any(t in types for t in ("hair_salon", "beauty_salon", "barber_shop", "point_of_interest")):
+        types = set(place.get("types", []))
+        if types & _EXCLUDED_TYPES:
+            return None
+        if not (types & _ACCEPTED_TYPES):
             return None
 
         name = place.get("displayName", {}).get("text", "")
@@ -188,10 +225,16 @@ def _extract_address_parts(components: list[dict]) -> tuple[str, str, str]:
 
 
 def _estimate_size(name: str, review_count: int) -> str:
+    """
+    Tamaño estimado a partir del volumen de reseñas.
+
+    Los umbrales son más altos que en otros sectores porque un restaurante
+    medio acumula muchas más reseñas que, por ejemplo, una peluquería.
+    """
     if any(k in name.lower() for k in _CHAIN_KEYWORDS):
         return "large"
-    if review_count > 200:
+    if review_count > 1000:
         return "medium"
-    if review_count > 50:
+    if review_count > 250:
         return "small"
     return "solo"

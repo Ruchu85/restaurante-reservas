@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.storage.db_models import Base
@@ -37,7 +37,37 @@ def init_db(database_url: str) -> None:
 
     Base.metadata.create_all(_engine)
 
+    if "sqlite" in database_url:
+        _run_sqlite_migrations(_engine)
+
     _SessionLocal = sessionmaker(bind=_engine, autocommit=False, autoflush=False)
+
+
+def _run_sqlite_migrations(engine) -> None:
+    """
+    Añade columnas introducidas después del esquema inicial sin perder datos.
+
+    `create_all` crea tablas nuevas pero nunca altera las existentes, así que
+    una base de datos creada con una versión anterior necesita este paso.
+    """
+    new_columns = {
+        "leads": [
+            ("whatsapp_status", "TEXT"),
+            ("whatsapp_sent_at", "DATETIME"),
+        ],
+    }
+
+    with engine.connect() as conn:
+        for table, columns in new_columns.items():
+            existing = {
+                row[1] for row in conn.execute(text(f"PRAGMA table_info({table})"))
+            }
+            if not existing:
+                continue  # la tabla aún no existe
+            for name, column_type in columns:
+                if name not in existing:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {column_type}"))
+        conn.commit()
 
 
 @contextmanager
