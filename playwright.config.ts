@@ -18,8 +18,11 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm dev",
+    // En CI se sirve el build ya generado: es lo que se despliega y arranca
+    // mucho más rápido que el dev server.
+    command: process.env.CI ? "pnpm start" : "pnpm dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
   },
 });

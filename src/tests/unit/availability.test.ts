@@ -22,6 +22,7 @@ const TUESDAY_HOURS: BusinessHours = {
   closes_at: "16:00",
   opens_at_2: "20:30",
   closes_at_2: "23:30",
+  max_covers_per_slot: null,
 };
 
 // Returns minutes since midnight in Europe/Madrid timezone for a given Date.
@@ -47,6 +48,7 @@ function makeTable(id: string, capacity: number): RestaurantTable {
     section: "interior",
     active: true,
     sort_order: 0,
+    combinable: true,
     created_at: "",
   };
 }
@@ -56,6 +58,8 @@ function makeReservation(tableId: string, startsAt: string, endsAt: string): Res
     id: crypto.randomUUID(),
     restaurant_id: RESTAURANT_ID,
     table_id: tableId,
+    table_ids: [tableId],
+    guest_id: null,
     guest_name: "Test Guest",
     guest_phone: "600000000",
     guest_email: null,
@@ -131,9 +135,11 @@ describe("computeAvailableSlots", () => {
     const slotsWithRsv = computeAvailableSlots({ ...BASE_INPUT, existingReservations: [rsv] });
     const firstSlotNoRsv = slotsNoRsv.find((s) => Math.floor(madridMins(s.starts_at) / 60) === 13);
     const firstSlotWithRsv = slotsWithRsv.find((s) => Math.floor(madridMins(s.starts_at) / 60) === 13);
-    if (firstSlotNoRsv && firstSlotWithRsv) {
-      expect(firstSlotWithRsv.available_tables).toBe(firstSlotNoRsv.available_tables - 1);
-    }
+    // Sin estas dos aserciones, un `find` fallido dejaba pasar el test sin
+    // comprobar nada.
+    expect(firstSlotNoRsv).toBeDefined();
+    expect(firstSlotWithRsv).toBeDefined();
+    expect(firstSlotWithRsv!.available_tables).toBe(firstSlotNoRsv!.available_tables - 1);
   });
 
   it("returns no slots when all tables are occupied", () => {
