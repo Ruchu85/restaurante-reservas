@@ -4,8 +4,28 @@ import type { Reservation } from "@/types";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
+/**
+ * Relación a usar al incrustar la mesa de una reserva.
+ *
+ * La FK va explícita a propósito. Desde que existe `reservation_tables` (mesas
+ * juntadas) hay DOS caminos entre `reservations` y `restaurant_tables`:
+ *
+ *   1. reservations.table_id → restaurant_tables.id          (directo)
+ *   2. reservations → reservation_tables → restaurant_tables (muchos a muchos)
+ *
+ * Con `restaurant_tables(...)` a secas, PostgREST no sabe cuál elegir y
+ * responde PGRST201 ("Could not embed because more than one relationship was
+ * found"), lo que tumba TODA lectura de reservas. Aquí queremos siempre la
+ * mesa principal, es decir el camino directo.
+ */
+const TABLE_EMBED = "table:restaurant_tables!reservations_table_id_fkey";
+
 export const RESERVATION_SELECT =
-  "*, table:restaurant_tables(id, name, capacity, section), guest:guests(id, visits_count, no_shows_count, tags, allergies, notes)";
+  `*, ${TABLE_EMBED}(id, name, capacity, section), ` +
+  "guest:guests(id, visits_count, no_shows_count, tags, allergies, notes)";
+
+/** Solo la mesa, para cuando no hace falta la ficha del comensal. */
+export const RESERVATION_WITH_TABLE_SELECT = `*, ${TABLE_EMBED}(id, name, capacity, section)`;
 
 /**
  * Campos visibles para el cliente en la página pública de su reserva.
@@ -19,7 +39,7 @@ export const RESERVATION_SELECT =
  */
 export const PUBLIC_RESERVATION_SELECT =
   "id, guest_name, guest_phone, guest_email, party_size, starts_at, ends_at, status, " +
-  "notes, confirmation_token, table:restaurant_tables(name, section)";
+  `notes, confirmation_token, ${TABLE_EMBED}(name, section)`;
 
 /**
  * Rellena `table_ids` con todas las mesas asignadas a cada reserva.

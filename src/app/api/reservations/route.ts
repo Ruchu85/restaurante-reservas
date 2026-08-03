@@ -3,7 +3,7 @@ import { createAdminClient, getRestaurantId } from "@/lib/supabase/admin";
 import { getBusinessHours, getBlockedDays, getActiveTables } from "@/lib/restaurant";
 import { computeAvailableSlots, durationForParty } from "@/lib/availability";
 import { getRestaurantConfig, validateReservation } from "@/lib/reservationRules";
-import { setReservationTables } from "@/lib/reservations";
+import { setReservationTables, RESERVATION_WITH_TABLE_SELECT } from "@/lib/reservations";
 import { upsertGuest } from "@/lib/guests";
 import { normalizePhone } from "@/lib/phone";
 import { madridDayRangeUtc, toLocalDate, dayOfWeek, addDays } from "@/lib/dates";
@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
       source: "online",
       status: "confirmed",
     })
-    .select("*, table:restaurant_tables(id, name, capacity, section)")
+    .select(RESERVATION_WITH_TABLE_SELECT)
     .single();
 
   if (error) {
