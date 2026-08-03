@@ -17,6 +17,18 @@ const nextConfig: NextConfig = {
       allowedOrigins,
     },
   },
+  images: {
+    // Fotografía de la web pública. Pexels permite uso comercial sin atribución
+    // obligatoria. Para producción real conviene sustituirlas por fotos propias
+    // del local y servirlas desde el propio dominio.
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.pexels.com",
+        pathname: "/photos/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;
