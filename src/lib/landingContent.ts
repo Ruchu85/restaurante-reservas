@@ -29,7 +29,7 @@ export const IMAGES = {
   historia: 260922,     // barra del local, ambiente nocturno
   chef: 3298687,        // cocinero con sartén, cocina en penumbra
   comedor: 941861,      // sala de noche con copas servidas
-  servicio: 1109197,    // emplatado en cuenco de piedra
+  servicio: 3298634,    // manos emplatando, luz baja
   sobremesa: 5638732,   // mesa larga compartida
 } as const;
 
@@ -146,30 +146,33 @@ export const MENU_DEGUSTACION = {
 export interface Resena {
   autor: string;
   texto: string;
-  fuente: string;
   puntuacion: number;
 }
 
+/*
+  Reseñas de EJEMPLO. No llevan la marca del portal donde estarían publicadas
+  —Google, TripAdvisor— porque atribuir a un portal un texto que nadie escribió
+  es afirmar algo falso ante el visitante. Por la misma razón el JSON-LD no
+  emite `aggregateRating`. Cuando el restaurante tenga reseñas reales, se
+  traen de la API de Google Places y entonces sí se puede citar la fuente.
+*/
 export const RESENAS: Resena[] = [
   {
     autor: "Marta Ribera",
     texto:
       "El arroz de carabineros es de los mejores que he comido en Madrid. Reservamos por la web en dos minutos y nos guardaron la mesa de la ventana que pedimos.",
-    fuente: "Google",
     puntuacion: 5,
   },
   {
     autor: "Javier Ortiz",
     texto:
       "Fuimos doce por un cumpleaños y lo organizaron sin un solo fallo. Se acordaban de la alergia al marisco de mi hermana sin que tuviéramos que repetirla.",
-    fuente: "TripAdvisor",
     puntuacion: 5,
   },
   {
     autor: "Claire Dubois",
     texto:
       "Cocina honesta y producto excelente. La terraza al atardecer merece mucho la pena. Volveremos en nuestro próximo viaje a Madrid.",
-    fuente: "Google",
     puntuacion: 5,
   },
 ];
@@ -192,6 +195,37 @@ export const RECLAMOS = [
   "Huerta cercana",
   "Bodega del Bierzo",
 ];
+
+/**
+ * Lo que está en temporada ahora mismo.
+ *
+ * Es el contenido que distingue a un restaurante de una plantilla: nombres
+ * concretos, procedencias y meses. Un negocio real lo actualiza cuatro veces
+ * al año y es lo que hace que la web parezca viva.
+ */
+export const TEMPORADA = {
+  titulo: "En la mesa ahora mismo",
+  entradilla:
+    "Agosto es mes de tomate y de pescado azul. Esto es lo que entra estos días por la puerta de atrás.",
+  productos: [
+    { nombre: "Tomate rosa", origen: "Barbastro, Huesca", meses: "Julio a septiembre" },
+    { nombre: "Bonito del norte", origen: "Lonja de Bermeo", meses: "Junio a octubre" },
+    { nombre: "Higo de la Vera", origen: "Cáceres", meses: "Agosto a octubre" },
+    { nombre: "Pimiento asado", origen: "Huerta de Navarra", meses: "Agosto a noviembre" },
+  ],
+};
+
+/** La bodega, contada como la contaría el sumiller. */
+export const BODEGA = {
+  titulo: "La bodega",
+  texto:
+    "Ciento veinte referencias, casi todas españolas y ninguna por encima de las mil botellas de producción. Mencía del Bierzo, albariño de Val do Salnés y jerez de velo, que servimos por copas para que nadie tenga que comprometerse con una botella entera.",
+  datos: [
+    ["120", "referencias"],
+    ["14", "por copas"],
+    ["9", "denominaciones"],
+  ],
+};
 
 /** Quien firma la cocina. Aparece con foto, así que nombre y foto han de casar. */
 export const JEFE_COCINA = {

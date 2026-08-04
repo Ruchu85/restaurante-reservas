@@ -41,9 +41,21 @@ export function Motion() {
     }
 
     // ── Vídeos que solo se descargan al acercarse ────────────────────
-    // `autoPlay` anula `preload="none"` en Chrome: el vídeo de la sección de
-    // la brasa se bajaba entero (1 MB) en la carga inicial aunque esté a
-    // cinco pantallas de distancia. Por eso se arranca desde aquí.
+    // `autoPlay` anula `preload="none"` en Chrome, y el atributo `poster` se
+    // descarga siempre aunque el vídeo no. Por eso ambos se ponen desde aquí:
+    // así la carga inicial no arrastra megabytes de secciones que están a
+    // cinco pantallas de distancia.
+    //
+    // En móvil o con ahorro de datos activado el vídeo no llega a pedirse: el
+    // póster cuenta la misma historia por una fracción del peso.
+    const conexion = (
+      navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }
+    ).connection;
+    const conVideo =
+      !conexion?.saveData &&
+      !/^(slow-)?2g$/.test(conexion?.effectiveType ?? "") &&
+      window.matchMedia("(min-width: 768px)").matches;
+
     const diferidos = document.querySelectorAll<HTMLVideoElement>("[data-video-diferido]");
     if (diferidos.length) {
       const obsVideo = new IntersectionObserver(
@@ -51,10 +63,15 @@ export function Motion() {
           for (const e of entradas) {
             if (!e.isIntersecting) continue;
             const v = e.target as HTMLVideoElement;
+            obsVideo.unobserve(v);
+
+            if (v.dataset.poster && !v.poster) v.poster = v.dataset.poster;
+            if (!conVideo) continue;
+
+            v.preload = "auto";
             v.play().catch(() => {
               /* el navegador puede bloquearlo: se queda el póster */
             });
-            obsVideo.unobserve(v);
           }
         },
         { rootMargin: "300px 0px" },

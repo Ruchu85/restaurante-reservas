@@ -41,28 +41,39 @@ export default async function ReservarPage({
 
   return (
     <div className="min-h-screen bg-stone-50">
-      <header className="border-b border-stone-200 bg-white">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
+      {/*
+        La reserva es el paso que decide, así que mantiene la marca del hero:
+        fondo oscuro, serif y el mismo ámbar. Con la cabecera gris de panel
+        que había antes, el visitante sentía que había salido del restaurante.
+      */}
+      <header className="relative isolate overflow-hidden bg-stone-950 text-white">
+        <Image
+          src={pexels(IMAGES.historia, 1400)}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-30"
+        />
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-stone-950/70 to-stone-950" />
+        <div className="relative mx-auto max-w-5xl px-4 pb-10 pt-5">
           <Link
             href="/"
-            aria-label="Volver a la portada"
-            className="-ml-2 rounded-lg p-2.5 transition-colors hover:bg-stone-100"
+            className="foco-claro -ml-2 inline-flex items-center gap-2 rounded-lg p-2.5 text-sm text-stone-300 transition-colors hover:text-white"
           >
-            <ArrowLeft className="h-4 w-4 text-stone-600" />
+            <ArrowLeft className="h-4 w-4" aria-hidden />
+            {restaurant?.name ?? "Restaurante"}
           </Link>
-          <div>
-            <div className="text-sm font-semibold text-stone-800">
-              {restaurant?.name ?? "Restaurante"}
-            </div>
-            <div className="text-xs text-stone-500">Reservar mesa</div>
-          </div>
+          <h1 className="titular mt-4 text-[clamp(1.9rem,5vw,3rem)] leading-tight">
+            Reserva tu mesa
+          </h1>
+          <p className="mt-2 max-w-md text-sm text-stone-300">
+            Tres pasos y confirmación inmediata. Podrás cancelar desde el enlace que te enviamos.
+          </p>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <h1 className="mb-6 text-center text-2xl font-bold tracking-tight text-stone-900 md:text-3xl">
-          <span className="titular">Reserva tu mesa</span>
-        </h1>
+      <main className="mx-auto max-w-5xl px-4 py-10">
 
         <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_20rem] md:items-start">
           <div className="mx-auto w-full max-w-lg">

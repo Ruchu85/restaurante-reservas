@@ -24,7 +24,9 @@ const fraunces = Fraunces({
   display: "swap",
   // Fuente variable: el rango completo de grosor en un solo archivo. Los ejes
   // se pueden pedir solo si no se fija `weight`.
-  axes: ["SOFT", "WONK", "opsz"],
+  // Solo `opsz`: pedir SOFT y WONK sumaba unos 60 KB de ejes que ningún
+  // estilo de esta web usa.
+  axes: ["opsz"],
 });
 
 export const metadata: Metadata = {

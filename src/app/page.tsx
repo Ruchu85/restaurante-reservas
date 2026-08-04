@@ -16,6 +16,7 @@ import { MenuMovil } from "@/components/landing/MenuMovil";
 import { ReservaRapida } from "@/components/landing/ReservaRapida";
 import {
   pexels, IMAGES, CARTA, MENU_DEGUSTACION, RESENAS, GALERIA, RECLAMOS, JEFE_COCINA,
+  TEMPORADA, BODEGA,
 } from "@/lib/landingContent";
 import type { BusinessHours } from "@/types";
 
@@ -123,6 +124,14 @@ function fichaSchema(
           addressCountry: "ES",
         }
       : undefined,
+    // Enlace al mapa construido desde la dirección: sin coordenadas propias
+    // en la base de datos, es la señal de ubicación que se puede dar sin
+    // inventarse una latitud. `geo` y `sameAs` entran cuando el restaurante
+    // aporte su ficha de Google Business y sus redes.
+    hasMap: restaurant?.address
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.address)}`
+      : undefined,
+    sameAs: restaurant?.website ? [restaurant.website] : undefined,
     image: [`${base}/opengraph-image`, pexels(IMAGES.historia, 1200), pexels(IMAGES.comedor, 1200)],
     openingHoursSpecification: tramos,
     hasMenu: {
@@ -167,7 +176,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: titulo,
     description: descripcion,
-    alternates: { canonical: "/" },
+    alternates: { canonical: `${BASE}/` },
     openGraph: {
       type: "website",
       locale: "es_ES",
@@ -219,11 +228,13 @@ export default async function HomePage() {
         <style>{`[data-reveal],[data-lineas] .linea>span{opacity:1!important;transform:none!important}[data-cortina]>img{clip-path:none!important}`}</style>
       </noscript>
 
+      {/* Salta al selector de reserva, no al texto: quien navega con teclado
+          busca lo mismo que el resto, y es lo primero que hay que darle. */}
       <a
-        href="#nosotros"
+        href="#reservar-rapido"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[80] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:font-semibold focus:text-stone-900 focus:shadow-lg"
       >
-        Saltar al contenido
+        Saltar a la reserva
       </a>
 
       <Motion />
@@ -273,17 +284,19 @@ export default async function HomePage() {
       {/* ── Hero con vídeo ─────────────────────────────────────── */}
       <section className="relative isolate flex min-h-[100svh] items-center justify-center overflow-hidden bg-stone-950 text-white">
         {/*
-          El póster es la imagen que mide el LCP y lo que ve quien tenga el
-          vídeo bloqueado o datos limitados. El vídeo va mudo, en bucle y con
-          playsInline (sin él, iOS lo abre a pantalla completa).
+          El póster sí se declara aquí: está sobre la línea de flotación y es
+          lo que ve el visitante mientras no haya vídeo. El vídeo en cambio se
+          arranca desde Motion.tsx, y solo en escritorio y sin ahorro de
+          datos: en móvil son 464 KB —la mitad del peso de la página— para un
+          fondo decorativo.
         */}
         <video
+          data-video-diferido
           className="deriva-lenta absolute inset-0 h-full w-full object-cover opacity-55"
-          autoPlay
           muted
           loop
           playsInline
-          preload="metadata"
+          preload="none"
           poster="/video/hero-poster.jpg"
           aria-hidden
           tabIndex={-1}
@@ -308,7 +321,7 @@ export default async function HomePage() {
             Cocina mediterránea de autor
           </p>
 
-          <h1 className="titular entra entra-2 text-[clamp(2.8rem,8.5vw,6rem)] font-normal leading-[0.95]">
+          <h1 className="titular entra-lcp text-[clamp(2.8rem,8.5vw,6rem)] font-normal leading-[0.95]">
             {nombre}
           </h1>
 
@@ -319,8 +332,12 @@ export default async function HomePage() {
           )}
 
           {/* La reserva empieza aquí, no tras un salto a un formulario vacío. */}
-          <div className="entra entra-4 mt-10">
-            <ReservaRapida hoy={diaLocal} maxComensales={maxComensales} />
+          <div id="reservar-rapido" className="entra entra-4 mt-10 scroll-mt-24">
+            <ReservaRapida
+              hoy={diaLocal}
+              diasAbiertos={hoursData.filter((h) => h.is_open).map((h) => h.day_of_week)}
+              maxComensales={maxComensales}
+            />
           </div>
 
           <p className="entra entra-5 mt-7 text-sm text-stone-200">
@@ -340,7 +357,7 @@ export default async function HomePage() {
                 {" · "}
                 <a
                   href={`tel:${restaurant.phone}`}
-                  className="foco-claro underline decoration-white/40 underline-offset-4 hover:decoration-white"
+                  className="foco-claro inline-block py-1.5 underline decoration-white/40 underline-offset-4 hover:decoration-white"
                 >
                   {restaurant.phone}
                 </a>
@@ -381,7 +398,7 @@ export default async function HomePage() {
       <section id="nosotros" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24 md:py-28">
         <div className="grid items-center gap-12 md:grid-cols-2 md:gap-16">
           <div className="relative">
-            <div data-cortina className="relative aspect-[4/3] overflow-hidden rounded-3xl">
+            <div data-cortina className="foto-editorial relative aspect-[4/3] overflow-hidden rounded-3xl bg-stone-200">
               <Image
                 src={pexels(IMAGES.historia, 1000)}
                 alt="Barra del restaurante al anochecer"
@@ -464,7 +481,7 @@ export default async function HomePage() {
                   {foto && (
                     <div
                       data-cortina
-                      className={`relative aspect-[4/5] overflow-hidden rounded-3xl md:aspect-[3/4] ${
+                      className={`foto-editorial relative aspect-[4/5] overflow-hidden rounded-3xl bg-stone-200 md:aspect-[3/4] ${
                         invertida ? "md:order-2" : ""
                       }`}
                     >
@@ -525,7 +542,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal="zoom" className="overflow-hidden rounded-3xl bg-stone-900 text-white">
             <div className="grid md:grid-cols-2">
-              <div className="relative min-h-56">
+              <div className="foto-editorial relative min-h-56 bg-stone-800">
                 <Image
                   src={pexels(IMAGES.servicio, 900)}
                   alt="Uno de los pasos del menú degustación"
@@ -567,21 +584,70 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── Temporada y bodega ─────────────────────────────────── */}
+      <section className="border-y border-stone-200 bg-stone-100 py-20 md:py-24">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="grid gap-14 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:gap-20">
+            <div data-reveal="izquierda">
+              <p className="text-sm font-semibold uppercase tracking-wide text-amber-800">
+                Temporada
+              </p>
+              <h2 className="titular mt-3 text-[clamp(1.7rem,3.4vw,2.4rem)] text-stone-900">
+                {TEMPORADA.titulo}
+              </h2>
+              <p className="mt-4 max-w-lg text-stone-600">{TEMPORADA.entradilla}</p>
+
+              <dl className="mt-8 divide-y divide-stone-300 border-t border-stone-300">
+                {TEMPORADA.productos.map((p) => (
+                  <div
+                    key={p.nombre}
+                    className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3.5"
+                  >
+                    <dt className="font-semibold text-stone-900">{p.nombre}</dt>
+                    <dd className="text-sm text-stone-600">
+                      {p.origen}
+                      <span className="mx-2 text-stone-400">·</span>
+                      <span className="text-stone-500">{p.meses}</span>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <div data-reveal="derecha" className="md:pt-14">
+              <p className="text-sm font-semibold uppercase tracking-wide text-amber-800">Vinos</p>
+              <h2 className="titular mt-3 text-[clamp(1.7rem,3.4vw,2.4rem)] text-stone-900">
+                {BODEGA.titulo}
+              </h2>
+              <p className="mt-4 text-stone-600">{BODEGA.texto}</p>
+              <dl className="mt-8 grid grid-cols-3 gap-4 border-t border-stone-300 pt-6">
+                {BODEGA.datos.map(([valor, etiqueta]) => (
+                  <div key={etiqueta}>
+                    <dt className="titular text-3xl text-amber-800">{valor}</dt>
+                    <dd className="text-xs text-stone-600">{etiqueta}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Vídeo de cocina ────────────────────────────────────── */}
       <section className="relative isolate flex min-h-[65svh] items-center overflow-hidden bg-stone-950 text-white">
         {/*
-          Sin `autoPlay`: en Chrome anula el `preload="none"` y el vídeo se
-          descargaba entero en la carga inicial pese a estar a cinco pantallas
-          de aquí. Lo arranca Motion.tsx cuando se acerca.
+          Ni `autoPlay` ni `poster`: el primero anula el `preload="none"` y el
+          segundo se descarga siempre. Los dos los pone Motion.tsx al
+          acercarse esta sección, que está a cinco pantallas del hero.
         */}
         <video
           data-video-diferido
+          data-poster="/video/cocina-poster.jpg"
           className="absolute inset-0 h-full w-full object-cover opacity-45"
           muted
           loop
           playsInline
           preload="none"
-          poster="/video/cocina-poster.jpg"
           aria-hidden
           tabIndex={-1}
         >
@@ -639,13 +705,13 @@ export default async function HomePage() {
           reparten en tres filas iguales; dejándolo al contenido, las filas
           salían de distinto alto y el mosaico quedaba descuadrado.
         */}
-        <div className="mt-12 grid grid-cols-2 gap-3 md:h-[40rem] md:grid-cols-3 md:grid-rows-3 md:gap-4">
+        <div className="mt-12 grid grid-cols-2 gap-3 md:grid-cols-3 md:grid-rows-3 md:gap-4">
           {GALERIA.map((foto, i) => (
             <div
               key={foto.id}
               data-cortina
               data-reveal-delay={i * 70}
-              className={`group relative aspect-square overflow-hidden rounded-2xl md:aspect-auto md:h-full ${
+              className={`foto-editorial group relative aspect-square overflow-hidden rounded-2xl bg-stone-200 ${
                 i === 0 ? "md:col-span-2 md:row-span-2" : ""
               }`}
             >
@@ -687,7 +753,7 @@ export default async function HomePage() {
           </div>
           <div
             data-cortina
-            className="relative aspect-[4/5] overflow-hidden rounded-3xl md:aspect-[4/3]"
+            className="foto-editorial relative aspect-[4/5] overflow-hidden rounded-3xl bg-stone-800 md:aspect-[4/3]"
           >
             <Image
               src={pexels(IMAGES.chef, 1000)}
@@ -727,7 +793,6 @@ export default async function HomePage() {
                   ))}
                 </div>
                 <div className="mt-1.5 text-sm font-semibold text-stone-900">{r.autor}</div>
-                <div className="text-xs text-stone-500">vía {r.fuente}</div>
               </figcaption>
             </figure>
           ))}
@@ -810,7 +875,7 @@ export default async function HomePage() {
               {restaurant?.phone && (
                 <a
                   href={`tel:${restaurant.phone}`}
-                  className="foco-claro mt-4 text-center text-sm text-white underline underline-offset-4"
+                  className="foco-claro mt-4 inline-block py-1.5 text-center text-sm text-white underline underline-offset-4"
                 >
                   o llámanos al {restaurant.phone}
                 </a>

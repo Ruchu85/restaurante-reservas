@@ -110,11 +110,32 @@ html:has(:target) {
   --tipo-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
 }
 
-.titular {
-  font-family: var(--tipo-display);
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  font-optical-sizing: auto;
+/*
+  En @layer components para que las utilidades de Tailwind (font-normal,
+  font-bold) sigan ganando: fuera de capa, este `font-weight` las anulaba y
+  la clase que se escribía en el HTML no hacía nada.
+*/
+@layer components {
+  .titular {
+    font-family: var(--tipo-display);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    font-optical-sizing: auto;
+  }
+}
+
+/*
+  Tratamiento fotográfico común.
+
+  Las fotos vienen de un banco de imágenes y traen temperaturas de color muy
+  distintas: una sala con neón azul junto a una terraza con manteles
+  amarillos parecen dos locales. Bajar la saturación, subir algo el contraste
+  y calentar el conjunto acerca todas al mismo sitio. Es lo que haría un
+  director de arte con material heterogéneo, y lo primero que sobra el día
+  que el restaurante aporte sus propias fotos.
+*/
+.foto-editorial img {
+  filter: saturate(0.82) contrast(1.06) brightness(0.96) sepia(0.12);
 }
 
 /*
@@ -147,6 +168,19 @@ html:has(:target) {
 }
 .entra {
   animation: entrada-hero 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/*
+  El <h1> es el elemento que mide el LCP: si empieza en opacidad 0, el LCP se
+  retrasa lo que dure la animación (medido: 1,45 s de más). Se mueve, pero
+  nunca es invisible.
+*/
+@keyframes entrada-visible {
+  from { transform: translate3d(0, 20px, 0); }
+  to   { transform: none; }
+}
+.entra-lcp {
+  animation: entrada-visible 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .entra-2 { animation-delay: 0.1s; }
 .entra-3 { animation-delay: 0.2s; }
@@ -292,7 +326,7 @@ html:has(:target) {
     transition: none !important;
   }
   .cinta-pista, .rebote, .deriva-lenta { animation: none !important; }
-  .entra { animation: none !important; }
+  .entra, .entra-lcp { animation: none !important; }
   .panel-menu[data-state="open"], .panel-fondo[data-state="open"] { animation: none !important; }
   .subrayado { background-size: 100% 2px; transition: none; }
   [data-parallax] { transform: none !important; }

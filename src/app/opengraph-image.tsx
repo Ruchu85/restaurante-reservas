@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
 import { getRestaurant } from "@/lib/restaurant";
-import { pexels, IMAGES } from "@/lib/landingContent";
 
 /**
  * Tarjeta que se ve al compartir el enlace por WhatsApp o redes.
@@ -9,7 +8,13 @@ import { pexels, IMAGES } from "@/lib/landingContent";
  * rastreadores de las redes fallan a menudo con dominios de terceros, y así
  * la previsualización lleva el nombre del restaurante encima de la foto.
  */
-export const size = { width: 1200, height: 630 };
+/*
+  A 1200×630 el PNG que genera ImageResponse pesaba 1,1 MB y WhatsApp y varios
+  rastreadores descartan las previsualizaciones grandes. Se genera a la mitad
+  de tamaño —las redes reescalan— y sin foto de fondo: el degradado sobre el
+  tono de la casa pesa una fracción y se lee mejor en miniatura.
+*/
+export const size = { width: 600, height: 315 };
 export const contentType = "image/png";
 export const alt = "Reserva tu mesa";
 
@@ -27,42 +32,34 @@ export default async function OpengraphImage() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-end",
-          background: "#1c1917",
+          background: "linear-gradient(135deg, #1c1917 0%, #3b2a17 55%, #78350f 100%)",
           position: "relative",
         }}
       >
-
-        <img
-          src={pexels(IMAGES.historia, 1200, 630)}
-          alt=""
-          width={1200}
-          height={630}
-          style={{ position: "absolute", inset: 0, objectFit: "cover", opacity: 0.55 }}
-        />
         <div
           style={{
             position: "relative",
             display: "flex",
             flexDirection: "column",
-            padding: "0 72px 72px",
+            padding: "0 44px 40px",
           }}
         >
           <div
             style={{
               display: "flex",
               color: "#fbbf24",
-              fontSize: 26,
-              letterSpacing: 4,
+              fontSize: 15,
+              letterSpacing: 3,
               textTransform: "uppercase",
-              marginBottom: 18,
+              marginBottom: 12,
             }}
           >
             Reserva tu mesa
           </div>
-          <div style={{ display: "flex", color: "#fff", fontSize: 82, fontWeight: 700 }}>
+          <div style={{ display: "flex", color: "#fff", fontSize: 48, fontWeight: 700 }}>
             {nombre}
           </div>
-          <div style={{ display: "flex", color: "#d6d3d1", fontSize: 32, marginTop: 14 }}>
+          <div style={{ display: "flex", color: "#e7e5e4", fontSize: 20, marginTop: 10 }}>
             {descripcion}
           </div>
         </div>
