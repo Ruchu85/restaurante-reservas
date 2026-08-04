@@ -77,3 +77,94 @@
     color: hsl(var(--foreground));
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   Web pública del restaurante — movimiento
+   Las animaciones son CSS; el JavaScript solo añade `.is-visible`
+   cuando el elemento entra en pantalla (ver components/landing/Motion).
+   ══════════════════════════════════════════════════════════════════ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0);
+  transition:
+    opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+[data-reveal="izquierda"] { transform: translate3d(-32px, 0, 0); }
+[data-reveal="derecha"]   { transform: translate3d(32px, 0, 0); }
+[data-reveal="zoom"]      { transform: scale(0.94); }
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+/* Cabecera que se vuelve sólida al bajar */
+[data-header] {
+  transition: background-color 0.35s ease, border-color 0.35s ease, backdrop-filter 0.35s ease;
+}
+
+/* Barra de progreso de lectura */
+[data-progress] {
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+
+/* Cinta infinita */
+@keyframes cinta {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+.cinta-pista {
+  display: flex;
+  width: max-content;
+  animation: cinta 42s linear infinite;
+}
+
+/* Indicador de scroll del hero */
+@keyframes rebote {
+  0%, 100% { transform: translateY(0); opacity: 0.85; }
+  50%      { transform: translateY(9px); opacity: 0.35; }
+}
+.rebote { animation: rebote 2s ease-in-out infinite; }
+
+/* Zoom lento y continuo del vídeo de fondo: da vida sin distraer */
+@keyframes deriva-lenta {
+  from { transform: scale(1.04); }
+  to   { transform: scale(1.14); }
+}
+.deriva-lenta { animation: deriva-lenta 26s ease-in-out infinite alternate; }
+
+/* Subrayado que se dibuja al entrar */
+.subrayado {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 2px;
+  transition: background-size 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.25s;
+}
+[data-reveal].is-visible .subrayado,
+.subrayado.is-visible { background-size: 100% 2px; }
+
+/*
+  Accesibilidad: si el sistema pide menos movimiento, todo queda quieto y
+  visible. Motion.tsx además ni siquiera registra los observadores.
+*/
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .cinta-pista, .rebote, .deriva-lenta { animation: none !important; }
+  .subrayado { background-size: 100% 2px; transition: none; }
+  [data-parallax] { transform: none !important; }
+  html { scroll-behavior: auto; }
+}
