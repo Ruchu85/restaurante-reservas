@@ -63,6 +63,7 @@ export function BookingWizard({
   fechaInicial = "",
   comensalesIniciales = 2,
   diasAbiertos = [],
+  telefono,
 }: {
   maxPartySize?: number;
   maxAdvanceDays?: number;
@@ -72,6 +73,8 @@ export function BookingWizard({
   comensalesIniciales?: number;
   /** Días de la semana con servicio (0 = domingo). */
   diasAbiertos?: number[];
+  /** Para ofrecer una salida cuando no hay hueco: llamar. */
+  telefono?: string | null;
 }) {
   const [step, setStep] = useState<Step>("date-party");
   const [date, setDate] = useState(fechaInicial);
@@ -178,12 +181,19 @@ export function BookingWizard({
       timeZone,
     });
 
-  const formatDateDisplay = (d: string) => {
-    const texto = new Date(d + "T12:00:00").toLocaleDateString("es-ES", {
+  const formatDateDisplayLower = (d: string) =>
+    new Date(d + "T12:00:00").toLocaleDateString("es-ES", {
       weekday: "long",
       day: "numeric",
       month: "long",
     });
+
+  // En español los días de la semana no llevan mayúscula, salvo al empezar
+  // frase. Para las etiquetas independientes ("Martes, 11 de agosto") sí
+  // hace falta; para el texto que sigue a "el" (línea del próximo servicio)
+  // se usa la variante en minúscula, o quedaba "es el Miércoles, 12…".
+  const formatDateDisplay = (d: string) => {
+    const texto = formatDateDisplayLower(d);
     return texto.charAt(0).toUpperCase() + texto.slice(1);
   };
 
@@ -285,8 +295,8 @@ export function BookingWizard({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-2 flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-amber-600" />
+            <label htmlFor="reserva-fecha" className="block text-sm font-medium text-stone-700 mb-2 flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-amber-700" aria-hidden />
               Fecha
             </label>
             <div className="mb-2 grid grid-cols-4 gap-2">
@@ -296,7 +306,7 @@ export function BookingWizard({
                   type="button"
                   onClick={() => setDate(a.fecha)}
                   className={cn(
-                    "rounded-xl border py-2.5 text-xs font-semibold transition-all",
+                    "rounded-xl border py-3.5 text-xs font-semibold transition-all",
                     date === a.fecha
                       ? "border-amber-700 bg-amber-700 text-white shadow-md"
                       : "border-stone-200 bg-stone-50 text-stone-600 hover:border-amber-300 hover:text-amber-800",
@@ -307,6 +317,8 @@ export function BookingWizard({
               ))}
             </div>
             <input
+              id="reserva-fecha"
+              name="fecha"
               type="date"
               value={date}
               min={today}
@@ -317,11 +329,11 @@ export function BookingWizard({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-2 flex items-center gap-2">
-              <Users className="h-4 w-4 text-amber-600" />
+            <span id="reserva-pax" className="block text-sm font-medium text-stone-700 mb-2 flex items-center gap-2">
+              <Users className="h-4 w-4 text-amber-700" aria-hidden />
               Número de comensales
-            </label>
-            <div className="grid grid-cols-4 gap-2">
+            </span>
+            <div className="grid grid-cols-4 gap-2" role="group" aria-labelledby="reserva-pax">
               {opcionesComensales(maxPartySize).map((n) => (
                 <button
                   key={n}
@@ -371,6 +383,7 @@ export function BookingWizard({
             </div>
           </div>
 
+          <div aria-live="polite" aria-busy={loadingSlots}>
           {loadingSlots ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 text-amber-600 animate-spin" />
@@ -388,7 +401,7 @@ export function BookingWizard({
                   {proximoDiaAbierto && (
                     <>
                       <p className="text-sm text-stone-500 mb-4">
-                        El próximo servicio es el {formatDateDisplay(proximoDiaAbierto)}.
+                        El próximo servicio es el {formatDateDisplayLower(proximoDiaAbierto)}.
                       </p>
                       <button
                         onClick={() => {
@@ -399,6 +412,17 @@ export function BookingWizard({
                       >
                         Ver ese día
                       </button>
+                      {telefono && (
+                        <p className="mt-4 text-sm text-stone-500">
+                          ¿Prefieres hablarlo?{" "}
+                          <a
+                            href={`tel:${telefono}`}
+                            className="inline-block py-1 font-medium text-amber-800 underline underline-offset-4"
+                          >
+                            {telefono}
+                          </a>
+                        </p>
+                      )}
                     </>
                   )}
                 </>
@@ -414,6 +438,17 @@ export function BookingWizard({
                   >
                     Probar otra fecha
                   </button>
+                  {telefono && (
+                    <p className="mt-4 text-sm text-stone-500">
+                      A veces guardamos alguna mesa por teléfono:{" "}
+                      <a
+                        href={`tel:${telefono}`}
+                        className="inline-block py-1 font-medium text-amber-800 underline underline-offset-4"
+                      >
+                        {telefono}
+                      </a>
+                    </p>
+                  )}
                 </>
               )}
             </div>
@@ -435,6 +470,7 @@ export function BookingWizard({
               ))}
             </div>
           )}
+          </div>
 
           {selectedSlot && (
             <button
@@ -468,11 +504,19 @@ export function BookingWizard({
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                Nombre completo <span className="text-red-500">*</span>
+              {/* `htmlFor`/`id` en cada par: sin ellos un lector de pantalla
+                  anuncia cuatro campos sin nombre, justo en el formulario que
+                  genera el negocio. `autoComplete` para que el navegador pueda
+                  rellenarlos. */}
+              <label htmlFor="reserva-nombre" className="block text-sm font-medium text-stone-700 mb-1.5">
+                Nombre completo <span className="text-red-500" aria-hidden>*</span>
               </label>
               <input
+                id="reserva-nombre"
+                name="nombre"
                 type="text"
+                required
+                autoComplete="name"
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}
                 placeholder="Juan García"
@@ -481,11 +525,15 @@ export function BookingWizard({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                Teléfono <span className="text-red-500">*</span>
+              <label htmlFor="reserva-telefono" className="block text-sm font-medium text-stone-700 mb-1.5">
+                Teléfono <span className="text-red-500" aria-hidden>*</span>
               </label>
               <input
+                id="reserva-telefono"
+                name="telefono"
                 type="tel"
+                required
+                autoComplete="tel"
                 value={guestPhone}
                 onChange={(e) => setGuestPhone(e.target.value)}
                 placeholder="+34 600 000 000"
@@ -494,11 +542,14 @@ export function BookingWizard({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                Email <span className="text-stone-400 font-normal">(opcional)</span>
+              <label htmlFor="reserva-email" className="block text-sm font-medium text-stone-700 mb-1.5">
+                Email <span className="text-stone-500 font-normal">(opcional)</span>
               </label>
               <input
+                id="reserva-email"
+                name="email"
                 type="email"
+                autoComplete="email"
                 value={guestEmail}
                 onChange={(e) => setGuestEmail(e.target.value)}
                 placeholder="juan@ejemplo.com"
@@ -507,10 +558,13 @@ export function BookingWizard({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                Alergias o peticiones especiales <span className="text-stone-400 font-normal">(opcional)</span>
+              <label htmlFor="reserva-notas" className="block text-sm font-medium text-stone-700 mb-1.5">
+                Alergias o peticiones especiales{" "}
+                <span className="text-stone-500 font-normal">(opcional)</span>
               </label>
               <textarea
+                id="reserva-notas"
+                name="notas"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}

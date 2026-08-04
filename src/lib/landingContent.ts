@@ -21,19 +21,24 @@ export function pexels(id: number, width: number, height?: number): string {
 }
 
 /*
-  Criterio de las fotos: interiores de noche o con luz cálida. Aun así son de
-  banco y vienen de locales distintos, así que la portada les aplica un
-  tratamiento común (`.foto-editorial` en globals.css) para acercar sus
-  temperaturas de color. Es un parche: la única solución de verdad es que el
-  restaurante aporte su propio reportaje.
+  Criterio de las fotos, en este orden:
+
+  1. Ningún rótulo, logotipo ni pizarra de otro negocio a la vista. Una foto
+     con la marca de otro restaurante desmonta la web entera.
+  2. Interiores en penumbra con luz cálida, y cocina de producto: nada que se
+     lea como otra cocina distinta de la que anuncia la carta.
+  3. Temperatura de color parecida; el resto lo acerca el tratamiento común
+     de `.foto-editorial` (globals.css).
+
+  Aun así son fotos de banco de locales distintos. La única solución de verdad
+  es que el restaurante aporte su propio reportaje: ningún filtro convierte
+  seis salas en una.
 */
 export const IMAGES = {
-  hero: 1581384,        // terraza al anochecer con luces cálidas
-  historia: 260922,     // barra del local, ambiente nocturno
-  chef: 3298687,        // cocinero con sartén, cocina en penumbra
-  comedor: 941861,      // sala de noche con copas servidas
-  servicio: 1998920,    // gambas a la brasa sobre plato de pizarra
-  sobremesa: 5638732,   // mesa larga compartida
+  historia: 5490965,    // barra en penumbra con lámparas cálidas
+  chef: 4253312,        // cocinero emplatando con pinzas
+  comedor: 941861,      // sala de noche con las copas servidas
+  servicio: 6270541,    // cigala emplatada, cocina de producto
 } as const;
 
 export interface Plato {
@@ -177,11 +182,11 @@ export const RESENAS: Resena[] = [
 
 export const GALERIA = [
   { id: 941861, alt: "Comedor de noche con las mesas preparadas y copas de vino" },
-  { id: 3298634, alt: "Emplatado de un pase en cocina" },
-  { id: 696218, alt: "Comensales brindando en una celebración" },
+  { id: 2290070, alt: "Sala en penumbra antes del servicio" },
+  { id: 1449773, alt: "Comedor de ladrillo visto con las luces encendidas" },
+  { id: 3298687, alt: "Cocinero trabajando con la sartén" },
   { id: 262978, alt: "Pase de platos hacia la sala" },
-  { id: 1581384, alt: "Terraza al anochecer con luces cálidas" },
-  { id: 1058277, alt: "Barra del local llena al final de la tarde" },
+  { id: 5490915, alt: "Postre emplatado con frutos rojos" },
 ];
 
 /** Frases de la cinta que separa el hero del resto de la página. */

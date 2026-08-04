@@ -9,12 +9,11 @@ import { getRestaurant } from "@/lib/restaurant";
  * la previsualización lleva el nombre del restaurante encima de la foto.
  */
 /*
-  A 1200×630 el PNG que genera ImageResponse pesaba 1,1 MB y WhatsApp y varios
-  rastreadores descartan las previsualizaciones grandes. Se genera a la mitad
-  de tamaño —las redes reescalan— y sin foto de fondo: el degradado sobre el
-  tono de la casa pesa una fracción y se lee mejor en miniatura.
+  1200×630 es lo que piden las redes. Lo que pesaba 1,1 MB no era el tamaño
+  sino la fotografía de fondo: un degradado plano a resolución completa se
+  queda en unas decenas de kilobytes y se ve nítido en pantallas retina.
 */
-export const size = { width: 600, height: 315 };
+export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "Reserva tu mesa";
 
@@ -41,25 +40,25 @@ export default async function OpengraphImage() {
             position: "relative",
             display: "flex",
             flexDirection: "column",
-            padding: "0 44px 40px",
+            padding: "0 88px 80px",
           }}
         >
           <div
             style={{
               display: "flex",
               color: "#fbbf24",
-              fontSize: 15,
-              letterSpacing: 3,
+              fontSize: 28,
+              letterSpacing: 6,
               textTransform: "uppercase",
-              marginBottom: 12,
+              marginBottom: 24,
             }}
           >
             Reserva tu mesa
           </div>
-          <div style={{ display: "flex", color: "#fff", fontSize: 48, fontWeight: 700 }}>
+          <div style={{ display: "flex", color: "#fff", fontSize: 92, fontWeight: 700 }}>
             {nombre}
           </div>
-          <div style={{ display: "flex", color: "#e7e5e4", fontSize: 20, marginTop: 10 }}>
+          <div style={{ display: "flex", color: "#e7e5e4", fontSize: 36, marginTop: 20 }}>
             {descripcion}
           </div>
         </div>

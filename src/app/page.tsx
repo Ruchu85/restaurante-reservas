@@ -31,7 +31,7 @@ const NAV = [
 
 /** Imagen que ilustra cada bloque de la carta, en el mismo orden que CARTA. */
 const IMAGEN_SECCION: Record<string, { id: number; alt: string }> = {
-  entrantes: { id: 566566, alt: "Tostada de aguacate con huevo de codorniz" },
+  entrantes: { id: 1267320, alt: "Un entrante saliendo del pase" },
   principales: { id: 2233729, alt: "Brochetas de cordero sobre la brasa" },
   postres: { id: 291528, alt: "Tarta de chocolate con frambuesa" },
 };
@@ -162,6 +162,18 @@ function fichaSchema(
   };
 }
 
+/** Migas de pan: ayudan a que el resultado de búsqueda muestre la ruta. */
+function migasSchema(base: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Inicio", item: base },
+      { "@type": "ListItem", position: 2, name: "Reservar mesa", item: `${base}/reservar` },
+    ],
+  };
+}
+
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -210,10 +222,10 @@ export default async function HomePage() {
         // El `<` escapado evita que un texto de la base de datos pueda cerrar
         // la etiqueta y colar marcado.
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(fichaSchema(nombre, restaurant, hoursData, BASE)).replace(
-            /</g,
-            "\\u003c",
-          ),
+          __html: JSON.stringify([
+            fichaSchema(nombre, restaurant, hoursData, BASE),
+            migasSchema(BASE),
+          ]).replace(/</g, "\\u003c"),
         }}
       />
 
@@ -590,7 +602,7 @@ export default async function HomePage() {
               <p className="text-sm font-semibold uppercase tracking-wide text-amber-800">
                 Temporada
               </p>
-              <h2 className="titular mt-3 text-[clamp(1.7rem,3.4vw,2.4rem)] text-stone-900">
+              <h2 className="titular mt-3 text-[clamp(1.7rem,3.4vw,2.4rem)] leading-tight text-stone-900">
                 {TEMPORADA.titulo}
               </h2>
               <p className="mt-4 max-w-lg text-stone-600">{TEMPORADA.entradilla}</p>
@@ -614,7 +626,7 @@ export default async function HomePage() {
 
             <div data-reveal="derecha" className="md:pt-14">
               <p className="text-sm font-semibold uppercase tracking-wide text-amber-800">Vinos</p>
-              <h2 className="titular mt-3 text-[clamp(1.7rem,3.4vw,2.4rem)] text-stone-900">
+              <h2 className="titular mt-3 text-[clamp(1.7rem,3.4vw,2.4rem)] leading-tight text-stone-900">
                 {BODEGA.titulo}
               </h2>
               <p className="mt-4 text-stone-600">{BODEGA.texto}</p>
@@ -659,7 +671,7 @@ export default async function HomePage() {
         <div className="relative mx-auto w-full max-w-6xl px-4 py-24">
           <div className="max-w-xl">
             <p data-reveal className="text-sm font-semibold uppercase tracking-wide text-amber-400">
-              La brasa
+              El fuego
             </p>
             <h2
               data-lineas
@@ -674,9 +686,9 @@ export default async function HomePage() {
               </span>
             </h2>
             <p data-reveal data-reveal-delay="180" className="mt-6 text-lg text-stone-200">
-              Fuego vivo, temperatura y paciencia. La brasa de encina para las carnes y el
-              pescado; la sartén al rojo para lo que tiene que salir en segundos. Nada
-              espera bajo una lámpara.
+              Fuego vivo, temperatura y paciencia. Aquí no se cocina con antelación:
+              cada plato empieza cuando se canta la comanda y sale cuando está, no
+              cuando toca. Nada espera bajo una lámpara.
             </p>
             <a
               href="#carta"
@@ -901,7 +913,7 @@ export default async function HomePage() {
               </h2>
               <ul className="space-y-1 text-sm text-stone-600">
                 {restaurant?.address && (
-                  <li className="flex items-start gap-2 py-2.5">
+                  <li className="flex items-start gap-2 py-3">
                     <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-800" aria-hidden />
                     {restaurant.address}
                   </li>
@@ -909,7 +921,7 @@ export default async function HomePage() {
                 {restaurant?.phone && (
                   <li className="flex items-center gap-2">
                     <Phone className="h-4 w-4 flex-shrink-0 text-amber-800" aria-hidden />
-                    <a href={`tel:${restaurant.phone}`} className="block py-2.5 hover:text-amber-800">
+                    <a href={`tel:${restaurant.phone}`} className="block py-3 hover:text-amber-800">
                       {restaurant.phone}
                     </a>
                   </li>
@@ -917,7 +929,7 @@ export default async function HomePage() {
                 {restaurant?.email && (
                   <li className="flex items-center gap-2">
                     <Mail className="h-4 w-4 flex-shrink-0 text-amber-800" aria-hidden />
-                    <a href={`mailto:${restaurant.email}`} className="block py-2.5 hover:text-amber-800">
+                    <a href={`mailto:${restaurant.email}`} className="block py-3 hover:text-amber-800">
                       {restaurant.email}
                     </a>
                   </li>
@@ -932,13 +944,13 @@ export default async function HomePage() {
               <ul className="text-sm text-stone-600">
                 {NAV.map(({ href, label }) => (
                   <li key={href}>
-                    <a href={href} className="block py-2.5 hover:text-amber-800">
+                    <a href={href} className="block py-3 hover:text-amber-800">
                       {label}
                     </a>
                   </li>
                 ))}
                 <li>
-                  <Link href="/reservar" className="block py-2.5 font-medium text-amber-800 hover:text-amber-900">
+                  <Link href="/reservar" className="block py-3 font-medium text-amber-800 hover:text-amber-900">
                     Reservar mesa
                   </Link>
                 </li>
@@ -950,7 +962,7 @@ export default async function HomePage() {
             <p>
               © {new Date().getFullYear()} {nombre}. Carta, reseñas, fotografías y vídeos de demostración.
             </p>
-            <Link href="/login" className="inline-block py-2.5 hover:text-stone-800">
+            <Link href="/login" className="inline-block py-3.5 hover:text-stone-800">
               Acceso del personal
             </Link>
           </div>

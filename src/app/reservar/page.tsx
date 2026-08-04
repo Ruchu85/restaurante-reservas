@@ -70,7 +70,6 @@ export default async function ReservarPage({
           src={pexels(IMAGES.historia, 1400)}
           alt=""
           fill
-          priority
           sizes="100vw"
           className="object-cover opacity-30"
         />
@@ -103,6 +102,7 @@ export default async function ReservarPage({
               fechaInicial={fechaInicial}
               comensalesIniciales={comensalesIniciales}
               diasAbiertos={diasAbiertos}
+              telefono={restaurant?.phone}
             />
           </div>
 
@@ -111,7 +111,7 @@ export default async function ReservarPage({
             producto de mayor margen y antes solo aparecía una vez, enterrado
             al final de la carta.
           */}
-          <aside className="hidden overflow-hidden rounded-2xl border border-stone-200 bg-white md:block">
+          <aside className="overflow-hidden rounded-2xl border border-stone-200 bg-white">
             <div className="foto-editorial relative aspect-[4/3] bg-stone-200">
               <Image
                 src={pexels(IMAGES.servicio, 640)}
@@ -138,6 +138,20 @@ export default async function ReservarPage({
           </aside>
         </div>
       </main>
+
+      <footer className="border-t border-stone-200 bg-white">
+        <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-8 text-sm text-stone-600 sm:flex-row sm:items-center sm:justify-between">
+          <p>{restaurant?.address}</p>
+          {restaurant?.phone && (
+            <a href={`tel:${restaurant.phone}`} className="inline-block py-1.5 font-medium text-amber-800">
+              {restaurant.phone}
+            </a>
+          )}
+          <Link href="/" className="inline-block py-1.5 text-stone-500 hover:text-stone-800">
+            Volver a la carta
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 }
