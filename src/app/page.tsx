@@ -15,7 +15,7 @@ import { Motion } from "@/components/landing/Motion";
 import { MenuMovil } from "@/components/landing/MenuMovil";
 import { ReservaRapida } from "@/components/landing/ReservaRapida";
 import {
-  pexels, IMAGES, CARTA, MENU_DEGUSTACION, RESENAS, GALERIA, RECLAMOS, JEFE_COCINA,
+  pexels, precio, IMAGES, CARTA, MENU_DEGUSTACION, RESENAS, GALERIA, RECLAMOS, JEFE_COCINA,
   TEMPORADA, BODEGA,
 } from "@/lib/landingContent";
 import type { BusinessHours } from "@/types";
@@ -33,7 +33,7 @@ const NAV = [
 const IMAGEN_SECCION: Record<string, { id: number; alt: string }> = {
   entrantes: { id: 566566, alt: "Tostada de aguacate con huevo de codorniz" },
   principales: { id: 2233729, alt: "Brochetas de cordero sobre la brasa" },
-  postres: { id: 1109197, alt: "Postre de chocolate emplatado en cuenco de piedra" },
+  postres: { id: 291528, alt: "Tarta de chocolate con frambuesa" },
 };
 
 function turnos(h: BusinessHours | undefined): string | null {
@@ -60,8 +60,6 @@ function proximaApertura(horas: BusinessHours[], hoy: number): string | null {
 
 /** Lunes primero: en España la semana no empieza en domingo. */
 const ordenSemana = (d: number) => (d + 6) % 7;
-
-const precio = (n: number) => `${n.toFixed(2).replace(".", ",")} €`;
 
 const SCHEMA_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -107,7 +105,7 @@ function fichaSchema(
     "@context": "https://schema.org",
     "@type": "Restaurant",
     "@id": `${base}/#restaurante`,
-    url: `${base}/`,
+    url: base,
     name: nombre,
     description: restaurant?.description ?? undefined,
     servesCuisine: "Mediterránea",
@@ -176,7 +174,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: titulo,
     description: descripcion,
-    alternates: { canonical: `${BASE}/` },
+    alternates: { canonical: BASE },
     openGraph: {
       type: "website",
       locale: "es_ES",
@@ -250,7 +248,7 @@ export default async function HomePage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Link
             href="/"
-            className="titular foco-claro min-w-0 truncate text-lg text-white transition-colors [.is-solid_&]:text-stone-900 [.is-solid_&]:focus-visible:outline-amber-700 sm:text-2xl"
+            className="titular foco-claro min-w-0 truncate py-2.5 text-lg text-white transition-colors [.is-solid_&]:text-stone-900 [.is-solid_&]:focus-visible:outline-amber-700 sm:text-2xl"
           >
             {nombre}
           </Link>
@@ -260,7 +258,7 @@ export default async function HomePage() {
               <a
                 key={href}
                 href={href}
-                className="foco-claro py-2 text-sm font-medium text-white/90 transition-colors hover:text-amber-300 [.is-solid_&]:text-stone-600 [.is-solid_&]:hover:text-amber-800 [.is-solid_&]:focus-visible:outline-amber-700"
+                className="foco-claro py-3 text-sm font-medium text-white/90 transition-colors hover:text-amber-300 [.is-solid_&]:text-stone-600 [.is-solid_&]:hover:text-amber-800 [.is-solid_&]:focus-visible:outline-amber-700"
               >
                 {label}
               </a>
@@ -332,7 +330,7 @@ export default async function HomePage() {
           )}
 
           {/* La reserva empieza aquí, no tras un salto a un formulario vacío. */}
-          <div id="reservar-rapido" className="entra entra-4 mt-10 scroll-mt-24">
+          <div id="reservar-rapido" tabIndex={-1} className="entra entra-4 mt-10 scroll-mt-24 focus:outline-none">
             <ReservaRapida
               hoy={diaLocal}
               diasAbiertos={hoursData.filter((h) => h.is_open).map((h) => h.day_of_week)}
@@ -357,7 +355,7 @@ export default async function HomePage() {
                 {" · "}
                 <a
                   href={`tel:${restaurant.phone}`}
-                  className="foco-claro inline-block py-1.5 underline decoration-white/40 underline-offset-4 hover:decoration-white"
+                  className="foco-claro inline-block py-2.5 underline decoration-white/40 underline-offset-4 hover:decoration-white"
                 >
                   {restaurant.phone}
                 </a>
@@ -455,7 +453,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-wide text-amber-800">La carta</p>
-            <h2 className="titular mt-3 text-[clamp(1.9rem,4vw,2.75rem)] text-stone-900">
+            <h2 className="titular mt-3 text-[clamp(1.9rem,4vw,2.75rem)] leading-tight text-stone-900">
               Qué vas a comer
             </h2>
             <p className="mt-4 text-stone-600">
@@ -607,7 +605,7 @@ export default async function HomePage() {
                     <dd className="text-sm text-stone-600">
                       {p.origen}
                       <span className="mx-2 text-stone-400">·</span>
-                      <span className="text-stone-500">{p.meses}</span>
+                      <span className="text-stone-600">{p.meses}</span>
                     </dd>
                   </div>
                 ))}
@@ -665,6 +663,7 @@ export default async function HomePage() {
             </p>
             <h2
               data-lineas
+              aria-label="El fuego manda"
               className="titular mt-3 text-[clamp(2.2rem,6vw,4rem)] leading-[1.05]"
             >
               <span className="linea">
@@ -675,13 +674,13 @@ export default async function HomePage() {
               </span>
             </h2>
             <p data-reveal data-reveal-delay="180" className="mt-6 text-lg text-stone-200">
-              Encina, temperatura y paciencia. Casi todo lo que sale de esta cocina pasa
-              antes por la parrilla: el pescado del día, las verduras de la huerta y la
-              carne madurada treinta días.
+              Fuego vivo, temperatura y paciencia. La brasa de encina para las carnes y el
+              pescado; la sartén al rojo para lo que tiene que salir en segundos. Nada
+              espera bajo una lámpara.
             </p>
             <a
               href="#carta"
-              className="foco-claro group mt-8 inline-flex items-center gap-2 py-2 text-base font-semibold text-amber-400 transition-colors hover:text-amber-300"
+              className="foco-claro group mt-8 inline-flex items-center gap-2 py-3 text-base font-semibold text-amber-400 transition-colors hover:text-amber-300"
             >
               Ver la carta
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
@@ -694,7 +693,7 @@ export default async function HomePage() {
       <section id="galeria" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24 md:py-28">
         <div data-reveal className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wide text-amber-800">Galería</p>
-          <h2 className="titular mt-3 text-[clamp(1.9rem,4vw,2.75rem)] text-stone-900">
+          <h2 className="titular mt-3 text-[clamp(1.9rem,4vw,2.75rem)] leading-tight text-stone-900">
             El sitio y la cocina
           </h2>
         </div>
@@ -770,7 +769,7 @@ export default async function HomePage() {
       <section className="mx-auto max-w-6xl px-4 py-24 md:py-28">
         <div data-reveal className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wide text-amber-800">Reseñas</p>
-          <h2 className="titular mt-3 text-[clamp(1.9rem,4vw,2.75rem)] text-stone-900">
+          <h2 className="titular mt-3 text-[clamp(1.9rem,4vw,2.75rem)] leading-tight text-stone-900">
             Lo que dicen quienes ya han venido
           </h2>
         </div>
@@ -804,7 +803,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-4">
           <div data-reveal className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-wide text-amber-800">Visítanos</p>
-            <h2 className="titular mt-3 text-[clamp(1.9rem,4vw,2.75rem)] text-stone-900">
+            <h2 className="titular mt-3 text-[clamp(1.9rem,4vw,2.75rem)] leading-tight text-stone-900">
               Horario y reservas
             </h2>
           </div>
@@ -875,7 +874,7 @@ export default async function HomePage() {
               {restaurant?.phone && (
                 <a
                   href={`tel:${restaurant.phone}`}
-                  className="foco-claro mt-4 inline-block py-1.5 text-center text-sm text-white underline underline-offset-4"
+                  className="foco-claro mt-4 inline-block py-2.5 text-center text-sm text-white underline underline-offset-4"
                 >
                   o llámanos al {restaurant.phone}
                 </a>
@@ -902,7 +901,7 @@ export default async function HomePage() {
               </h2>
               <ul className="space-y-1 text-sm text-stone-600">
                 {restaurant?.address && (
-                  <li className="flex items-start gap-2 py-1.5">
+                  <li className="flex items-start gap-2 py-2.5">
                     <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-800" aria-hidden />
                     {restaurant.address}
                   </li>
@@ -910,7 +909,7 @@ export default async function HomePage() {
                 {restaurant?.phone && (
                   <li className="flex items-center gap-2">
                     <Phone className="h-4 w-4 flex-shrink-0 text-amber-800" aria-hidden />
-                    <a href={`tel:${restaurant.phone}`} className="block py-1.5 hover:text-amber-800">
+                    <a href={`tel:${restaurant.phone}`} className="block py-2.5 hover:text-amber-800">
                       {restaurant.phone}
                     </a>
                   </li>
@@ -918,7 +917,7 @@ export default async function HomePage() {
                 {restaurant?.email && (
                   <li className="flex items-center gap-2">
                     <Mail className="h-4 w-4 flex-shrink-0 text-amber-800" aria-hidden />
-                    <a href={`mailto:${restaurant.email}`} className="block py-1.5 hover:text-amber-800">
+                    <a href={`mailto:${restaurant.email}`} className="block py-2.5 hover:text-amber-800">
                       {restaurant.email}
                     </a>
                   </li>
@@ -933,13 +932,13 @@ export default async function HomePage() {
               <ul className="text-sm text-stone-600">
                 {NAV.map(({ href, label }) => (
                   <li key={href}>
-                    <a href={href} className="block py-1.5 hover:text-amber-800">
+                    <a href={href} className="block py-2.5 hover:text-amber-800">
                       {label}
                     </a>
                   </li>
                 ))}
                 <li>
-                  <Link href="/reservar" className="block py-1.5 font-medium text-amber-800 hover:text-amber-900">
+                  <Link href="/reservar" className="block py-2.5 font-medium text-amber-800 hover:text-amber-900">
                     Reservar mesa
                   </Link>
                 </li>
@@ -949,9 +948,9 @@ export default async function HomePage() {
 
           <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-stone-200 pt-6 text-xs text-stone-500 sm:flex-row">
             <p>
-              © {new Date().getFullYear()} {nombre}. Carta, fotografías y vídeos de demostración.
+              © {new Date().getFullYear()} {nombre}. Carta, reseñas, fotografías y vídeos de demostración.
             </p>
-            <Link href="/login" className="py-1.5 hover:text-stone-800">
+            <Link href="/login" className="inline-block py-2.5 hover:text-stone-800">
               Acceso del personal
             </Link>
           </div>

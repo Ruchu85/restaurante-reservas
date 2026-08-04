@@ -32,20 +32,28 @@ function opcionesComensales(max: number): number[] {
   return Array.from({ length: Math.max(1, max) }, (_, i) => i + 1);
 }
 
-/** Atajos de fecha: la mayoría reserva para hoy, mañana o el fin de semana. */
-function atajosFecha(hoy: string): { etiqueta: string; fecha: string }[] {
-  const nombres = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-  const atajos = [
-    { etiqueta: "Hoy", fecha: hoy },
-    { etiqueta: "Mañana", fecha: addDays(hoy, 1) },
-  ];
-  // Los dos días siguientes, con su nombre, para no obligar a abrir el calendario.
-  for (const d of [2, 3]) {
-    const fecha = addDays(hoy, d);
-    const [a, m, dd] = fecha.split("-").map(Number);
-    atajos.push({ etiqueta: nombres[new Date(Date.UTC(a, m - 1, dd)).getUTCDay()], fecha });
-  }
-  return atajos;
+const NOMBRES_DIA = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+function diaSemana(fecha: string): number {
+  const [a, m, d] = fecha.split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1, d)).getUTCDay();
+}
+
+/**
+ * Atajos de fecha, saltándose los días de cierre.
+ *
+ * Ofrecer "Hoy" sin mirar el horario mandaba al visitante, dos días de cada
+ * siete, a un "no hay disponibilidad" que no explicaba nada.
+ */
+function atajosFecha(hoy: string, diasAbiertos: number[]): { etiqueta: string; fecha: string }[] {
+  return Array.from({ length: 21 }, (_, n) => addDays(hoy, n))
+    .filter((f) => diasAbiertos.length === 0 || diasAbiertos.includes(diaSemana(f)))
+    .slice(0, 4)
+    .map((fecha) => ({
+      fecha,
+      etiqueta:
+        fecha === hoy ? "Hoy" : fecha === addDays(hoy, 1) ? "Mañana" : NOMBRES_DIA[diaSemana(fecha)],
+    }));
 }
 
 export function BookingWizard({
@@ -54,6 +62,7 @@ export function BookingWizard({
   timeZone = "Europe/Madrid",
   fechaInicial = "",
   comensalesIniciales = 2,
+  diasAbiertos = [],
 }: {
   maxPartySize?: number;
   maxAdvanceDays?: number;
@@ -61,6 +70,8 @@ export function BookingWizard({
   /** Vienen del selector rápido del hero, por la URL. */
   fechaInicial?: string;
   comensalesIniciales?: number;
+  /** Días de la semana con servicio (0 = domingo). */
+  diasAbiertos?: number[];
 }) {
   const [step, setStep] = useState<Step>("date-party");
   const [date, setDate] = useState(fechaInicial);
@@ -80,6 +91,16 @@ export function BookingWizard({
   // del restaurante, para no ofrecer fechas que el servidor va a rechazar.
   const today = toLocalDate(new Date(), timeZone);
   const maxDateStr = addDays(today, maxAdvanceDays);
+
+  // Para explicar un resultado vacío: distinguir "ese día cerramos" de "ese
+  // día está lleno" cambia por completo lo que hay que decirle al visitante.
+  const cerradoEseDia =
+    !!date && diasAbiertos.length > 0 && !diasAbiertos.includes(diaSemana(date));
+  const proximoDiaAbierto = date
+    ? Array.from({ length: 21 }, (_, n) => addDays(date, n + 1)).find(
+        (f) => diasAbiertos.length === 0 || diasAbiertos.includes(diaSemana(f)),
+      )
+    : undefined;
 
   const loadSlots = useCallback(async (d: string, ps: number) => {
     setLoadingSlots(true);
@@ -157,12 +178,14 @@ export function BookingWizard({
       timeZone,
     });
 
-  const formatDateDisplay = (d: string) =>
-    new Date(d + "T12:00:00").toLocaleDateString("es-ES", {
+  const formatDateDisplay = (d: string) => {
+    const texto = new Date(d + "T12:00:00").toLocaleDateString("es-ES", {
       weekday: "long",
       day: "numeric",
       month: "long",
     });
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  };
 
   if (step === "done" && confirmed) {
     return (
@@ -188,7 +211,7 @@ export function BookingWizard({
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-stone-500">Fecha</span>
-            <span className="font-medium capitalize">{formatDateDisplay(date)}</span>
+            <span className="font-medium">{formatDateDisplay(date)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-stone-500">Hora</span>
@@ -267,7 +290,7 @@ export function BookingWizard({
               Fecha
             </label>
             <div className="mb-2 grid grid-cols-4 gap-2">
-              {atajosFecha(today).map((a) => (
+              {atajosFecha(today, diasAbiertos).map((a) => (
                 <button
                   key={a.fecha}
                   type="button"
@@ -342,7 +365,7 @@ export function BookingWizard({
             </button>
             <div>
               <h2 className="text-xl font-bold text-stone-800">Elige horario</h2>
-              <p className="text-sm text-stone-500 capitalize">
+              <p className="text-sm text-stone-500">
                 {formatDateDisplay(date)} · {partySize} {partySize === 1 ? "comensal" : "comensales"}
               </p>
             </div>
@@ -354,13 +377,45 @@ export function BookingWizard({
             </div>
           ) : slots.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-stone-500 mb-4">No hay disponibilidad para esta fecha.</p>
-              <button
-                onClick={() => setStep("date-party")}
-                className="text-sm text-amber-600 hover:text-amber-700 font-medium"
-              >
-                Prueba otra fecha
-              </button>
+              {/* Un "no hay disponibilidad" a secas deja al visitante sin
+                  salida: si el motivo es que ese día se cierra, hay que
+                  decirlo y ofrecer el siguiente servicio de un clic. */}
+              {cerradoEseDia ? (
+                <>
+                  <p className="text-stone-600 mb-1 font-medium">
+                    Los {NOMBRES_DIA[diaSemana(date)].toLowerCase()} cerramos.
+                  </p>
+                  {proximoDiaAbierto && (
+                    <>
+                      <p className="text-sm text-stone-500 mb-4">
+                        El próximo servicio es el {formatDateDisplay(proximoDiaAbierto)}.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setDate(proximoDiaAbierto);
+                          loadSlots(proximoDiaAbierto, partySize);
+                        }}
+                        className="rounded-xl bg-amber-700 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-800"
+                      >
+                        Ver ese día
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-stone-600 mb-4">
+                    No queda mesa libre para {partySize}{" "}
+                    {partySize === 1 ? "persona" : "personas"} ese día.
+                  </p>
+                  <button
+                    onClick={() => setStep("date-party")}
+                    className="rounded-xl bg-amber-700 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-800"
+                  >
+                    Probar otra fecha
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-2">

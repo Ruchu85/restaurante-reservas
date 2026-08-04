@@ -28,7 +28,7 @@
     esto se descargaban las fuentes y no se aplicaba ninguna.
   */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 @layer base {
@@ -280,7 +280,11 @@ html:has(:target) {
   display: flex;
   width: max-content;
   animation: cinta 42s linear infinite;
+  /* `paused` cuando la cinta no está a la vista: una animación infinita
+     fuera de pantalla gasta batería sin que nadie la vea. */
+  animation-play-state: paused;
 }
+.cinta-pista.en-pantalla { animation-play-state: running; }
 
 /* Indicador de scroll del hero */
 @keyframes rebote {
@@ -294,7 +298,11 @@ html:has(:target) {
   from { transform: scale(1.04); }
   to   { transform: scale(1.14); }
 }
-.deriva-lenta { animation: deriva-lenta 26s ease-in-out infinite alternate; }
+.deriva-lenta {
+  animation: deriva-lenta 26s ease-in-out infinite alternate;
+  animation-play-state: paused;
+}
+.deriva-lenta.en-pantalla { animation-play-state: running; }
 
 /* Subrayado que se dibuja al entrar */
 .subrayado {

@@ -80,6 +80,18 @@ export function Motion() {
       limpiezas.push(() => obsVideo.disconnect());
     }
 
+    // ── Animaciones infinitas: solo mientras se ven ──────────────────
+    // La cinta y el zoom del vídeo son bucles sin fin. Corriendo fuera de
+    // pantalla no los ve nadie y siguen gastando batería.
+    const bucles = document.querySelectorAll<HTMLElement>(".cinta-pista, .deriva-lenta");
+    if (bucles.length && !sinMovimiento) {
+      const obsBucle = new IntersectionObserver((entradas) => {
+        for (const e of entradas) e.target.classList.toggle("en-pantalla", e.isIntersecting);
+      });
+      bucles.forEach((el) => obsBucle.observe(el));
+      limpiezas.push(() => obsBucle.disconnect());
+    }
+
     // ── Cabecera, barra de progreso y parallax ───────────────────────
     const cabecera = document.querySelector<HTMLElement>("[data-header]");
     const progreso = document.querySelector<HTMLElement>("[data-progress]");

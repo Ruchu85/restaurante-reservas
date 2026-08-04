@@ -4,9 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, UtensilsCrossed } from "lucide-react";
 import { BookingWizard } from "@/components/booking/BookingWizard";
-import { getRestaurant } from "@/lib/restaurant";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getRestaurant, getBusinessHours } from "@/lib/restaurant";
 import { toLocalDate, addDays } from "@/lib/dates";
-import { pexels, IMAGES, MENU_DEGUSTACION } from "@/lib/landingContent";
+import { pexels, precio, IMAGES, MENU_DEGUSTACION } from "@/lib/landingContent";
 
 export const metadata = {
   title: "Reservar mesa",
@@ -28,12 +29,30 @@ export default async function ReservarPage({
 }) {
   const [restaurant, params] = await Promise.all([getRestaurant(), searchParams]);
 
+  const horas = restaurant
+    ? await getBusinessHours(createAdminClient(), restaurant.id)
+    : [];
+  const diasAbiertos = horas.filter((h) => h.is_open).map((h) => h.day_of_week);
+
   const timeZone = restaurant?.timezone ?? "Europe/Madrid";
   const maxPartySize = restaurant?.max_party_size ?? 10;
   const maxAdvanceDays = restaurant?.max_advance_days ?? 30;
 
   const hoy = toLocalDate(new Date(), timeZone);
-  const fechaInicial = fechaValida(params.fecha, hoy, addDays(hoy, maxAdvanceDays));
+  // Sin fecha en la URL —seis de los siete accesos a esta página no la pasan—
+  // se preselecciona el próximo día con servicio. Antes se llegaba a un
+  // formulario vacío con el botón desactivado.
+  const proximoAbierto = (() => {
+    for (let i = 0; i <= maxAdvanceDays; i++) {
+      const f = addDays(hoy, i);
+      const [a, m, d] = f.split("-").map(Number);
+      if (diasAbiertos.length === 0 || diasAbiertos.includes(new Date(Date.UTC(a, m - 1, d)).getUTCDay())) return f;
+    }
+    return hoy;
+  })();
+
+  const fechaInicial =
+    fechaValida(params.fecha, hoy, addDays(hoy, maxAdvanceDays)) || proximoAbierto;
 
   const pax = Number(params.pax);
   const comensalesIniciales =
@@ -83,6 +102,7 @@ export default async function ReservarPage({
               timeZone={timeZone}
               fechaInicial={fechaInicial}
               comensalesIniciales={comensalesIniciales}
+              diasAbiertos={diasAbiertos}
             />
           </div>
 
@@ -92,7 +112,7 @@ export default async function ReservarPage({
             al final de la carta.
           */}
           <aside className="hidden overflow-hidden rounded-2xl border border-stone-200 bg-white md:block">
-            <div className="relative aspect-[4/3]">
+            <div className="foto-editorial relative aspect-[4/3] bg-stone-200">
               <Image
                 src={pexels(IMAGES.servicio, 640)}
                 alt="Emplatado del menú degustación"
@@ -107,7 +127,7 @@ export default async function ReservarPage({
               <p className="mt-2 text-sm text-stone-600">{MENU_DEGUSTACION.descripcion}</p>
               <p className="mt-3 text-sm text-stone-700">
                 <span className="text-lg font-bold text-amber-800">
-                  {MENU_DEGUSTACION.precio} €
+                  {precio(MENU_DEGUSTACION.precio)}
                 </span>{" "}
                 por persona · {MENU_DEGUSTACION.pasos} pasos
               </p>

@@ -11,6 +11,9 @@
  * más rápido y evitan que el local parezca un catálogo genérico.
  */
 
+/** Precio en euros con el formato español. */
+export const precio = (n: number) => `${n.toFixed(2).replace(".", ",")} €`;
+
 /** URL de una foto de Pexels con recorte y compresión al vuelo. */
 export function pexels(id: number, width: number, height?: number): string {
   const crop = height ? `&h=${height}&fit=crop` : "";
@@ -18,18 +21,18 @@ export function pexels(id: number, width: number, height?: number): string {
 }
 
 /*
-  Criterio de las fotos: todas de noche o con luz cálida de interior. Antes
-  se mezclaban un salón de banquetes en azul, una cocina en blanco clínico y
-  una parrilla de comida callejera, y el conjunto parecía tres restaurantes
-  distintos. La coherencia de temperatura de color es lo que hace que un
-  sitio parezca uno solo.
+  Criterio de las fotos: interiores de noche o con luz cálida. Aun así son de
+  banco y vienen de locales distintos, así que la portada les aplica un
+  tratamiento común (`.foto-editorial` en globals.css) para acercar sus
+  temperaturas de color. Es un parche: la única solución de verdad es que el
+  restaurante aporte su propio reportaje.
 */
 export const IMAGES = {
   hero: 1581384,        // terraza al anochecer con luces cálidas
   historia: 260922,     // barra del local, ambiente nocturno
   chef: 3298687,        // cocinero con sartén, cocina en penumbra
   comedor: 941861,      // sala de noche con copas servidas
-  servicio: 3298634,    // manos emplatando, luz baja
+  servicio: 1998920,    // gambas a la brasa sobre plato de pizarra
   sobremesa: 5638732,   // mesa larga compartida
 } as const;
 
@@ -37,7 +40,6 @@ export interface Plato {
   nombre: string;
   descripcion: string;
   precio: number;
-  imagen?: number;
   etiquetas?: string[];
 }
 
@@ -58,7 +60,6 @@ export const CARTA: SeccionCarta[] = [
         nombre: "Tostada de aguacate y huevo de codorniz",
         descripcion: "Pan de masa madre, aguacate, huevo de codorniz y semillas tostadas.",
         precio: 12.5,
-        imagen: 566566,
         etiquetas: ["Vegetariano"],
       },
       {
@@ -88,13 +89,11 @@ export const CARTA: SeccionCarta[] = [
         nombre: "Salmón salvaje a la brasa",
         descripcion: "Con rúcula, tomate cherry confitado y reducción de Pedro Ximénez.",
         precio: 23,
-        imagen: 725991,
       },
       {
         nombre: "Brochetas de cordero a la brasa",
         descripcion: "Cordero lechal, especias del Mediterráneo y yogur de menta.",
         precio: 21.5,
-        imagen: 2233729,
       },
       {
         nombre: "Arroz meloso de carabineros",
@@ -118,7 +117,6 @@ export const CARTA: SeccionCarta[] = [
         nombre: "Texturas de chocolate y frambuesa",
         descripcion: "Chocolate 70% de origen único, frambuesa fresca y crujiente de cacao.",
         precio: 8.5,
-        imagen: 1109197,
       },
       {
         nombre: "Torrija caramelizada",
@@ -179,7 +177,7 @@ export const RESENAS: Resena[] = [
 
 export const GALERIA = [
   { id: 941861, alt: "Comedor de noche con las mesas preparadas y copas de vino" },
-  { id: 2544829, alt: "Cocina en pleno servicio vista desde la barra" },
+  { id: 3298634, alt: "Emplatado de un pase en cocina" },
   { id: 696218, alt: "Comensales brindando en una celebración" },
   { id: 262978, alt: "Pase de platos hacia la sala" },
   { id: 1581384, alt: "Terraza al anochecer con luces cálidas" },

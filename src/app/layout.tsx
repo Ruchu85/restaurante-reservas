@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono, Fraunces } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Geist, Fraunces } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -8,10 +8,9 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Sin fuente mono propia: solo se usa para el código de reserva y en una
+// columna del panel, y cargarla en el layout raíz metía 23 KB en la ruta
+// crítica de la portada, donde no se usa. La mono del sistema sirve igual.
 
 /**
  * Serif de display para los titulares de la web pública. Una sola sans para
@@ -37,6 +36,15 @@ export const metadata: Metadata = {
   description: "Reserva tu mesa en Restaurante Demo. Cocina mediterránea de autor en Madrid.",
 };
 
+/**
+ * El hero es oscuro: sin `themeColor`, en Android la barra del navegador sale
+ * blanca y corta la pantalla en dos. Va en `viewport`, no en `metadata`:
+ * Next 15 ya no lo acepta ahí.
+ */
+export const viewport: Viewport = {
+  themeColor: "#1c1917",
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -47,7 +55,7 @@ export default function RootLayout({
   // Declaradas en <body> resultaban inválidas al resolverse en :root y la web
   // entera se quedaba con la fuente del sistema.
   return (
-    <html lang="es" className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable}`}>
+    <html lang="es" className={`${geistSans.variable} ${fraunces.variable}`}>
       <body className="font-sans antialiased">
         {children}
         <Toaster richColors position="top-right" />

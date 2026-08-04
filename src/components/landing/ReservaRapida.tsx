@@ -92,7 +92,7 @@ export function ReservaRapida({ hoy, diasAbiertos, maxComensales }: Props) {
           value={fecha}
           min={hoy}
           onChange={(e) => e.target.value && setFecha(e.target.value)}
-          className={`foco-claro mt-1.5 w-full rounded-xl border-0 bg-white/10 px-3 py-1.5 text-xs text-white transition-colors hover:bg-white/20 [color-scheme:dark] ${
+          className={`foco-claro mt-1.5 h-11 w-full rounded-xl border-0 bg-white/10 px-3 text-xs text-white transition-colors hover:bg-white/20 [color-scheme:dark] ${
             otroDia ? "ring-1 ring-white" : ""
           }`}
         />
