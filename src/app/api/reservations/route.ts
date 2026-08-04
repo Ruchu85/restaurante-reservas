@@ -9,6 +9,7 @@ import { normalizePhone } from "@/lib/phone";
 import { madridDayRangeUtc, toLocalDate, dayOfWeek, addDays } from "@/lib/dates";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { sendConfirmationEmail } from "@/lib/email";
+import { sendConfirmationWhatsApp } from "@/lib/whatsapp";
 import { z } from "zod";
 import type { Reservation } from "@/types";
 
@@ -321,6 +322,13 @@ export async function POST(request: NextRequest) {
       timeZone: config.timezone,
     });
   }
+  void sendConfirmationWhatsApp({
+    reservation,
+    restaurantName: config.name,
+    restaurantPhone: config.phone,
+    appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
+    timeZone: config.timezone,
+  });
 
   return NextResponse.json(
     {

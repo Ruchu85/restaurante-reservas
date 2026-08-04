@@ -19,6 +19,7 @@ import { logAudit } from "@/lib/audit";
 import { normalizePhone } from "@/lib/phone";
 import { rateLimit } from "@/lib/rateLimit";
 import { sendCancellationEmail } from "@/lib/email";
+import { sendCancellationWhatsApp } from "@/lib/whatsapp";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { Reservation } from "@/types";
@@ -458,7 +459,7 @@ export async function cancelReservationByToken(token: string) {
   // Este es el camino que usa de verdad la página pública, así que el aviso de
   // cancelación tiene que salir de aquí: antes solo lo mandaba el endpoint
   // DELETE equivalente, al que la UI no llama nunca.
-  if (r.guest_email) {
+  {
     const { data: rest } = await admin
       .from("restaurants")
       .select("name, timezone")
@@ -466,7 +467,15 @@ export async function cancelReservationByToken(token: string) {
       .maybeSingle();
     const restaurant = rest as { name: string; timezone: string | null } | null;
 
-    void sendCancellationEmail({
+    if (r.guest_email) {
+      void sendCancellationEmail({
+        reservation: { ...r, status: "cancelled" },
+        restaurantName: restaurant?.name ?? "Restaurante",
+        appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
+        timeZone: restaurant?.timezone ?? undefined,
+      });
+    }
+    void sendCancellationWhatsApp({
       reservation: { ...r, status: "cancelled" },
       restaurantName: restaurant?.name ?? "Restaurante",
       appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",

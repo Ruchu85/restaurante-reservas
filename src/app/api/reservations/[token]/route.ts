@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { PUBLIC_RESERVATION_SELECT } from "@/lib/reservations";
 import { sendCancellationEmail } from "@/lib/email";
+import { sendCancellationWhatsApp } from "@/lib/whatsapp";
 import type { Reservation } from "@/types";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -89,7 +90,9 @@ export async function DELETE(
     return NextResponse.json({ error: "No se pudo cancelar la reserva." }, { status: 500 });
   }
 
-  if (r.guest_email) {
+  {
+    // Antes esta consulta iba dentro del `if (r.guest_email)`: el aviso de
+    // WhatsApp la necesita igual, tenga o no email el comensal.
     const { data: rest } = await admin
       .from("restaurants")
       .select("name, timezone")
@@ -98,7 +101,15 @@ export async function DELETE(
 
     const restaurant = rest as { name: string; timezone: string | null } | null;
 
-    void sendCancellationEmail({
+    if (r.guest_email) {
+      void sendCancellationEmail({
+        reservation: { ...r, status: "cancelled" },
+        restaurantName: restaurant?.name ?? "Restaurante",
+        appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
+        timeZone: restaurant?.timezone ?? undefined,
+      });
+    }
+    void sendCancellationWhatsApp({
       reservation: { ...r, status: "cancelled" },
       restaurantName: restaurant?.name ?? "Restaurante",
       appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
