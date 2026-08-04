@@ -1,6 +1,2 @@
-# Logs y temporales de generación de la demo
-dev-demo.log
-landing-preview*.png
-
-# Capturas intermedias (las publicadas están en landing/screenshots)
-/screenshots/
+# Trabajo intermedio del generador de vídeo
+.trabajo/

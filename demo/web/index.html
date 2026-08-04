@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reservas para restaurantes — web propia y sistema de reservas</title>
+<meta name="description" content="Una web para tu restaurante y un sistema de reservas que evita dobles reservas, reconoce a tus clientes habituales y controla el ritmo de la cocina.">
+<meta property="og:title" content="Reservas para restaurantes">
+<meta property="og:description" content="Tu web con reservas online y el panel de sala que las gestiona. Siete días gratis.">
+<meta property="og:type" content="website">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --tinta:#1c1917; --tinta2:#44403c; --suave:#78716c;
+    --papel:#faf9f7; --linea:#e7e5e4; --acento:#d97706; --acento2:#b45309;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--tinta);
+       background:var(--papel);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  a{color:inherit}
+
+  /* Cabecera */
+  header{position:sticky;top:0;z-index:50;background:rgba(250,249,247,.92);
+         backdrop-filter:blur(8px);border-bottom:1px solid var(--linea)}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;height:62px}
+  .logo{font-weight:800;letter-spacing:-.02em}
+  .logo span{color:var(--acento)}
+  .btn{display:inline-block;background:var(--acento);color:#fff;text-decoration:none;
+       padding:11px 22px;border-radius:10px;font-weight:600;transition:background .15s}
+  .btn:hover{background:var(--acento2)}
+  .btn.claro{background:#fff;color:var(--acento2);border:1px solid var(--linea)}
+  .btn.claro:hover{background:#fff7ed}
+  .btn.sm{padding:8px 16px;font-size:14px}
+
+  /* Portada */
+  .portada{text-align:center;padding:64px 0 40px}
+  .pill{display:inline-block;background:#fff7ed;color:var(--acento2);border:1px solid #fed7aa;
+        border-radius:999px;padding:6px 15px;font-size:13px;font-weight:600;margin-bottom:22px}
+  h1{font-size:clamp(31px,5.2vw,52px);line-height:1.12;letter-spacing:-.03em;font-weight:800}
+  .sub{font-size:clamp(16px,2.2vw,20px);color:var(--tinta2);max-width:640px;margin:20px auto 0}
+  .acciones{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+
+  /* Vídeo */
+  .video-caja{margin:46px auto 0;max-width:940px;border-radius:16px;overflow:hidden;
+              box-shadow:0 22px 60px rgba(28,25,23,.22);background:#000;line-height:0}
+  .video-caja video{width:100%;display:block}
+  .pie-video{text-align:center;font-size:14px;color:var(--suave);margin-top:12px}
+
+  /* Secciones */
+  section{padding:64px 0}
+  .cabecera{text-align:center;max-width:680px;margin:0 auto 44px}
+  .eyebrow{color:var(--acento);font-weight:700;font-size:13px;letter-spacing:.09em;
+           text-transform:uppercase}
+  h2{font-size:clamp(25px,3.6vw,36px);letter-spacing:-.02em;margin-top:10px;font-weight:800}
+  .cabecera p{color:var(--tinta2);margin-top:14px}
+
+  /* Los dos productos */
+  .productos{display:grid;gap:22px;grid-template-columns:1fr}
+  @media(min-width:800px){.productos{grid-template-columns:1fr 1fr}}
+  .producto{background:#fff;border:1px solid var(--linea);border-radius:16px;padding:30px;
+            display:flex;flex-direction:column}
+  .producto h3{font-size:21px;margin-bottom:6px}
+  .producto .que{color:var(--suave);font-size:14px;margin-bottom:18px}
+  .producto ul{list-style:none;margin-top:auto}
+  .producto li{padding-left:26px;position:relative;margin-bottom:9px;font-size:15px;color:var(--tinta2)}
+  .producto li::before{content:"";position:absolute;left:6px;top:10px;width:7px;height:7px;
+                        border-radius:50%;background:var(--acento)}
+
+  /* Capturas */
+  .tiras{display:grid;gap:20px;grid-template-columns:1fr}
+  @media(min-width:760px){.tiras{grid-template-columns:1fr 1fr}}
+  figure{background:#fff;border:1px solid var(--linea);border-radius:14px;overflow:hidden}
+  figure img{width:100%;display:block;border-bottom:1px solid var(--linea)}
+  figcaption{padding:14px 18px}
+  figcaption b{display:block;font-size:15px}
+  figcaption span{font-size:13.5px;color:var(--suave)}
+  .ancha{grid-column:1/-1}
+
+  /* Funciones */
+  .rejilla{display:grid;gap:18px;grid-template-columns:1fr}
+  @media(min-width:700px){.rejilla{grid-template-columns:repeat(3,1fr)}}
+  .tarjeta{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:22px}
+  .tarjeta .ico{font-size:22px}
+  .tarjeta b{display:block;margin:10px 0 5px;font-size:16px}
+  .tarjeta p{font-size:14.5px;color:var(--tinta2)}
+
+  /* Cierre */
+  .cierre{background:var(--tinta);color:#fff;border-radius:20px;padding:46px 32px;text-align:center}
+  .cierre h2{color:#fff}
+  .cierre p{color:#d6d3d1;max-width:520px;margin:14px auto 26px}
+  .cierre .btn{background:var(--acento)}
+  .nota{font-size:13px;color:#a8a29e;margin-top:16px}
+
+  footer{border-top:1px solid var(--linea);padding:30px 0;text-align:center;
+         font-size:13.5px;color:var(--suave)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">Reservas<span>·</span>Restaurantes</div>
+    <a class="btn sm" href="#probar">Probar gratis</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="portada">
+    <span class="pill">Web propia + sistema de reservas</span>
+    <h1>Tu restaurante deja de perder<br>reservas por teléfono</h1>
+    <p class="sub">
+      Te montamos la web de tu restaurante y, dentro, un sistema de reservas que
+      trabaja solo: sin dobles reservas, reconociendo a tus clientes habituales
+      y controlando el ritmo de entrada a cocina.
+    </p>
+    <div class="acciones">
+      <a class="btn" href="#probar">Quiero probarlo</a>
+      <a class="btn claro" href="https://reservas-restaurante-demo.vercel.app" target="_blank" rel="noopener">
+        Ver la demo en vivo
+      </a>
+    </div>
+  </div>
+
+  <div class="video-caja">
+    <video controls preload="metadata" playsinline poster="capturas/04-reservas.jpg">
+      <source src="media/demo.mp4" type="video/mp4">
+      Tu navegador no reproduce vídeo. <a href="media/demo.mp4">Descárgalo aquí</a>.
+    </video>
+  </div>
+  <p class="pie-video">Vídeo de 1:45 · Grabado sobre la aplicación real, con datos de un restaurante de ejemplo</p>
+</div>
+
+<section id="incluye">
+  <div class="wrap">
+    <div class="cabecera">
+      <div class="eyebrow">Qué incluye</div>
+      <h2>Dos cosas, y funcionan juntas</h2>
+      <p>Puedes contratar solo el sistema de reservas si ya tienes web. O las dos, que es donde se nota.</p>
+    </div>
+
+    <div class="productos">
+      <div class="producto">
+        <h3>La web de tu restaurante</h3>
+        <div class="que">Lo que ve tu cliente</div>
+        <ul>
+          <li>Tu carta, tus fotos y tu historia</li>
+          <li>Reserva en dos minutos, desde el móvil</li>
+          <li>Horario y localización siempre al día</li>
+          <li>Email de confirmación con enlace para cancelar</li>
+          <li>Dominio propio si lo quieres</li>
+        </ul>
+      </div>
+
+      <div class="producto">
+        <h3>El panel de sala</h3>
+        <div class="que">Lo que usas tú</div>
+        <ul>
+          <li>El servicio del día completo de un vistazo</li>
+          <li>Ficha de cada comensal: visitas, alergias, no-shows</li>
+          <li>Mesas juntadas para grupos grandes</li>
+          <li>Límite de comensales por franja</li>
+          <li>Informes de ocupación y tasa de no-show</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pantallas">
+  <div class="wrap">
+    <div class="cabecera">
+      <div class="eyebrow">Por dentro</div>
+      <h2>Capturas de la aplicación real</h2>
+      <p>No son maquetas: son pantallas del sistema funcionando con datos de un restaurante de ejemplo.</p>
+    </div>
+
+    <div class="tiras">
+      <figure class="ancha">
+        <img src="capturas/04-reservas.jpg" alt="Listado de reservas del día con señales del comensal" loading="lazy">
+        <figcaption>
+          <b>El servicio del día</b>
+          <span>Cada reserva muestra si es cliente habitual, sus alergias y cuántas veces te ha fallado.</span>
+        </figcaption>
+      </figure>
+
+      <figure>
+        <img src="capturas/09-ficha-comensal.jpg" alt="Ficha de un comensal con su historial" loading="lazy">
+        <figcaption>
+          <b>Ficha del comensal</b>
+          <span>Se crea sola con cada reserva. Historial, notas de sala y alergias.</span>
+        </figcaption>
+      </figure>
+
+      <figure>
+        <img src="capturas/02-calendario.jpg" alt="Calendario mensual con ocupación" loading="lazy">
+        <figcaption>
+          <b>Calendario de ocupación</b>
+          <span>De un vistazo, qué días vas lleno y cuáles hay que empujar.</span>
+        </figcaption>
+      </figure>
+
+      <figure>
+        <img src="capturas/06-informes.jpg" alt="Informes de ocupación y no-shows" loading="lazy">
+        <figcaption>
+          <b>Informes</b>
+          <span>Comensales, origen de las reservas y tasa de no-show.</span>
+        </figcaption>
+      </figure>
+
+      <figure>
+        <img src="capturas/07-mesas.jpg" alt="Gestión de mesas por salas" loading="lazy">
+        <figcaption>
+          <b>Tus mesas y salas</b>
+          <span>Interior, terraza, privado. Con capacidad y si se pueden juntar.</span>
+        </figcaption>
+      </figure>
+
+      <figure class="ancha">
+        <img src="capturas/10-web-publica.jpg" alt="Web pública del restaurante" loading="lazy">
+        <figcaption>
+          <b>Tu web, con la carta y el botón de reservar</b>
+          <span>Diseñada para móvil, que es por donde entra la mayoría de las reservas.</span>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="funciones">
+  <div class="wrap">
+    <div class="cabecera">
+      <div class="eyebrow">Lo que resuelve</div>
+      <h2>Los problemas de todos los días</h2>
+    </div>
+    <div class="rejilla">
+      <div class="tarjeta">
+        <div class="ico">🔒</div>
+        <b>Nunca dos veces la misma mesa</b>
+        <p>La garantía no está en el programa, está en la base de datos. Aunque entren dos reservas a la vez, solo una se queda con la mesa.</p>
+      </div>
+      <div class="tarjeta">
+        <div class="ico">👋</div>
+        <b>Reconoce al habitual</b>
+        <p>Al abrir la reserva ves que es su décima visita, que es alérgico al marisco y que ya te dejó dos mesas vacías.</p>
+      </div>
+      <div class="tarjeta">
+        <div class="ico">🍽️</div>
+        <b>Grupos grandes sin líos</b>
+        <p>Si un grupo no cabe en una mesa, junta varias de la misma sala automáticamente.</p>
+      </div>
+      <div class="tarjeta">
+        <div class="ico">⏱️</div>
+        <b>La cocina no se ahoga</b>
+        <p>Limita cuántos comensales entran en cada franja. El maître puede saltárselo cuando hace falta.</p>
+      </div>
+      <div class="tarjeta">
+        <div class="ico">🌙</div>
+        <b>Cierres de madrugada</b>
+        <p>Si cierras a la una, las reservas de las 00:30 salen en el servicio correcto y no en el día siguiente.</p>
+      </div>
+      <div class="tarjeta">
+        <div class="ico">💬</div>
+        <b>Aviso por WhatsApp</b>
+        <p>Confirmar, recordar o avisar de que se ha liberado mesa, con el mensaje ya escrito.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="probar">
+  <div class="wrap">
+    <div class="cierre">
+      <h2>Pruébalo con tu restaurante</h2>
+      <p>
+        Siete días gratis, con tus mesas y tus horarios cargados. Si no te encaja,
+        lo dejas y no pasa nada.
+      </p>
+      <a class="btn" href="https://reservas-restaurante-demo.vercel.app" target="_blank" rel="noopener">
+        Entrar en la demo
+      </a>
+      <div class="nota">La demo es un restaurante ficticio. Puedes reservar en ella sin compromiso.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Reservas para restaurantes · Demo con datos ficticios ·
+    <a href="https://reservas-restaurante-demo.vercel.app">reservas-restaurante-demo.vercel.app</a>
+  </div>
+</footer>
+
+</body>
+</html>

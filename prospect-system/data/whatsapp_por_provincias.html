@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reservas — Outreach WhatsApp (18)</title>
+<style>
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+        background:#f0f2f5;margin:0;padding:0;color:#1a1a1a;}
+  .topnav{position:sticky;top:0;z-index:100;background:#128c7e;
+           padding:.6rem 1rem;display:flex;gap:.5rem;flex-wrap:wrap;
+           box-shadow:0 2px 8px rgba(0,0,0,.2);}
+  .topnav a{color:#fff;text-decoration:none;font-size:.8rem;font-weight:600;
+             background:rgba(255,255,255,.15);padding:.35rem .75rem;
+             border-radius:999px;white-space:nowrap;}
+  .topnav a:hover{background:rgba(255,255,255,.32);}
+  .topnav b{opacity:.75;font-weight:700;}
+  .topnav .total{margin-left:auto;color:rgba(255,255,255,.85);
+                  font-size:.8rem;align-self:center;white-space:nowrap;}
+  .wrap{max-width:1100px;margin:0 auto;padding:1.5rem 1rem 4rem;}
+  h1{color:#128c7e;margin:0 0 .2rem;font-size:1.4rem;}
+  .subtitle{color:#555;font-size:.85rem;margin:0 0 1.2rem;}
+  .tip{background:#fffde7;border-left:4px solid #f9a825;border-radius:0 8px 8px 0;
+        padding:.7rem 1rem;margin-bottom:1rem;font-size:.85rem;color:#555;}
+  .tip b{color:#333;}
+  .toolbar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;
+            background:#fff;border-radius:10px;padding:.7rem 1rem;
+            margin-bottom:1.2rem;box-shadow:0 2px 6px rgba(0,0,0,.06);}
+  .toolbar button{border:1px solid #d6d9de;background:#fff;border-radius:8px;
+                   padding:.4rem .8rem;font-size:.8rem;font-weight:600;
+                   cursor:pointer;color:#333;}
+  .toolbar button:hover{background:#f5f6f8;}
+  .toolbar .progress{margin-left:auto;font-size:.82rem;color:#555;font-weight:600;}
+  .summary{display:flex;gap:.8rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+  .scard{background:#fff;border-radius:10px;padding:.8rem 1rem;text-decoration:none;
+          box-shadow:0 2px 6px rgba(0,0,0,.07);text-align:center;
+          flex:1;min-width:110px;color:inherit;}
+  .scard:hover{box-shadow:0 3px 12px rgba(0,0,0,.12);}
+  .scard .n{font-size:1.7rem;font-weight:800;color:#128c7e;line-height:1;}
+  .scard .l{font-size:.74rem;color:#777;margin-top:.25rem;}
+  .total-card{background:#128c7e;}
+  .total-card .n,.total-card .l{color:#fff;}
+  .prov-section{margin-bottom:2.2rem;scroll-margin-top:56px;}
+  .prov-header{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+                background:#128c7e;color:#fff;border-radius:12px 12px 0 0;
+                padding:.75rem 1.2rem;}
+  .prov-header h2{font-size:1.05rem;margin:0;}
+  .prov-header .badge{background:rgba(255,255,255,.2);border-radius:999px;
+                       padding:.2rem .7rem;font-size:.78rem;font-weight:700;}
+  .prov-header .sent-badge{background:#25d366;border-radius:999px;
+                            padding:.2rem .7rem;font-size:.78rem;font-weight:700;
+                            margin-left:auto;}
+  .table-scroll{overflow-x:auto;}
+  table{border-collapse:collapse;width:100%;background:#fff;
+         border-radius:0 0 12px 12px;overflow:hidden;
+         box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  th{background:#f8f9fa;color:#444;padding:.6rem 1rem;text-align:left;
+      font-size:.78rem;border-bottom:2px solid #e9ecef;white-space:nowrap;}
+  td{padding:.55rem 1rem;border-bottom:1px solid #f0f0f0;
+      vertical-align:middle;font-size:.85rem;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#fafcff;}
+  tr.is-sent{opacity:.45;}
+  .num{color:#888;font-size:.78rem;}
+  .name{font-weight:600;}
+  .city{color:#666;font-size:.8rem;}
+  .phone{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem;white-space:nowrap;}
+  .btn-wa{display:inline-block;padding:.4rem .9rem;border-radius:20px;
+           font-size:.8rem;text-decoration:none;font-weight:700;
+           background:#25d366;color:#fff;white-space:nowrap;}
+  .btn-wa:hover{background:#1ebe5d;}
+  .sent-check{width:18px;height:18px;accent-color:#128c7e;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="topnav">
+<a href="#leon">León <b>18</b></a>
+<span class="total">18 mensajes · 03/08/2026 21:16</span>
+</div>
+<div class="wrap">
+<h1>📱 Reservas — Outreach WhatsApp</h1>
+<p class="subtitle">Generado el 03/08/2026 21:16 · 18 mensajes en 1 provincia(s) · 0 ya marcados como enviados.</p>
+<div class="tip">
+  <b>Cómo usarlo:</b> ve provincia a provincia. Pulsa 💬 en cada fila, envía el
+  mensaje y marca la casilla <b>Enviado</b>. El progreso se guarda en este
+  navegador. Ritmo recomendado: <b>20–30 mensajes por sesión</b> para que
+  WhatsApp no limite la cuenta. Mejor franja para restaurantes:
+  <b>martes a jueves, 10:00–12:00</b> (fuera del servicio).
+</div>
+<div class="toolbar">
+  <button type="button" id="copy-sent">📋 Copiar IDs enviados</button>
+  <button type="button" id="reset-sent">↺ Reiniciar marcas</button>
+  <span class="progress" id="progress">0 / 0 enviados</span>
+</div>
+<div class="summary">
+<a class="scard" href="#leon"><div class="n">18</div><div class="l">León</div></a>
+<div class="scard total-card"><div class="n">18</div><div class="l">Total</div></div>
+</div>
+<section class="prov-section" id="leon">
+<div class="prov-header"><h2>📍 León</h2><span class="badge">18 mensajes</span><span class="sent-badge" data-province-counter="leon">0 enviados</span></div>
+<div class="table-scroll"><table><thead><tr><th>#</th><th>Restaurante</th><th>Ciudad</th><th>Teléfono</th><th>Acción</th><th>Enviado</th></tr></thead><tbody>
+<tr data-id="f045bbe5-35bb-435e-8f6e-595389df3c47" data-province="leon"><td class="num">1</td><td class="name">El Romántico León</td><td class="city">León</td><td class="phone">618 00 90 90</td><td><a class="btn-wa" href="https://wa.me/34618009090?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20El%20Rom%C3%A1ntico%20Le%C3%B3n%20en%20Le%C3%B3n%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="58d5e821-12c5-4a0d-bf0a-7ae8d1d531af" data-province="leon"><td class="num">2</td><td class="name">Restaurante Hotel Real Colegiata San Isidoro</td><td class="city">León</td><td class="phone">638 39 93 99</td><td><a class="btn-wa" href="https://wa.me/34638399399?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20Restaurante%20Hotel%20Real%20Colegiata%20San%20Isidoro%20en%20Le%C3%B3n%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="2d820e85-e6c8-4786-aefd-9dfacaeb0dad" data-province="leon"><td class="num">3</td><td class="name">Finca Amaranta</td><td class="city">Ponferrada</td><td class="phone">677 01 44 31</td><td><a class="btn-wa" href="https://wa.me/34677014431?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20Finca%20Amaranta%20en%20Ponferrada%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="83f1de23-fad7-43a2-876d-bb23c9ac6d7f" data-province="leon"><td class="num">4</td><td class="name">La Barbacana</td><td class="city">Ponferrada</td><td class="phone">638 54 96 80</td><td><a class="btn-wa" href="https://wa.me/34638549680?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20La%20Barbacana%20en%20Ponferrada%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="cf520ca7-dba7-40a9-b5b4-cbe504127960" data-province="leon"><td class="num">5</td><td class="name">Meson La Taberna</td><td class="city">Ponferrada</td><td class="phone">628 71 86 91</td><td><a class="btn-wa" href="https://wa.me/34628718691?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20Meson%20La%20Taberna%20en%20Ponferrada%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="4dfe0029-9a38-48cb-bb33-d059efbc51d3" data-province="leon"><td class="num">6</td><td class="name">O Xantar</td><td class="city">Ponferrada</td><td class="phone">610 04 65 79</td><td><a class="btn-wa" href="https://wa.me/34610046579?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20O%20Xantar%20en%20Ponferrada%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="a9e9c798-5bc1-49be-b51e-83dc74b451c4" data-province="leon"><td class="num">7</td><td class="name">Restaurante Casa Aníbal</td><td class="city">Ponferrada</td><td class="phone">634 58 97 09</td><td><a class="btn-wa" href="https://wa.me/34634589709?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20Restaurante%20Casa%20An%C3%ADbal%20en%20Ponferrada%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="6fefe948-104a-4af4-bc09-4cd6bd7cf8f3" data-province="leon"><td class="num">8</td><td class="name">Restaurante Essencia</td><td class="city">Ponferrada</td><td class="phone">605 79 13 41</td><td><a class="btn-wa" href="https://wa.me/34605791341?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20Restaurante%20Essencia%20en%20Ponferrada%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="7830181f-6bc6-424b-ba97-7fadd1c4ca51" data-province="leon"><td class="num">9</td><td class="name">Restaurante La Violeta</td><td class="city">Ponferrada</td><td class="phone">628 71 86 91</td><td><a class="btn-wa" href="https://wa.me/34628718691?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20Restaurante%20La%20Violeta%20en%20Ponferrada%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="1d5a26be-c70b-4ca3-bd1a-725cb60813b3" data-province="leon"><td class="num">10</td><td class="name">Vinomio Bar &amp; Botánico</td><td class="city">Ponferrada</td><td class="phone">661 78 84 21</td><td><a class="btn-wa" href="https://wa.me/34661788421?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20Vinomio%20Bar%20%26%20Bot%C3%A1nico%20en%20Ponferrada%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="ba778914-79cb-4eda-b66c-99774ef779dc" data-province="leon"><td class="num">11</td><td class="name">Amazonas Café Bar</td><td class="city">San Andrés del Rabanedo</td><td class="phone">640 07 07 12</td><td><a class="btn-wa" href="https://wa.me/34640070712?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20Amazonas%20Caf%C3%A9%20Bar%20en%20San%20Andr%C3%A9s%20del%20Rabanedo%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="61249353-3af4-420d-a90a-35bd25338490" data-province="leon"><td class="num">12</td><td class="name">Bar Restaurante Hugo&#x27;s</td><td class="city">San Andrés del Rabanedo</td><td class="phone">616 92 40 82</td><td><a class="btn-wa" href="https://wa.me/34616924082?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20Bar%20Restaurante%20Hugo%27s%20en%20San%20Andr%C3%A9s%20del%20Rabanedo%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="37693048-27e9-4c99-a858-f18da6252fba" data-province="leon"><td class="num">13</td><td class="name">Café Bar Alto Sil</td><td class="city">San Andrés del Rabanedo</td><td class="phone">646 98 71 42</td><td><a class="btn-wa" href="https://wa.me/34646987142?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20Caf%C3%A9%20Bar%20Alto%20Sil%20en%20San%20Andr%C3%A9s%20del%20Rabanedo%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="7b13606b-50f7-4f22-b305-836331020292" data-province="leon"><td class="num">14</td><td class="name">Café EL PICO</td><td class="city">San Andrés del Rabanedo</td><td class="phone">685 10 04 75</td><td><a class="btn-wa" href="https://wa.me/34685100475?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20Caf%C3%A9%20EL%20PICO%20en%20San%20Andr%C3%A9s%20del%20Rabanedo%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="0f7b651c-491c-4767-9f25-2dfa5621217d" data-province="leon"><td class="num">15</td><td class="name">El Patio de San Andrés</td><td class="city">San Andrés del Rabanedo</td><td class="phone">609 73 81 33</td><td><a class="btn-wa" href="https://wa.me/34609738133?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20El%20Patio%20de%20San%20Andr%C3%A9s%20en%20San%20Andr%C3%A9s%20del%20Rabanedo%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="ac46a2a3-98e2-4aa0-9d54-0dd1adfe272d" data-province="leon"><td class="num">16</td><td class="name">Javi&#x27;s Bar</td><td class="city">San Andrés del Rabanedo</td><td class="phone">607 08 67 45</td><td><a class="btn-wa" href="https://wa.me/34607086745?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20Javi%27s%20Bar%20en%20San%20Andr%C3%A9s%20del%20Rabanedo%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="820e3735-fd5d-4894-8314-8324b14baf2b" data-province="leon"><td class="num">17</td><td class="name">La Cantina de Barcaduro</td><td class="city">San Andrés del Rabanedo</td><td class="phone">626 68 94 05</td><td><a class="btn-wa" href="https://wa.me/34626689405?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20La%20Cantina%20de%20Barcaduro%20en%20San%20Andr%C3%A9s%20del%20Rabanedo%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+<tr data-id="dcfda919-5b57-47b8-a0ab-e1b2604729f6" data-province="leon"><td class="num">18</td><td class="name">pizzeria la bicicleta</td><td class="city">San Andrés del Rabanedo</td><td class="phone">602 17 56 90</td><td><a class="btn-wa" href="https://wa.me/34602175690?text=Hola%21%20Soy%20Pablo%20%7C%20GestiCitas.%0A%0AHe%20visto%20pizzeria%20la%20bicicleta%20en%20San%20Andr%C3%A9s%20del%20Rabanedo%20y%20quer%C3%ADa%20preguntarte%20c%C3%B3mo%20llev%C3%A1is%20las%20reservas%3A%20%C2%BFa%20mano%2C%20por%20tel%C3%A9fono%2C%20o%20con%20alguna%20plataforma%3F%0A%0ATenemos%20una%20aplicaci%C3%B3n%20pensada%20para%20restaurantes%20que%20ayuda%20a%3A%0A-%20Ver%20la%20sala%20del%20d%C3%ADa%20entera%20desde%20el%20m%C3%B3vil%0A-%20Evitar%20dobles%20reservas%20y%20controlar%20el%20ritmo%20de%20entrada%20a%20cocina%0A-%20Reconocer%20al%20cliente%20habitual%20%28alergias%2C%20visitas%2C%20no-shows%29%0A-%20Confirmar%20reservas%20por%20WhatsApp%20en%20un%20toque%0A%0APuedes%20ver%20c%C3%B3mo%20funciona%20aqu%C3%AD%3A%0Ahttps%3A//reservas-restaurante-demo.vercel.app%0A%0ASi%20te%20encaja%2C%20te%20damos%20acceso%20gratis%207%20d%C3%ADas%20para%20que%20lo%20pruebes%20sin%20compromiso.%0A%0ASi%20prefieres%20que%20no%20volvamos%20a%20escribirte%2C%20responde%20BAJA%20y%20te%20quitamos%20de%20la%20lista.%20Escribo%20desde%20Pablo%20%7C%20GestiCitas%20y%20solo%20uso%20el%20tel%C3%A9fono%20que%20ten%C3%A9is%20publicado." target="_blank" rel="noopener">💬 Abrir en WhatsApp</a></td><td><input type="checkbox" class="sent-check" aria-label="Marcar como enviado"></td></tr>
+</tbody></table></div>
+</section>
+</div>
+<script>
+(function () {
+  var KEY = 'wa-sent-ids';
+  var stored = new Set(JSON.parse(localStorage.getItem(KEY) || '[]'));
+  var rows = Array.prototype.slice.call(document.querySelectorAll('tr[data-id]'));
+
+  function persist() {
+    localStorage.setItem(KEY, JSON.stringify(Array.from(stored)));
+  }
+
+  function render() {
+    var counts = {};
+    rows.forEach(function (row) {
+      var sent = stored.has(row.dataset.id);
+      row.classList.toggle('is-sent', sent);
+      row.querySelector('.sent-check').checked = sent;
+      var p = row.dataset.province;
+      counts[p] = (counts[p] || 0) + (sent ? 1 : 0);
+    });
+    document.querySelectorAll('[data-province-counter]').forEach(function (el) {
+      el.textContent = (counts[el.dataset.provinceCounter] || 0) + ' enviados';
+    });
+    document.getElementById('progress').textContent =
+      stored.size + ' / ' + rows.length + ' enviados';
+  }
+
+  rows.forEach(function (row) {
+    // Marcar automáticamente al abrir WhatsApp: es el gesto que ya hace el usuario.
+    row.querySelector('.btn-wa').addEventListener('click', function () {
+      stored.add(row.dataset.id);
+      persist();
+      render();
+    });
+    row.querySelector('.sent-check').addEventListener('change', function (e) {
+      if (e.target.checked) stored.add(row.dataset.id);
+      else stored.delete(row.dataset.id);
+      persist();
+      render();
+    });
+  });
+
+  document.getElementById('copy-sent').addEventListener('click', function () {
+    var ids = Array.from(stored).join(',');
+    if (!ids) { alert('Todavía no has marcado ningún mensaje como enviado.'); return; }
+    navigator.clipboard.writeText(ids).then(function () {
+      alert('IDs copiados. Sincroniza la base de datos con:\n\n' +
+            'run.bat whatsapp mark-sent --ids "' + (ids.length > 60 ? '<pegar aquí>' : ids) + '"');
+    }, function () {
+      window.prompt('Copia estos IDs:', ids);
+    });
+  });
+
+  document.getElementById('reset-sent').addEventListener('click', function () {
+    if (!confirm('¿Borrar todas las marcas de enviado de este navegador?')) return;
+    stored = new Set();
+    persist();
+    render();
+  });
+
+  render();
+})();
+</script>
+</body></html>

@@ -1,327 +1,368 @@
-// ============================================================
-// SEED DEMO — Pobla el "Salón Demo" (slug: salon-demo) con datos
-// ficticios atractivos para generar capturas de marketing.
-//
-// AISLADO: solo toca el salón con slug 'salon-demo'. NO toca tu
-// salón real. Usa el SERVICE_ROLE_KEY de .env.local.
-//
-// Uso:  node demo/seed-demo.mjs
-// ============================================================
+/**
+ * seed-demo.mjs — Datos de demostración del restaurante demo.
+ *
+ * Genera reservas y fichas de comensal de agosto a diciembre de 2026, con la
+ * variedad necesaria para poder enseñar la app entera: clientes habituales,
+ * no-shows, alergias, grupos grandes con mesas juntadas, servicios llenos y
+ * servicios flojos.
+ *
+ *   node demo/seed-demo.mjs            # genera lo que falte
+ *   node demo/seed-demo.mjs --limpiar  # borra antes lo que generó este script
+ *
+ * Respeta las reglas reales del sistema:
+ *  - solo días abiertos (cerrado lunes y martes)
+ *  - una reserva por mesa y turno: con 90 minutos de duración todos los huecos
+ *    de un turno se solapan, así que la restricción de exclusión de Postgres
+ *    solo admite una reserva por mesa en cada servicio
+ *  - el grupo cabe en la mesa asignada
+ *  - los grupos que no caben en una sola mesa ocupan dos, registradas en
+ *    `reservation_tables` como haría la propia aplicación
+ *
+ * Solo toca el restaurante con slug `restaurante-demo`.
+ */
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { randomUUID } from "node:crypto";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, "..");
+const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
 
-// --- Cargar .env.local sin dependencias ---
-function loadEnv() {
-  const raw = readFileSync(join(ROOT, ".env.local"), "utf8");
-  const env = {};
-  for (const line of raw.split("\n")) {
-    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/i);
-    if (m) env[m[1]] = m[2].replace(/^["']|["']$/g, "").trim();
-  }
-  return env;
+// Dos ventanas. El historial pasado no es un capricho: sin él, todos los
+// comensales aparecen con "0 visitas" y el CRM —que es la función que más
+// vende— se ve vacío. Con historial hay clientes que han venido diez veces,
+// otros con no-shows acumulados, y las señales de sala tienen sentido.
+const HISTORIA_DESDE = "2026-03-01";
+const HISTORIA_HASTA = "2026-07-31";
+const DESDE = "2026-08-01";
+const HASTA = "2026-12-31";
+const MARCA = "seed-demo"; // queda en internal_notes para poder limpiarlo luego
+
+function env(clave) {
+  const linea = readFileSync(new URL("../.env.local", import.meta.url), "utf8")
+    .split(/\r?\n/)
+    .find((l) => l.startsWith(clave + "="));
+  if (!linea) throw new Error(`Falta ${clave} en .env.local`);
+  return linea.slice(clave.length + 1).trim();
 }
 
-const env = loadEnv();
-const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!SUPABASE_URL || !SERVICE_KEY) {
-  console.error("Faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en .env.local");
-  process.exit(1);
-}
-
-const db = createClient(SUPABASE_URL, SERVICE_KEY, {
+const db = createClient(env("NEXT_PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-const DEMO_SLUG = "salon-demo";
-const DEMO_USER_EMAIL = "demo@salondemo.es";
-const DEMO_USER_PASSWORD = "DemoSalon2026!";
+// Semilla fija: relanzar el script da el mismo reparto y la demo no "baila".
+let semilla = 20260801;
+const rnd = () => ((semilla = (semilla * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+const entre = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+const elige = (xs) => xs[Math.floor(rnd() * xs.length)];
+const chance = (p) => rnd() < p;
 
-// --- Datos demo ---
-const SALON = {
-  name: "Peluquería Aurora",
-  owner: "Laura Fernández",
-  nif: "B-12345678",
-  address: "Calle de la Luz 24",
-  city: "28013 Madrid",
-  phone: "+34 911 23 45 67",
-  email: "hola@peluqueria-aurora.es",
-  ticket_footer: "¡Gracias por tu visita! Reserva tu próxima cita.",
-  slot_capacity: 2,
+const NOMBRES = [
+  "Lucía", "Martín", "Sofía", "Hugo", "Paula", "Mateo", "Carmen", "Pablo", "Julia", "Álvaro",
+  "Marta", "Diego", "Elena", "Adrián", "Sara", "Javier", "Laura", "Sergio", "Ana", "Daniel",
+  "Irene", "Rubén", "Nuria", "Óscar", "Beatriz", "Andrés", "Clara", "Iván", "Rocío", "Gonzalo",
+  "Patricia", "Ignacio", "Alicia", "Manuel", "Cristina", "Jorge", "Silvia", "Raúl", "Teresa", "Víctor",
+];
+const APELLIDOS = [
+  "García", "Fernández", "Rodríguez", "Martínez", "López", "Sánchez", "Pérez", "Gómez",
+  "Martín", "Jiménez", "Ruiz", "Hernández", "Díaz", "Moreno", "Muñoz", "Álvarez",
+  "Romero", "Alonso", "Gutiérrez", "Navarro", "Torres", "Domínguez", "Vázquez", "Ramos",
+  "Gil", "Serrano", "Blanco", "Molina", "Castro", "Ortega", "Rubio", "Marín",
+];
+const ALERGIAS = [
+  "Marisco", "Gluten", "Frutos secos", "Lactosa",
+  "Marisco y frutos secos", "Huevo", "Pescado azul",
+];
+const NOTAS_SALA = [
+  "Prefiere mesa junto a la ventana.",
+  "Viene con carrito, necesita espacio al lado.",
+  "Siempre pide la misma mesa de la terraza.",
+  "Cliente de empresa, suele pedir factura.",
+  "Le gusta el Bierzo, recomendarle novedades.",
+  "Celebra su aniversario cada octubre.",
+  "Muy puntual con la temperatura de la carne.",
+];
+const PETICIONES = [
+  "Celebramos un cumpleaños, ¿podéis traer una vela?",
+  "Si es posible, mesa tranquila.",
+  "Venimos con un bebé, necesitamos trona.",
+  "Alergia al marisco en un comensal.",
+  "Preferimos terraza si hace buen tiempo.",
+  "Cena de empresa, necesitamos factura.",
+  "Uno de los comensales es celíaco.",
+  null, null, null, null, null, null, // la mayoría no deja nota
+];
+
+/** Móvil español válido (6xx/7xx): son los únicos que admiten WhatsApp. */
+function telefono() {
+  let n = String(chance(0.75) ? 6 : 7);
+  for (let i = 0; i < 8; i++) n += entre(0, 9);
+  return "+34" + n;
+}
+
+function sinAcentos(s) {
+  return s.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+
+function crearComensales(cuantos) {
+  const usados = new Set();
+  const lista = [];
+  while (lista.length < cuantos) {
+    const nombre = `${elige(NOMBRES)} ${elige(APELLIDOS)}`;
+    const phone = telefono();
+    if (usados.has(phone)) continue;
+    usados.add(phone);
+
+    const tags = [];
+    if (chance(0.08)) tags.push("vip");
+    if (chance(0.06)) tags.push("celebracion");
+    if (chance(0.03)) tags.push("prensa");
+    const allergies = chance(0.18) ? elige(ALERGIAS) : null;
+    if (allergies) tags.push("alergias");
+
+    lista.push({
+      id: randomUUID(),
+      restaurant_id: RESTAURANT_ID,
+      phone,
+      name: nombre,
+      email: chance(0.6) ? `${sinAcentos(nombre).toLowerCase().replace(/ /g, ".")}@example.com` : null,
+      allergies,
+      notes: chance(0.15) ? elige(NOTAS_SALA) : null,
+      tags: [...new Set(tags)],
+    });
+  }
+  return lista;
+}
+
+const TURNOS = {
+  comida: ["13:30", "14:00", "14:30"],
+  cena: ["20:30", "21:00", "21:30", "22:00"],
 };
 
-const STAFF = [
-  { id: "10000000-0000-0000-0000-000000000001", name: "María García" },
-  { id: "10000000-0000-0000-0000-000000000002", name: "Carlos López" },
-  { id: "10000000-0000-0000-0000-000000000003", name: "Ana Martínez" },
-];
-
-const SERVICES = [
-  { name: "Corte caballero", price: 14, duration_minutes: 30 },
-  { name: "Corte señora", price: 20, duration_minutes: 45 },
-  { name: "Corte + peinado", price: 28, duration_minutes: 60 },
-  { name: "Tinte", price: 45, duration_minutes: 90 },
-  { name: "Mechas / Balayage", price: 70, duration_minutes: 120 },
-  { name: "Peinado", price: 18, duration_minutes: 30 },
-  { name: "Recogido", price: 35, duration_minutes: 60 },
-  { name: "Tratamiento hidratación", price: 25, duration_minutes: 45 },
-  { name: "Arreglo de barba", price: 10, duration_minutes: 20 },
-  { name: "Corte infantil", price: 12, duration_minutes: 30 },
-];
-
-const CUSTOMERS = [
-  ["Lucía Romero", "+34 612 345 001", "Corte + peinado"],
-  ["Javier Moreno", "+34 612 345 002", "Corte caballero"],
-  ["Carmen Ortega", "+34 612 345 003", "Tinte"],
-  ["Daniel Navarro", "+34 612 345 004", "Arreglo de barba"],
-  ["Paula Gil", "+34 612 345 005", "Mechas / Balayage"],
-  ["Sergio Díaz", "+34 612 345 006", "Corte caballero"],
-  ["Marta Serrano", "+34 612 345 007", "Recogido"],
-  ["Alberto Ramos", "+34 612 345 008", "Corte caballero"],
-  ["Elena Castro", "+34 612 345 009", "Corte señora"],
-  ["Pablo Herrera", "+34 612 345 010", "Corte + peinado"],
-  ["Nuria Vega", "+34 612 345 011", "Tratamiento hidratación"],
-  ["Rubén Molina", "+34 612 345 012", "Corte caballero"],
-  ["Sara Iglesias", "+34 612 345 013", "Peinado"],
-  ["Andrés Cano", "+34 612 345 014", "Corte caballero"],
-  ["Cristina Prieto", "+34 612 345 015", "Tinte"],
-  ["Diego Santos", "+34 612 345 016", "Corte infantil"],
-  ["Beatriz Flores", "+34 612 345 017", "Corte señora"],
-  ["Hugo Marín", "+34 612 345 018", "Arreglo de barba"],
-  ["Patricia León", "+34 612 345 019", "Mechas / Balayage"],
-  ["Adrián Rubio", "+34 612 345 020", "Corte caballero"],
-  ["Silvia Campos", "+34 612 345 021", "Recogido"],
-  ["Marcos Vidal", "+34 612 345 022", "Corte + peinado"],
-  ["Laura Méndez", "+34 612 345 023", "Peinado"],
-  ["Iván Garrido", "+34 612 345 024", "Corte caballero"],
-];
-
-// --- Utilidades de fecha (semana actual, Lun-Sáb, +02:00 Madrid verano) ---
-function mondayOfThisWeek() {
-  const now = new Date();
-  const day = now.getDay(); // 0=Dom
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + diff);
-  monday.setHours(0, 0, 0, 0);
-  return monday;
+/** Fecha + hora local de Madrid → instante UTC. Correcto en cambios de hora. */
+function aUtc(fecha, hora) {
+  const [y, m, d] = fecha.split("-").map(Number);
+  const [hh, mm] = hora.split(":").map(Number);
+  const naive = Date.UTC(y, m - 1, d, hh, mm);
+  const offset = (dt) => {
+    const p = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Madrid", hour12: false,
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+    }).formatToParts(dt);
+    const g = (t) => Number(p.find((x) => x.type === t).value);
+    return (Date.UTC(g("year"), g("month") - 1, g("day"), g("hour") % 24, g("minute"), g("second")) - dt.getTime()) / 60000;
+  };
+  let o = offset(new Date(naive));
+  let r = new Date(naive - o * 60000);
+  const o2 = offset(r);
+  if (o2 !== o) r = new Date(naive - o2 * 60000);
+  return r;
 }
 
-function iso(dayOffset, hour, minute) {
-  const monday = mondayOfThisWeek();
-  const d = new Date(monday);
-  d.setDate(monday.getDate() + dayOffset);
-  const pad = (n) => String(n).padStart(2, "0");
-  // +02:00 = horario de verano peninsular (junio)
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(hour)}:${pad(minute)}:00+02:00`;
-}
-
-function addMinutesIso(isoStr, minutes) {
-  const d = new Date(isoStr);
-  d.setMinutes(d.getMinutes() + minutes);
-  return d.toISOString();
-}
-
-function pick(arr, i) {
-  return arr[i % arr.length];
-}
-
-// Genera citas para la semana, repartidas entre staff sin solapar por staff.
-function buildAppointments(salonId) {
-  const appts = [];
-  const todayOffset = (() => {
-    const now = new Date();
-    const day = now.getDay();
-    return day === 0 ? 6 : day - 1; // 0=Lun ... 5=Sáb
-  })();
-
-  let custIdx = 0;
-  let svcIdx = 0;
-  let ticketCounter = 201;
-
-  // Días Lun(0)..Sáb(5)
-  for (let dayOffset = 0; dayOffset <= 5; dayOffset++) {
-    const isSaturday = dayOffset === 5;
-    const closeHour = isSaturday ? 14 : 20;
-    const isPastOrToday = dayOffset <= todayOffset;
-
-    // Para cada profesional, ir colocando citas con huecos
-    for (const staff of STAFF) {
-      let cursor = 9 * 60 + (STAFF.indexOf(staff) * 20); // arranque escalonado
-      const closeMin = closeHour * 60;
-
-      while (cursor < closeMin - 30) {
-        const svc = pick(SERVICES, svcIdx++);
-        const cust = pick(CUSTOMERS, custIdx++);
-        const dur = svc.duration_minutes;
-        if (cursor + dur > closeMin) break;
-
-        const startH = Math.floor(cursor / 60);
-        const startM = cursor % 60;
-        const startsAt = iso(dayOffset, startH, startM);
-        const endsAt = addMinutesIso(startsAt, dur);
-
-        const appt = {
-          salon_id: salonId,
-          staff_id: staff.id,
-          customer_name: cust[0],
-          service: svc.name,
-          starts_at: startsAt,
-          ends_at: endsAt,
-          price: svc.price,
-          status: "active",
-          notes: null,
-        };
-
-        // Citas de días pasados/hoy quedan "cobradas" con nº de ticket
-        if (isPastOrToday) {
-          appt.ticket_number = ticketCounter++;
-          appt.ticket_printed = true;
-        }
-
-        appts.push(appt);
-
-        // Hueco entre citas: la duración + 10-25 min de margen variable
-        const gap = dur + (10 + ((custIdx * 7) % 20));
-        cursor += gap;
-      }
-    }
+function* dias(desde, hasta) {
+  const d = new Date(desde + "T00:00:00Z");
+  const fin = new Date(hasta + "T00:00:00Z");
+  while (d <= fin) {
+    yield d.toISOString().slice(0, 10);
+    d.setUTCDate(d.getUTCDate() + 1);
   }
-  return appts;
+}
+
+/** Mesas ocupadas en ese turno. Fines de semana y diciembre llenan más. */
+function ocupacion(fecha, turno) {
+  const dow = new Date(fecha + "T00:00:00Z").getUTCDay();
+  const mes = Number(fecha.slice(5, 7));
+  const finde = dow === 5 || dow === 6 || dow === 0;
+
+  let base = finde ? entre(6, 9) : entre(3, 6);
+  if (turno === "cena" && !finde) base = Math.min(9, base + 1);
+  if (mes === 8) base = Math.max(2, base - 2);       // agosto, vacaciones
+  if (mes === 12) base = Math.min(9, base + 2);      // diciembre, comidas de empresa
+  if (chance(0.08)) base = Math.max(1, base - 3);    // algún día flojo suelto
+  return Math.min(base, 9);
 }
 
 async function main() {
-  console.log("→ Conectando a Supabase...");
+  const limpiar = process.argv.includes("--limpiar");
 
-  // 1. Salón demo
-  const { data: salonRow, error: salonErr } = await db
-    .from("salons")
-    .upsert(
-      { slug: DEMO_SLUG, timezone: "Europe/Madrid", ...SALON },
-      { onConflict: "slug" }
-    )
-    .select("id")
-    .single();
-  if (salonErr) throw salonErr;
-  const salonId = salonRow.id;
-  console.log(`✓ Salón demo: ${SALON.name} (${salonId})`);
+  const { data: mesas } = await db
+    .from("restaurant_tables")
+    .select("id, name, capacity, min_capacity, section")
+    .eq("restaurant_id", RESTAURANT_ID)
+    .eq("active", true)
+    .order("sort_order");
+  if (!mesas?.length) throw new Error("No hay mesas activas");
 
-  // 2. Limpiar datos demo previos (solo de este salón)
-  await db.from("appointments").delete().eq("salon_id", salonId);
-  await db.from("customers").delete().eq("salon_id", salonId);
-  await db.from("services").delete().eq("salon_id", salonId);
-  console.log("✓ Datos demo previos limpiados");
+  const { data: cerrados } = await db
+    .from("blocked_days")
+    .select("date")
+    .eq("restaurant_id", RESTAURANT_ID);
+  const bloqueados = new Set((cerrados ?? []).map((b) => b.date));
 
-  // 3. Horarios (Dom cerrado; Lun-Vie 9-20; Sáb 9-14)
-  const HOURS = [
-    { day_of_week: 0, opens_at: "09:00", closes_at: "20:00", is_open: false },
-    { day_of_week: 1, opens_at: "09:00", closes_at: "20:00", is_open: true },
-    { day_of_week: 2, opens_at: "09:00", closes_at: "20:00", is_open: true },
-    { day_of_week: 3, opens_at: "09:00", closes_at: "20:00", is_open: true },
-    { day_of_week: 4, opens_at: "09:00", closes_at: "20:00", is_open: true },
-    { day_of_week: 5, opens_at: "09:00", closes_at: "20:00", is_open: true },
-    { day_of_week: 6, opens_at: "09:00", closes_at: "14:00", is_open: true },
-  ];
-  for (const h of HOURS) {
-    await db.from("business_hours").upsert(
-      { salon_id: salonId, ...h },
-      { onConflict: "salon_id,day_of_week" }
-    );
+  if (limpiar) {
+    const { error, count } = await db
+      .from("reservations")
+      .delete({ count: "exact" })
+      .eq("restaurant_id", RESTAURANT_ID)
+      .like("internal_notes", `%${MARCA}%`);
+    if (error) throw new Error("limpieza: " + error.message);
+    console.log(`Limpieza: ${count ?? 0} reservas de demo eliminadas.`);
   }
-  console.log("✓ Horarios fijados (Lun-Sáb abierto, Dom cerrado)");
 
-  // 4. Staff
-  for (const s of STAFF) {
-    await db.from("staff_members").upsert(
-      { id: s.id, salon_id: salonId, name: s.name, active: true },
-      { onConflict: "id" }
-    );
+  const { count: yaHay } = await db
+    .from("reservations")
+    .select("id", { count: "exact", head: true })
+    .eq("restaurant_id", RESTAURANT_ID)
+    .like("internal_notes", `%${MARCA}%`);
+  if ((yaHay ?? 0) > 0) {
+    console.log(`Ya hay ${yaHay} reservas de demo. Usa --limpiar para regenerarlas.`);
+    return;
   }
-  console.log(`✓ ${STAFF.length} profesionales`);
 
-  // 4. Servicios
-  const { error: svcErr } = await db.from("services").insert(
-    SERVICES.map((s) => ({ salon_id: salonId, ...s, active: true }))
-  );
-  if (svcErr) throw svcErr;
-  console.log(`✓ ${SERVICES.length} servicios`);
+  // Mesas ya ocupadas por reservas que no ha creado este script (pruebas,
+  // reservas reales…). Sin esto, el generador choca con la restricción de
+  // exclusión de Postgres, que es justo la que impide doblar una mesa.
+  const { data: previas } = await db
+    .from("reservations")
+    .select("starts_at, table_id, status")
+    .eq("restaurant_id", RESTAURANT_ID)
+    .gte("starts_at", HISTORIA_DESDE)
+    .not("status", "in", "(cancelled,no_show)");
 
-  // 5. Clientes
-  const { error: custErr } = await db.from("customers").insert(
-    CUSTOMERS.map(([name, phone, pref]) => ({
-      salon_id: salonId,
-      name,
-      phone,
-      preferred_service: pref,
-    }))
-  );
-  if (custErr) throw custErr;
-  console.log(`✓ ${CUSTOMERS.length} clientes`);
+  const ocupadas = new Set();
+  for (const r of previas ?? []) {
+    if (!r.table_id) continue;
+    const local = new Date(r.starts_at).toLocaleString("sv-SE", { timeZone: "Europe/Madrid" });
+    const [fecha, hora] = local.split(" ");
+    const turno = Number(hora.slice(0, 2)) < 17 ? "comida" : "cena";
+    ocupadas.add(`${fecha}|${turno}|${r.table_id}`);
+  }
+  if (ocupadas.size > 0) {
+    console.log(`Respetando ${ocupadas.size} mesa(s) ya reservadas de antes.`);
+  }
 
-  // 6. Citas
-  const appts = buildAppointments(salonId);
-  // Insertar en lotes para evitar choques con el constraint anti-solapamiento
-  let inserted = 0;
-  for (const appt of appts) {
-    const { error } = await db.from("appointments").insert(appt);
-    if (!error) inserted++;
-    else if (!String(error.message).includes("appointments_no_overlap")) {
-      console.warn("  cita omitida:", error.message);
+
+  const comensales = crearComensales(220);
+  console.log(`Creando ${comensales.length} fichas de comensal…`);
+  for (let i = 0; i < comensales.length; i += 100) {
+    const { error } = await db
+      .from("guests")
+      .upsert(comensales.slice(i, i + 100), { onConflict: "restaurant_id,phone" });
+    if (error) throw new Error("guests: " + error.message);
+  }
+
+  // Unos pocos habituales concentran muchas visitas: es lo que hace que el CRM
+  // se vea útil, porque el equipo reconoce al cliente que vuelve.
+  const habituales = comensales.slice(0, 30);
+  const ocasionales = comensales.slice(30);
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  const reservas = [];
+  const asignaciones = [];
+
+  for (const fecha of dias(HISTORIA_DESDE, HASTA)) {
+    const dow = new Date(fecha + "T00:00:00Z").getUTCDay();
+    if (dow === 1 || dow === 2 || bloqueados.has(fecha)) continue;
+
+    for (const [turno, horas] of Object.entries(TURNOS)) {
+      const objetivo = ocupacion(fecha, turno);
+      const libres = [...mesas]
+        .filter((m) => !ocupadas.has(`${fecha}|${turno}|${m.id}`))
+        .sort(() => rnd() - 0.5);
+      let usadas = 0;
+
+      while (usadas < objetivo && libres.length > 0) {
+        const mesa = libres.shift();
+        usadas++;
+
+        // Grupo grande ocasional: junta con otra mesa de la misma sala.
+        const mesasReserva = [mesa];
+        let maxPax = mesa.capacity;
+        if (mesa.capacity >= 6 && chance(0.12)) {
+          const idx = libres.findIndex((m) => m.section === mesa.section);
+          if (idx >= 0) {
+            const extra = libres.splice(idx, 1)[0];
+            mesasReserva.push(extra);
+            maxPax += extra.capacity;
+            usadas++;
+          }
+        }
+
+        const pax =
+          mesasReserva.length > 1
+            ? entre(mesa.capacity + 1, maxPax)
+            : entre(Math.max(1, mesa.min_capacity), mesa.capacity);
+
+        const comensal = chance(0.45) ? elige(habituales) : elige(ocasionales);
+        const inicio = aUtc(fecha, elige(horas));
+        const fin = new Date(inicio.getTime() + 90 * 60000);
+
+        // Pasado: la mayoría se completó, con algún no-show y alguna
+        // cancelación. Futuro: casi todo confirmado.
+        const status =
+          fecha < hoy
+            ? chance(0.86) ? "completed" : chance(0.55) ? "no_show" : "cancelled"
+            : chance(0.94) ? "confirmed" : "cancelled";
+
+        const id = randomUUID();
+        reservas.push({
+          id,
+          restaurant_id: RESTAURANT_ID,
+          table_id: mesasReserva[0].id,
+          guest_id: comensal.id,
+          guest_name: comensal.name,
+          guest_phone: comensal.phone,
+          guest_email: comensal.email,
+          party_size: pax,
+          starts_at: inicio.toISOString(),
+          ends_at: fin.toISOString(),
+          notes: elige(PETICIONES),
+          internal_notes: MARCA,
+          status,
+          source: chance(0.55) ? "online" : chance(0.65) ? "phone" : "admin",
+        });
+
+        for (const m of mesasReserva) {
+          asignaciones.push({
+            reservation_id: id,
+            table_id: m.id,
+            starts_at: inicio.toISOString(),
+            ends_at: fin.toISOString(),
+            status,
+          });
+        }
+      }
     }
   }
-  console.log(`✓ ${inserted} citas insertadas (semana actual)`);
 
-  // 7. Usuario demo + profile admin
-  let userId;
-  const { data: created, error: createErr } = await db.auth.admin.createUser({
-    email: DEMO_USER_EMAIL,
-    password: DEMO_USER_PASSWORD,
-    email_confirm: true,
-  });
-  if (createErr) {
-    // Ya existe: buscarlo
-    const { data: list } = await db.auth.admin.listUsers();
-    const existing = list.users.find((u) => u.email === DEMO_USER_EMAIL);
-    userId = existing?.id;
-    if (userId) {
-      await db.auth.admin.updateUserById(userId, { password: DEMO_USER_PASSWORD });
-    }
-    console.log("✓ Usuario demo ya existía (contraseña actualizada)");
-  } else {
-    userId = created.user.id;
-    console.log("✓ Usuario demo creado");
+  console.log(`Insertando ${reservas.length} reservas…`);
+  for (let i = 0; i < reservas.length; i += 200) {
+    const { error } = await db.from("reservations").insert(reservas.slice(i, i + 200));
+    if (error) throw new Error(`reservations (lote ${i}): ${error.message}`);
   }
 
-  if (userId) {
-    await db.from("profiles").upsert(
-      {
-        id: userId,
-        salon_id: salonId,
-        role: "admin",
-        full_name: "Laura (Demo)",
-      },
-      { onConflict: "id" }
-    );
-    console.log("✓ Profile admin asignado al salón demo");
+  console.log(`Asignando ${asignaciones.length} mesas…`);
+  for (let i = 0; i < asignaciones.length; i += 200) {
+    const { error } = await db.from("reservation_tables").insert(asignaciones.slice(i, i + 200));
+    if (error) throw new Error(`reservation_tables (lote ${i}): ${error.message}`);
   }
 
-  console.log("\n========================================");
-  console.log("  SEED DEMO COMPLETADO");
-  console.log("========================================");
-  console.log(`  Salón:    ${SALON.name}`);
-  console.log(`  Login:    ${DEMO_USER_EMAIL}`);
-  console.log(`  Password: ${DEMO_USER_PASSWORD}`);
-  console.log(`  Slug:     ${DEMO_SLUG}`);
-  console.log("========================================\n");
+  const porEstado = reservas.reduce((a, r) => ((a[r.status] = (a[r.status] ?? 0) + 1), a), {});
+  const juntadas = new Set(
+    asignaciones
+      .map((a) => a.reservation_id)
+      .filter((id, _, arr) => arr.indexOf(id) !== arr.lastIndexOf(id)),
+  );
+
+  console.log("\nListo:");
+  console.log(`  comensales      ${comensales.length}`);
+  console.log(`  reservas        ${reservas.length}`);
+  for (const [k, v] of Object.entries(porEstado)) console.log(`     ${k.padEnd(11)} ${v}`);
+  console.log(`  mesas juntadas  ${juntadas.size} reservas de grupo grande`);
+  console.log(`  historial       ${HISTORIA_DESDE} → ${HISTORIA_HASTA}`);
+  console.log(`  agenda futura   ${DESDE} → ${HASTA}`);
 }
 
 main().catch((e) => {
-  console.error("ERROR:", e.message || e);
+  console.error("ERROR:", e.message);
   process.exit(1);
 });
