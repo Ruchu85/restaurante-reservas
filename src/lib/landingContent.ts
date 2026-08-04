@@ -183,7 +183,7 @@ export const RESENAS: Resena[] = [
 export const GALERIA = [
   { id: 941861, alt: "Comedor de noche con las mesas preparadas y copas de vino" },
   { id: 2290070, alt: "Sala en penumbra antes del servicio" },
-  { id: 1449773, alt: "Comedor de ladrillo visto con las luces encendidas" },
+  { id: 4253312, alt: "Emplatado final con una cucharada de salsa" },
   { id: 3298687, alt: "Cocinero trabajando con la sartén" },
   { id: 262978, alt: "Pase de platos hacia la sala" },
   { id: 5490915, alt: "Postre emplatado con frutos rojos" },

@@ -66,10 +66,19 @@ export default async function ReservarPage({
         que había antes, el visitante sentía que había salido del restaurante.
       */}
       <header className="relative isolate overflow-hidden bg-stone-950 text-white">
+        {/*
+          Sí lleva `priority`. Se probó a pasarla a `background-image` de CSS
+          para sacarla de la candidatura a LCP, pero Chrome incluye los fondos
+          CSS en el cálculo desde 2023: seguía siendo el elemento medido, solo
+          que sin la pista de prioridad — medido 2,7 s frente a los 1,8 s de
+          antes. Como va a ser el LCP de todos modos, lo correcto es que
+          cargue lo antes posible.
+        */}
         <Image
           src={pexels(IMAGES.historia, 1400)}
           alt=""
           fill
+          priority
           sizes="100vw"
           className="object-cover opacity-30"
         />
@@ -143,11 +152,11 @@ export default async function ReservarPage({
         <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-8 text-sm text-stone-600 sm:flex-row sm:items-center sm:justify-between">
           <p>{restaurant?.address}</p>
           {restaurant?.phone && (
-            <a href={`tel:${restaurant.phone}`} className="inline-block py-1.5 font-medium text-amber-800">
+            <a href={`tel:${restaurant.phone}`} className="inline-block py-3 font-medium text-amber-800">
               {restaurant.phone}
             </a>
           )}
-          <Link href="/" className="inline-block py-1.5 text-stone-500 hover:text-stone-800">
+          <Link href="/" className="inline-block py-3 text-stone-600 hover:text-stone-800">
             Volver a la carta
           </Link>
         </div>

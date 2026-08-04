@@ -206,7 +206,7 @@ export function BookingWizard({
         <h2 className="text-2xl font-bold text-stone-800 mb-2">¡Reserva confirmada!</h2>
         <p className="text-stone-500 mb-8 max-w-sm mx-auto">
           Hemos guardado tu reserva. Te esperamos el{" "}
-          <strong>{formatDateDisplay(date)}</strong> a las{" "}
+          <strong>{formatDateDisplayLower(date)}</strong> a las{" "}
           <strong>{formatTime(confirmed.starts_at)}</strong>.
         </p>
 
@@ -228,7 +228,7 @@ export function BookingWizard({
             <span className="font-medium">{formatTime(confirmed.starts_at)}</span>
           </div>
           <div className="border-t border-amber-200 pt-3">
-            <div className="text-xs text-stone-400 mb-1">Código de reserva</div>
+            <div className="text-xs text-stone-600 mb-1">Código de reserva</div>
             <div className="text-xs font-mono text-stone-600 break-all">{confirmed.confirmation_token}</div>
           </div>
         </div>
@@ -243,7 +243,7 @@ export function BookingWizard({
           </Link>
           <Link
             href="/"
-            className="text-sm text-stone-400 hover:text-stone-600 font-medium"
+            className="text-sm text-stone-600 hover:text-stone-800 font-medium"
           >
             ← Volver al inicio
           </Link>
@@ -574,7 +574,7 @@ export function BookingWizard({
             </div>
           </div>
 
-          <p className="text-xs text-stone-400">
+          <p className="text-xs text-stone-600">
             Puedes cancelar tu reserva con hasta 2 horas de antelación.
           </p>
 
