@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronDown, Clock, MapPin, Phone, Star, UtensilsCrossed, Quote, ArrowRight } from "lucide-react";
@@ -7,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getRestaurant, getBusinessHours } from "@/lib/restaurant";
 import { toLocalDate, dayOfWeek } from "@/lib/dates";
 import { Motion } from "@/components/landing/Motion";
+import { MenuMovil } from "@/components/landing/MenuMovil";
 import { pexels, IMAGES, CARTA, MENU_DEGUSTACION, RESENAS, GALERIA } from "@/lib/landingContent";
 import type { BusinessHours } from "@/types";
 
@@ -38,6 +40,101 @@ function turnos(h: BusinessHours | undefined): string | null {
 
 const precio = (n: number) => `${n.toFixed(2).replace(".", ",")} €`;
 
+const SCHEMA_DAYS = [
+  "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+];
+
+/**
+ * Ficha de Restaurant para buscadores: horario, teléfono, rango de precios y
+ * valoración. Es lo que permite que Google muestre el horario y las estrellas
+ * junto al resultado, y lo que leen los asistentes de IA al recomendar sitios.
+ */
+function fichaSchema(
+  nombre: string,
+  restaurant: Awaited<ReturnType<typeof getRestaurant>>,
+  horas: BusinessHours[],
+) {
+  const tramos = horas
+    .filter((h) => h.is_open)
+    .flatMap((h) =>
+      [
+        [h.opens_at, h.closes_at],
+        [h.opens_at_2, h.closes_at_2],
+      ]
+        .filter(([a, b]) => a && b)
+        .map(([a, b]) => ({
+          "@type": "OpeningHoursSpecification",
+          dayOfWeek: SCHEMA_DAYS[h.day_of_week],
+          opens: (a as string).slice(0, 5),
+          closes: (b as string).slice(0, 5),
+        })),
+    );
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    name: nombre,
+    description: restaurant?.description ?? undefined,
+    servesCuisine: "Mediterránea",
+    priceRange: "€€",
+    acceptsReservations: "True",
+    telephone: restaurant?.phone ?? undefined,
+    email: restaurant?.email ?? undefined,
+    address: restaurant?.address
+      ? { "@type": "PostalAddress", streetAddress: restaurant.address, addressCountry: "ES" }
+      : undefined,
+    image: [pexels(IMAGES.historia, 1200), pexels(IMAGES.comedor, 1200)],
+    openingHoursSpecification: tramos,
+    hasMenu: {
+      "@type": "Menu",
+      hasMenuSection: CARTA.map((s) => ({
+        "@type": "MenuSection",
+        name: s.titulo,
+        hasMenuItem: s.platos.map((p) => ({
+          "@type": "MenuItem",
+          name: p.nombre,
+          description: p.descripcion,
+          offers: { "@type": "Offer", price: p.precio.toFixed(2), priceCurrency: "EUR" },
+        })),
+      })),
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: (RESENAS.reduce((s, r) => s + r.puntuacion, 0) / RESENAS.length).toFixed(1),
+      reviewCount: RESENAS.length,
+    },
+  };
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const restaurant = await getRestaurant();
+  const nombre = restaurant?.name ?? "Restaurante";
+  const descripcion =
+    restaurant?.description ??
+    "Cocina mediterránea de autor. Reserva tu mesa en dos minutos.";
+  const portada = pexels(IMAGES.historia, 1200, 630);
+
+  return {
+    title: `${nombre} — Reserva tu mesa`,
+    description: descripcion,
+    alternates: { canonical: "/" },
+    openGraph: {
+      type: "website",
+      locale: "es_ES",
+      siteName: nombre,
+      title: `${nombre} — Reserva tu mesa`,
+      description: descripcion,
+      images: [{ url: portada, width: 1200, height: 630, alt: nombre }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${nombre} — Reserva tu mesa`,
+      description: descripcion,
+      images: [portada],
+    },
+  };
+}
+
 export default async function HomePage() {
   const restaurant = await getRestaurant();
   const timeZone = restaurant?.timezone ?? "Europe/Madrid";
@@ -49,6 +146,15 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-stone-50">
+      <script
+        type="application/ld+json"
+        // El `<` escapado evita que un texto de la base de datos pueda cerrar
+        // la etiqueta y colar marcado.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(fichaSchema(nombre, restaurant, hoursData)).replace(/</g, "\\u003c"),
+        }}
+      />
+
       <Motion />
 
       {/*
@@ -105,6 +211,7 @@ export default async function HomePage() {
             >
               Reservar mesa
             </Link>
+            <MenuMovil enlaces={NAV} telefono={restaurant?.phone} />
           </div>
         </div>
       </header>

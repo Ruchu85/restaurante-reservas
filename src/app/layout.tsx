@@ -14,6 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Sin esto las URLs relativas de canonical y Open Graph no se resuelven y
+  // Next avisa en el build.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "Restaurante Demo — Reservas Online",
   description: "Reserva tu mesa en Restaurante Demo. Cocina mediterránea de autor en Madrid.",
 };
