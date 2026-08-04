@@ -1,107 +1,98 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { Menu, X, Phone, Clock } from "lucide-react";
 
 interface Props {
   enlaces: { href: string; label: string }[];
   telefono?: string | null;
+  horarioHoy?: string | null;
 }
 
 /**
  * Navegación de móvil. En escritorio los enlaces van en la cabecera; por
  * debajo de `md` no caben, así que aquí se despliegan a pantalla completa.
  *
- * El panel se cierra al pulsar un enlace (son anclas de la misma página: sin
- * navegación no hay nada que lo cierre) y con la tecla Escape.
+ * Se apoya en el Dialog de Radix en vez de en un div condicional: eso da
+ * gratis la trampa de foco, el fondo inerte para los lectores de pantalla, el
+ * cierre con Escape, la devolución del foco al botón y el bloqueo del scroll.
+ * Escrito a mano, el foco se escapaba del panel a la séptima tabulación.
  */
-export function MenuMovil({ enlaces, telefono }: Props) {
+export function MenuMovil({ enlaces, telefono, horarioHoy }: Props) {
   const [abierto, setAbierto] = useState(false);
-
-  useEffect(() => {
-    if (!abierto) return;
-    const alTeclado = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setAbierto(false);
-    };
-    // Bloquear el scroll de fondo: si no, al arrastrar sobre el panel se
-    // mueve la página que hay debajo.
-    const previo = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", alTeclado);
-    return () => {
-      document.body.style.overflow = previo;
-      document.removeEventListener("keydown", alTeclado);
-    };
-  }, [abierto]);
+  const cerrar = () => setAbierto(false);
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setAbierto(true)}
-        aria-label="Abrir menú"
-        aria-expanded={abierto}
-        className="-mr-1 p-2 text-white transition-colors [.is-solid_&]:text-stone-800 md:hidden"
-      >
-        <Menu className="h-6 w-6" />
-      </button>
-
-      {abierto && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Menú"
-          className="fixed inset-0 z-[70] flex flex-col bg-stone-950/97 backdrop-blur-sm md:hidden"
+    <Dialog.Root open={abierto} onOpenChange={setAbierto}>
+      <Dialog.Trigger asChild>
+        <button
+          type="button"
+          aria-label="Abrir menú"
+          className="foco-claro -mr-1 p-2.5 text-white transition-colors [.is-solid_&]:text-stone-800 [.is-solid_&]:focus-visible:outline-amber-700 md:hidden"
         >
+          <Menu className="h-6 w-6" aria-hidden />
+        </button>
+      </Dialog.Trigger>
+
+      <Dialog.Portal>
+        <Dialog.Overlay className="panel-fondo fixed inset-0 z-[70] bg-stone-950/60 backdrop-blur-sm md:hidden" />
+        <Dialog.Content className="panel-menu fixed inset-0 z-[70] flex flex-col bg-stone-950 md:hidden">
+          <Dialog.Title className="sr-only">Menú</Dialog.Title>
+          <Dialog.Description className="sr-only">
+            Navegación del sitio, teléfono y reserva de mesa.
+          </Dialog.Description>
+
           <div className="flex h-16 items-center justify-end px-4">
-            <button
-              type="button"
-              onClick={() => setAbierto(false)}
-              aria-label="Cerrar menú"
-              className="-mr-1 p-2 text-white"
-              autoFocus
-            >
-              <X className="h-6 w-6" />
-            </button>
+            <Dialog.Close asChild>
+              <button
+                type="button"
+                aria-label="Cerrar menú"
+                className="foco-claro -mr-1 p-2.5 text-white"
+              >
+                <X className="h-6 w-6" aria-hidden />
+              </button>
+            </Dialog.Close>
           </div>
 
-          <nav aria-label="Principal" className="flex flex-1 flex-col justify-center gap-1 px-8 pb-24">
+          <nav aria-label="Principal" className="flex flex-1 flex-col justify-center px-8 pb-16">
             {enlaces.map(({ href, label }) => (
               <a
                 key={href}
                 href={href}
-                onClick={() => setAbierto(false)}
-                className="border-b border-white/10 py-5 text-3xl font-semibold text-white transition-colors active:text-amber-400"
+                onClick={cerrar}
+                className="titular foco-claro border-b border-white/10 py-5 text-3xl text-white transition-colors active:text-amber-400"
               >
                 {label}
               </a>
             ))}
+
             <Link
               href="/reservar"
-              onClick={() => setAbierto(false)}
-              className="mt-8 rounded-xl bg-amber-600 px-6 py-4 text-center text-lg font-bold text-white"
+              onClick={cerrar}
+              className="foco-claro mt-8 rounded-xl bg-amber-700 px-6 py-4 text-center text-lg font-bold text-white"
             >
               Reservar mesa
             </Link>
-            {telefono && (
-              <a
-                href={`tel:${telefono}`}
-                className="mt-4 text-center text-base text-stone-300 underline-offset-4"
-              >
-                {telefono}
-              </a>
-            )}
-            <Link
-              href="/login"
-              onClick={() => setAbierto(false)}
-              className="mt-8 text-center text-sm text-stone-500"
-            >
-              Acceso personal
-            </Link>
+
+            <div className="mt-8 space-y-3 text-sm text-stone-300">
+              {horarioHoy && (
+                <p className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-amber-400" aria-hidden />
+                  Hoy: {horarioHoy}
+                </p>
+              )}
+              {telefono && (
+                <a href={`tel:${telefono}`} className="foco-claro flex items-center gap-2 py-1">
+                  <Phone className="h-4 w-4 text-amber-400" aria-hidden />
+                  {telefono}
+                </a>
+              )}
+            </div>
           </nav>
-        </div>
-      )}
-    </>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

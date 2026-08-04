@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -11,6 +11,20 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+/**
+ * Serif de display para los titulares de la web pública. Una sola sans para
+ * todo hacía que el sitio pareciera un panel de control, no un restaurante.
+ * `opsz` es un eje variable: a tamaños grandes afina los remates.
+ */
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  display: "swap",
+  // Fuente variable: el rango completo de grosor en un solo archivo. Los ejes
+  // se pueden pedir solo si no se fija `weight`.
+  axes: ["SOFT", "WONK", "opsz"],
 });
 
 export const metadata: Metadata = {
@@ -26,9 +40,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Las variables de next/font van en <html>, no en <body>: el tema de
+  // Tailwind y `--tipo-display` se declaran en :root y las sustituyen ahí.
+  // Declaradas en <body> resultaban inválidas al resolverse en :root y la web
+  // entera se quedaba con la fuente del sistema.
   return (
-    <html lang="es">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="es" className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable}`}>
+      <body className="font-sans antialiased">
         {children}
         <Toaster richColors position="top-right" />
       </body>

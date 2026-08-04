@@ -21,6 +21,14 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
   --radius: 0.5rem;
+
+  /*
+    En Tailwind 4 declarar la variable de next/font no basta: hay que
+    mapearla a --font-sans para que la utilidad `font-sans` la use. Sin
+    esto se descargaban las fuentes y no se aplicaba ninguna.
+  */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 @layer base {
@@ -84,8 +92,101 @@
    cuando el elemento entra en pantalla (ver components/landing/Motion).
    ══════════════════════════════════════════════════════════════════ */
 
-html {
+/*
+  El desplazamiento suave solo cuando se salta a un ancla. Aplicado a `html`
+  sin más, tabular hasta un enlace que está fuera de pantalla mueve la página
+  con animación y desorienta.
+*/
+html:has(:target) {
   scroll-behavior: smooth;
+}
+
+/*
+  Serif de display para los titulares de la web pública. Va aquí y no en
+  `@theme` porque Tailwind 4 descarta las variables del tema que ninguna
+  utilidad usa, y esta solo se consume desde CSS.
+*/
+:root {
+  --tipo-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+}
+
+.titular {
+  font-family: var(--tipo-display);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  font-optical-sizing: auto;
+}
+
+/*
+  Foco visible propio. El anillo del navegador hereda `currentColor` y sobre
+  el botón naranja resultaba naranja sobre naranja: invisible.
+*/
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid #b45309;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.foco-claro:focus-visible {
+  outline-color: #fff;
+}
+
+/*
+  Entrada del hero en CSS puro. Antes iba con `data-reveal`, que empieza en
+  opacidad 0 y espera a que hidrate React: el <h1> era el elemento LCP y
+  tardaba 4 segundos en móvil. Esto arranca con el primer pintado.
+*/
+@keyframes entrada-hero {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.entra {
+  animation: entrada-hero 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.entra-2 { animation-delay: 0.1s; }
+.entra-3 { animation-delay: 0.2s; }
+.entra-4 { animation-delay: 0.32s; }
+.entra-5 { animation-delay: 0.44s; }
+
+/*
+  Titulares que se descubren por líneas tras una máscara, en vez del mismo
+  fundido que todo lo demás. Cada línea va en su propio <span>.
+*/
+[data-lineas] .linea {
+  display: block;
+  overflow: hidden;
+}
+[data-lineas] .linea > span {
+  display: block;
+  transform: translate3d(0, 105%, 0);
+  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-lineas].is-visible .linea > span {
+  transform: none;
+}
+[data-lineas] .linea:nth-child(2) > span { transition-delay: 0.09s; }
+[data-lineas] .linea:nth-child(3) > span { transition-delay: 0.18s; }
+
+/*
+  Imágenes que se revelan con una cortina que sube, no con opacidad. Da
+  sensación de material y no de "elemento que aparece".
+*/
+/*
+  El recorte va en la imagen, no en el contenedor: `clip-path` también recorta
+  el rectángulo que mide IntersectionObserver, así que un contenedor clipado a
+  cero nunca "entra en pantalla" y la cortina no se abría jamás.
+*/
+[data-cortina] > img {
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-cortina].is-visible > img {
+  clip-path: inset(0 0 0 0);
 }
 
 [data-reveal] {
@@ -115,6 +216,25 @@ html {
 [data-progress] {
   transform-origin: 0 50%;
   transform: scaleX(0);
+}
+
+/*
+  Panel de menú en móvil. Radix expone `data-state`, así que la transición se
+  hace en CSS y no hace falta el plugin de animaciones de Tailwind.
+*/
+@keyframes panel-entra {
+  from { opacity: 0; transform: translate3d(0, -12px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes panel-fundido {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.panel-menu[data-state="open"] {
+  animation: panel-entra 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.panel-fondo[data-state="open"] {
+  animation: panel-fundido 0.28s ease;
 }
 
 /* Cinta infinita */
@@ -163,8 +283,18 @@ html {
     transform: none !important;
     transition: none !important;
   }
+  [data-lineas] .linea > span {
+    transform: none !important;
+    transition: none !important;
+  }
+  [data-cortina] > img {
+    clip-path: none !important;
+    transition: none !important;
+  }
   .cinta-pista, .rebote, .deriva-lenta { animation: none !important; }
+  .entra { animation: none !important; }
+  .panel-menu[data-state="open"], .panel-fondo[data-state="open"] { animation: none !important; }
   .subrayado { background-size: 100% 2px; transition: none; }
   [data-parallax] { transform: none !important; }
-  html { scroll-behavior: auto; }
+  html:has(:target) { scroll-behavior: auto; }
 }

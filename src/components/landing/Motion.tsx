@@ -10,34 +10,65 @@ import { useEffect } from "react";
  * hacer scroll. Los elementos se marcan con `data-reveal` en el HTML y el CSS
  * hace la animación; aquí solo se les añade la clase cuando entran en pantalla.
  *
- * Si el visitante ha pedido menos movimiento en su sistema, no se activa nada:
- * el CSS ya deja todo visible y esto sale sin tocar el DOM.
+ * Ojo con lo que se desactiva al pedir menos movimiento: solo las
+ * *animaciones*. La cabecera sólida y el arranque de los vídeos son
+ * comportamiento funcional y tienen que seguir ocurriendo — si no, el menú
+ * queda en blanco sobre blanco.
  */
 export function Motion() {
   useEffect(() => {
     const sinMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (sinMovimiento) return;
+    const limpiezas: (() => void)[] = [];
 
     // ── Aparición al entrar en pantalla ──────────────────────────────
-    const elementos = document.querySelectorAll<HTMLElement>("[data-reveal]");
-    const observador = new IntersectionObserver(
-      (entradas) => {
-        for (const e of entradas) {
-          if (!e.isIntersecting) continue;
-          const el = e.target as HTMLElement;
-          const retardo = Number(el.dataset.revealDelay ?? 0);
-          setTimeout(() => el.classList.add("is-visible"), retardo);
-          observador.unobserve(el); // una sola vez: no queremos parpadeos al volver
-        }
-      },
-      { threshold: 0.12, rootMargin: "0px 0px -60px 0px" },
-    );
-    elementos.forEach((el) => observador.observe(el));
+    if (!sinMovimiento) {
+      const observador = new IntersectionObserver(
+        (entradas) => {
+          for (const e of entradas) {
+            if (!e.isIntersecting) continue;
+            const el = e.target as HTMLElement;
+            const retardo = Number(el.dataset.revealDelay ?? 0);
+            setTimeout(() => el.classList.add("is-visible"), retardo);
+            observador.unobserve(el); // una sola vez: no queremos parpadeos al volver
+          }
+        },
+        { threshold: 0.12, rootMargin: "0px 0px -60px 0px" },
+      );
+      document
+        .querySelectorAll<HTMLElement>("[data-reveal], [data-lineas], [data-cortina]")
+        .forEach((el) => observador.observe(el));
+      limpiezas.push(() => observador.disconnect());
+    }
 
-    // ── Cabecera y barra de progreso ─────────────────────────────────
+    // ── Vídeos que solo se descargan al acercarse ────────────────────
+    // `autoPlay` anula `preload="none"` en Chrome: el vídeo de la sección de
+    // la brasa se bajaba entero (1 MB) en la carga inicial aunque esté a
+    // cinco pantallas de distancia. Por eso se arranca desde aquí.
+    const diferidos = document.querySelectorAll<HTMLVideoElement>("[data-video-diferido]");
+    if (diferidos.length) {
+      const obsVideo = new IntersectionObserver(
+        (entradas) => {
+          for (const e of entradas) {
+            if (!e.isIntersecting) continue;
+            const v = e.target as HTMLVideoElement;
+            v.play().catch(() => {
+              /* el navegador puede bloquearlo: se queda el póster */
+            });
+            obsVideo.unobserve(v);
+          }
+        },
+        { rootMargin: "300px 0px" },
+      );
+      diferidos.forEach((v) => obsVideo.observe(v));
+      limpiezas.push(() => obsVideo.disconnect());
+    }
+
+    // ── Cabecera, barra de progreso y parallax ───────────────────────
     const cabecera = document.querySelector<HTMLElement>("[data-header]");
     const progreso = document.querySelector<HTMLElement>("[data-progress]");
-    const capas = document.querySelectorAll<HTMLElement>("[data-parallax]");
+    const capas = sinMovimiento
+      ? []
+      : Array.from(document.querySelectorAll<HTMLElement>("[data-parallax]"));
 
     let pendiente = false;
     const alScroll = () => {
@@ -70,12 +101,12 @@ export function Motion() {
     alScroll();
     window.addEventListener("scroll", alScroll, { passive: true });
     window.addEventListener("resize", alScroll, { passive: true });
-
-    return () => {
-      observador.disconnect();
+    limpiezas.push(() => {
       window.removeEventListener("scroll", alScroll);
       window.removeEventListener("resize", alScroll);
-    };
+    });
+
+    return () => limpiezas.forEach((f) => f());
   }, []);
 
   return null;

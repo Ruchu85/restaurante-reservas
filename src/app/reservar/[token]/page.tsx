@@ -30,7 +30,7 @@ export default async function ReservationTokenPage({ params }: Props) {
           </p>
           <Link
             href="/reservar"
-            className="inline-block rounded-xl bg-amber-600 px-6 py-3 font-semibold text-white hover:bg-amber-700 transition-colors"
+            className="inline-block rounded-xl bg-amber-700 px-6 py-3 font-semibold text-white hover:bg-amber-800 transition-colors"
           >
             Hacer una nueva reserva
           </Link>

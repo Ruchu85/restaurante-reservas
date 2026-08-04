@@ -64,5 +64,6 @@ export async function updateRestaurant(input: UpdateRestaurantInput) {
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/calendario");
   revalidatePath("/reservar");
+  revalidatePath("/");
   return { success: true };
 }

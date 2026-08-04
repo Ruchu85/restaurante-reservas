@@ -259,7 +259,7 @@ export function ReservationDetailClient({
         {(reservation.status === "completed" || reservation.status === "no_show" || cancelled) && (
           <Link
             href="/reservar"
-            className="flex items-center justify-center gap-2 w-full rounded-xl bg-amber-600 py-3.5 font-semibold text-white hover:bg-amber-700 transition-colors"
+            className="flex items-center justify-center gap-2 w-full rounded-xl bg-amber-700 py-3.5 font-semibold text-white hover:bg-amber-800 transition-colors"
           >
             Hacer una nueva reserva
             <ChevronRight className="h-4 w-4" />

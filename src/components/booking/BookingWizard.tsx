@@ -23,20 +23,48 @@ interface ConfirmedReservation {
   party_size: number;
 }
 
-const PARTY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
+/**
+ * Las opciones salen del máximo que tenga configurado el restaurante. Estaban
+ * fijas en 8 mientras la web anunciaba grupos de hasta 10: el cliente llegaba
+ * aquí y no encontraba su tamaño de mesa.
+ */
+function opcionesComensales(max: number): number[] {
+  return Array.from({ length: Math.max(1, max) }, (_, i) => i + 1);
+}
+
+/** Atajos de fecha: la mayoría reserva para hoy, mañana o el fin de semana. */
+function atajosFecha(hoy: string): { etiqueta: string; fecha: string }[] {
+  const nombres = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  const atajos = [
+    { etiqueta: "Hoy", fecha: hoy },
+    { etiqueta: "Mañana", fecha: addDays(hoy, 1) },
+  ];
+  // Los dos días siguientes, con su nombre, para no obligar a abrir el calendario.
+  for (const d of [2, 3]) {
+    const fecha = addDays(hoy, d);
+    const [a, m, dd] = fecha.split("-").map(Number);
+    atajos.push({ etiqueta: nombres[new Date(Date.UTC(a, m - 1, dd)).getUTCDay()], fecha });
+  }
+  return atajos;
+}
 
 export function BookingWizard({
   maxPartySize = 10,
   maxAdvanceDays = 30,
   timeZone = "Europe/Madrid",
+  fechaInicial = "",
+  comensalesIniciales = 2,
 }: {
   maxPartySize?: number;
   maxAdvanceDays?: number;
   timeZone?: string;
+  /** Vienen del selector rápido del hero, por la URL. */
+  fechaInicial?: string;
+  comensalesIniciales?: number;
 }) {
   const [step, setStep] = useState<Step>("date-party");
-  const [date, setDate] = useState("");
-  const [partySize, setPartySize] = useState(2);
+  const [date, setDate] = useState(fechaInicial);
+  const [partySize, setPartySize] = useState(comensalesIniciales);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
@@ -201,7 +229,7 @@ export function BookingWizard({
               className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 transition-colors",
                 step === s
-                  ? "bg-amber-600 text-white"
+                  ? "bg-amber-700 text-white"
                   : (["date-party", "time", "contact"].indexOf(step) > i)
                     ? "bg-amber-100 text-amber-700"
                     : "bg-stone-100 text-stone-400",
@@ -238,6 +266,23 @@ export function BookingWizard({
               <Calendar className="h-4 w-4 text-amber-600" />
               Fecha
             </label>
+            <div className="mb-2 grid grid-cols-4 gap-2">
+              {atajosFecha(today).map((a) => (
+                <button
+                  key={a.fecha}
+                  type="button"
+                  onClick={() => setDate(a.fecha)}
+                  className={cn(
+                    "rounded-xl border py-2.5 text-xs font-semibold transition-all",
+                    date === a.fecha
+                      ? "border-amber-700 bg-amber-700 text-white shadow-md"
+                      : "border-stone-200 bg-stone-50 text-stone-600 hover:border-amber-300 hover:text-amber-800",
+                  )}
+                >
+                  {a.etiqueta}
+                </button>
+              ))}
+            </div>
             <input
               type="date"
               value={date}
@@ -254,14 +299,14 @@ export function BookingWizard({
               Número de comensales
             </label>
             <div className="grid grid-cols-4 gap-2">
-              {PARTY_OPTIONS.filter((n) => n <= maxPartySize).map((n) => (
+              {opcionesComensales(maxPartySize).map((n) => (
                 <button
                   key={n}
                   onClick={() => setPartySize(n)}
                   className={cn(
                     "rounded-xl py-3 text-sm font-semibold transition-all border",
                     partySize === n
-                      ? "bg-amber-600 text-white border-amber-600 shadow-md"
+                      ? "bg-amber-700 text-white border-amber-700 shadow-md"
                       : "bg-stone-50 text-stone-600 border-stone-200 hover:border-amber-300 hover:text-amber-700",
                   )}
                 >
@@ -269,17 +314,15 @@ export function BookingWizard({
                 </button>
               ))}
             </div>
-            {maxPartySize > 8 && (
-              <p className="text-xs text-stone-400 mt-2">
-                Para más de 8 personas, por favor llámenos directamente.
-              </p>
-            )}
+            <p className="text-xs text-stone-500 mt-2">
+              Para grupos de más de {maxPartySize} personas, llámanos y lo organizamos contigo.
+            </p>
           </div>
 
           <button
             onClick={handleDatePartyNext}
             disabled={!date}
-            className="w-full rounded-xl bg-amber-600 py-3.5 font-semibold text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="w-full rounded-xl bg-amber-700 py-3.5 font-semibold text-white hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             Ver horarios disponibles
             <ChevronRight className="h-4 w-4" />
@@ -328,7 +371,7 @@ export function BookingWizard({
                   className={cn(
                     "rounded-xl py-3 text-sm font-semibold transition-all border",
                     selectedSlot?.starts_at === slot.starts_at
-                      ? "bg-amber-600 text-white border-amber-600 shadow-md"
+                      ? "bg-amber-700 text-white border-amber-700 shadow-md"
                       : "bg-stone-50 text-stone-700 border-stone-200 hover:border-amber-300 hover:text-amber-700",
                   )}
                 >
@@ -341,7 +384,7 @@ export function BookingWizard({
           {selectedSlot && (
             <button
               onClick={() => setStep("contact")}
-              className="w-full rounded-xl bg-amber-600 py-3.5 font-semibold text-white hover:bg-amber-700 transition-colors flex items-center justify-center gap-2"
+              className="w-full rounded-xl bg-amber-700 py-3.5 font-semibold text-white hover:bg-amber-800 transition-colors flex items-center justify-center gap-2"
             >
               Continuar
               <ChevronRight className="h-4 w-4" />
@@ -429,7 +472,7 @@ export function BookingWizard({
           <button
             onClick={handleSubmit}
             disabled={submitting || !guestName.trim() || !guestPhone.trim()}
-            className="w-full rounded-xl bg-amber-600 py-3.5 font-semibold text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="w-full rounded-xl bg-amber-700 py-3.5 font-semibold text-white hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             {submitting ? (
               <>

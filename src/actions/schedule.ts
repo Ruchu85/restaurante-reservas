@@ -82,6 +82,8 @@ export async function upsertBusinessHours(input: BusinessHoursInput) {
 
   revalidatePath("/dashboard/horarios");
   revalidatePath("/dashboard/calendario");
+  // La portada publica el horario semanal y se sirve desde la caché del CDN.
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -122,6 +124,8 @@ export async function addBlockedDay(input: z.infer<typeof BlockedDaySchema>) {
 
   revalidatePath("/dashboard/horarios");
   revalidatePath("/dashboard/calendario");
+  // La portada publica el horario semanal y se sirve desde la caché del CDN.
+  revalidatePath("/");
 
   return {
     success: true,
@@ -149,5 +153,7 @@ export async function removeBlockedDay(id: string) {
 
   revalidatePath("/dashboard/horarios");
   revalidatePath("/dashboard/calendario");
+  // La portada publica el horario semanal y se sirve desde la caché del CDN.
+  revalidatePath("/");
   return { success: true };
 }

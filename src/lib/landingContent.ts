@@ -17,12 +17,19 @@ export function pexels(id: number, width: number, height?: number): string {
   return `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${width}${crop}`;
 }
 
+/*
+  Criterio de las fotos: todas de noche o con luz cálida de interior. Antes
+  se mezclaban un salón de banquetes en azul, una cocina en blanco clínico y
+  una parrilla de comida callejera, y el conjunto parecía tres restaurantes
+  distintos. La coherencia de temperatura de color es lo que hace que un
+  sitio parezca uno solo.
+*/
 export const IMAGES = {
   hero: 1581384,        // terraza al anochecer con luces cálidas
   historia: 260922,     // barra del local, ambiente nocturno
-  chef: 4253312,        // chef emplatando
-  comedor: 262047,      // sala principal
-  servicio: 262978,     // pase de platos
+  chef: 3298687,        // cocinero con sartén, cocina en penumbra
+  comedor: 941861,      // sala de noche con copas servidas
+  servicio: 1109197,    // emplatado en cuenco de piedra
   sobremesa: 5638732,   // mesa larga compartida
 } as const;
 
@@ -168,10 +175,29 @@ export const RESENAS: Resena[] = [
 ];
 
 export const GALERIA = [
-  { id: 1267320, alt: "Emplatado de un plato de autor en cocina" },
-  { id: 262047, alt: "Sala principal del comedor" },
-  { id: 2233729, alt: "Brochetas de cordero en la brasa" },
+  { id: 941861, alt: "Comedor de noche con las mesas preparadas y copas de vino" },
+  { id: 2544829, alt: "Cocina en pleno servicio vista desde la barra" },
   { id: 696218, alt: "Comensales brindando en una celebración" },
-  { id: 1109197, alt: "Postre de chocolate emplatado" },
-  { id: 941861, alt: "Mesa preparada con copas de vino" },
+  { id: 262978, alt: "Pase de platos hacia la sala" },
+  { id: 1581384, alt: "Terraza al anochecer con luces cálidas" },
+  { id: 1058277, alt: "Barra del local llena al final de la tarde" },
 ];
+
+/** Frases de la cinta que separa el hero del resto de la página. */
+export const RECLAMOS = [
+  "Cocina mediterránea de autor",
+  "Producto de temporada",
+  "Brasa de encina",
+  "Pescado de lonja",
+  "Huerta cercana",
+  "Bodega del Bierzo",
+];
+
+/** Quien firma la cocina. Aparece con foto, así que nombre y foto han de casar. */
+export const JEFE_COCINA = {
+  nombre: "Álvaro Quintana",
+  cargo: "jefe de cocina",
+  cita:
+    "Si un producto no está en su punto, ese día no lo servimos. Es la única norma que no se negocia.",
+  alt: "El jefe de cocina trabajando con una sartén en la cocina",
+};
