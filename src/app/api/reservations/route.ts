@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createAdminClient, getRestaurantId } from "@/lib/supabase/admin";
 import { getBusinessHours, getBlockedDays, getActiveTables } from "@/lib/restaurant";
 import { computeAvailableSlots, durationForParty } from "@/lib/availability";
@@ -313,22 +313,30 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // `after()` mantiene viva la función serverless hasta que esto termine.
+  // Con un `void` normal, Vercel congela la función en cuanto se envía la
+  // respuesta y corta el fetch a Resend/Meta a medias — así se nos pasó por
+  // alto que las confirmaciones no estaban llegando nunca.
   if (guestEmail) {
-    void sendConfirmationEmail({
+    after(
+      sendConfirmationEmail({
+        reservation,
+        restaurantName: config.name,
+        restaurantPhone: config.phone,
+        appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
+        timeZone: config.timezone,
+      }),
+    );
+  }
+  after(
+    sendConfirmationWhatsApp({
       reservation,
       restaurantName: config.name,
       restaurantPhone: config.phone,
       appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
       timeZone: config.timezone,
-    });
-  }
-  void sendConfirmationWhatsApp({
-    reservation,
-    restaurantName: config.name,
-    restaurantPhone: config.phone,
-    appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
-    timeZone: config.timezone,
-  });
+    }),
+  );
 
   return NextResponse.json(
     {

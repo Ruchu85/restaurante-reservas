@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit, getClientIp } from "@/lib/rateLimit";
 import { PUBLIC_RESERVATION_SELECT } from "@/lib/reservations";
@@ -102,19 +102,23 @@ export async function DELETE(
     const restaurant = rest as { name: string; timezone: string | null } | null;
 
     if (r.guest_email) {
-      void sendCancellationEmail({
+      after(
+        sendCancellationEmail({
+          reservation: { ...r, status: "cancelled" },
+          restaurantName: restaurant?.name ?? "Restaurante",
+          appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
+          timeZone: restaurant?.timezone ?? undefined,
+        }),
+      );
+    }
+    after(
+      sendCancellationWhatsApp({
         reservation: { ...r, status: "cancelled" },
         restaurantName: restaurant?.name ?? "Restaurante",
         appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
         timeZone: restaurant?.timezone ?? undefined,
-      });
-    }
-    void sendCancellationWhatsApp({
-      reservation: { ...r, status: "cancelled" },
-      restaurantName: restaurant?.name ?? "Restaurante",
-      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
-      timeZone: restaurant?.timezone ?? undefined,
-    });
+      }),
+    );
   }
 
   return NextResponse.json({ success: true });

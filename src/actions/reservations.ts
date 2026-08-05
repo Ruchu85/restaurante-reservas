@@ -21,6 +21,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { sendCancellationEmail } from "@/lib/email";
 import { sendCancellationWhatsApp } from "@/lib/whatsapp";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import type { Reservation } from "@/types";
 
@@ -467,20 +468,27 @@ export async function cancelReservationByToken(token: string) {
       .maybeSingle();
     const restaurant = rest as { name: string; timezone: string | null } | null;
 
+    // `after()` en vez de `void`: sin él, Vercel puede congelar la función en
+    // cuanto la acción resuelve y cortar el fetch a Resend/Meta a medias —
+    // es lo que estaba pasando con las confirmaciones de reserva.
     if (r.guest_email) {
-      void sendCancellationEmail({
+      after(
+        sendCancellationEmail({
+          reservation: { ...r, status: "cancelled" },
+          restaurantName: restaurant?.name ?? "Restaurante",
+          appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
+          timeZone: restaurant?.timezone ?? undefined,
+        }),
+      );
+    }
+    after(
+      sendCancellationWhatsApp({
         reservation: { ...r, status: "cancelled" },
         restaurantName: restaurant?.name ?? "Restaurante",
         appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
         timeZone: restaurant?.timezone ?? undefined,
-      });
-    }
-    void sendCancellationWhatsApp({
-      reservation: { ...r, status: "cancelled" },
-      restaurantName: restaurant?.name ?? "Restaurante",
-      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
-      timeZone: restaurant?.timezone ?? undefined,
-    });
+      }),
+    );
   }
 
   revalidateDashboard();
