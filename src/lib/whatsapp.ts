@@ -2,23 +2,27 @@ import { normalizePhone, isSpanishMobile } from "@/lib/phone";
 import type { Reservation } from "@/types";
 
 /*
- * Envío automático de WhatsApp vía la API de Twilio.
+ * Envío automático de WhatsApp vía la API de Meta (WhatsApp Cloud API).
  *
  * Sigue el mismo patrón que `email.ts`: mejor esfuerzo, nunca bloquea el
- * flujo de reserva, y no hace nada si faltan las credenciales — así el
- * proyecto funciona sin WhatsApp configurado y basta con añadir las env vars
- * para activarlo.
+ * flujo de reserva, y no hace nada si faltan las credenciales.
  *
- * Requiere tres variables de entorno:
- *   TWILIO_ACCOUNT_SID
- *   TWILIO_AUTH_TOKEN
- *   TWILIO_WHATSAPP_FROM   — el remitente, en formato "whatsapp:+14155238886"
- *                            (número de sandbox) o el número propio aprobado.
+ * Requiere dos variables de entorno:
+ *   META_WHATSAPP_TOKEN            — token permanente de un System User
+ *   META_WHATSAPP_PHONE_NUMBER_ID  — el "Phone Number ID" de la app de Meta
+ *                                     (no es el número de teléfono en sí)
  *
- * En el sandbox de Twilio, cada destinatario tiene que enviar antes
- * "join <código>" al número de sandbox desde su WhatsApp — si no, Twilio
- * devuelve error 63007/63016 y aquí simplemente no se envía nada (best-effort).
+ * A diferencia de Twilio, Meta no admite texto libre para mensajes que
+ * inicia el negocio (una confirmación de reserva no es una respuesta a un
+ * mensaje del cliente): hay que usar una plantilla aprobada por Meta. Los
+ * nombres de plantilla son fijos — se crean una vez con
+ * `scripts/setup-whatsapp-templates.mjs` y no hace falta tocarlos más.
  */
+
+const API_VERSION = "v20.0";
+const TEMPLATE_CONFIRM = "reservation_confirmation";
+const TEMPLATE_CANCEL = "reservation_cancellation";
+const LANGUAGE = "es";
 
 const DEFAULT_TZ = "Europe/Madrid";
 
@@ -41,11 +45,10 @@ function formatTime(iso: string, timeZone = DEFAULT_TZ) {
 }
 
 function credentials() {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const from = process.env.TWILIO_WHATSAPP_FROM;
-  if (!sid || !token || !from) return null;
-  return { sid, token, from };
+  const token = process.env.META_WHATSAPP_TOKEN;
+  const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
+  if (!token || !phoneNumberId) return null;
+  return { token, phoneNumberId };
 }
 
 /** Solo se intenta con números que pueden tener WhatsApp: los fijos españoles no. */
@@ -53,39 +56,53 @@ function whatsAppTarget(phone: string | null | undefined): string | null {
   if (!phone) return null;
   const e164 = normalizePhone(phone);
   if (e164.startsWith("+34") && !isSpanishMobile(e164)) return null;
-  return e164;
+  // Meta quiere el número sin el "+".
+  return e164.replace(/^\+/, "");
 }
 
-async function sendWhatsApp(to: string, body: string): Promise<void> {
+async function sendTemplate(
+  to: string,
+  template: string,
+  params: string[],
+): Promise<void> {
   const creds = credentials();
   if (!creds) return;
 
-  const params = new URLSearchParams({
-    From: creds.from,
-    To: `whatsapp:${to}`,
-    Body: body,
-  });
+  const body = {
+    messaging_product: "whatsapp",
+    to,
+    type: "template",
+    template: {
+      name: template,
+      language: { code: LANGUAGE },
+      components: [
+        {
+          type: "body",
+          parameters: params.map((text) => ({ type: "text", text })),
+        },
+      ],
+    },
+  };
 
   try {
     const res = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${creds.sid}/Messages.json`,
+      `https://graph.facebook.com/${API_VERSION}/${creds.phoneNumberId}/messages`,
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Basic ${Buffer.from(`${creds.sid}:${creds.token}`).toString("base64")}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${creds.token}`,
         },
-        body: params,
+        body: JSON.stringify(body),
       },
     );
     if (!res.ok) {
-      // Best-effort: un sandbox sin "join", un número no verificado o
-      // Twilio caído no deben romper la reserva. Se deja constancia en logs
-      // del servidor para poder diagnosticarlo.
-      console.error("Twilio WhatsApp error", res.status, await res.text());
+      // Best-effort: una plantilla aún no aprobada, un número fuera de la
+      // lista de prueba o un fallo de Meta no deben romper la reserva.
+      console.error("Meta WhatsApp error", res.status, await res.text());
     }
   } catch (err) {
-    console.error("Twilio WhatsApp fetch failed", err);
+    console.error("Meta WhatsApp fetch failed", err);
   }
 }
 
@@ -100,7 +117,6 @@ interface WhatsAppParams {
 export async function sendConfirmationWhatsApp({
   reservation,
   restaurantName,
-  restaurantPhone,
   appUrl,
   timeZone = DEFAULT_TZ,
 }: WhatsAppParams): Promise<void> {
@@ -111,13 +127,14 @@ export async function sendConfirmationWhatsApp({
   const time = formatTime(reservation.starts_at, timeZone);
   const cancelUrl = `${appUrl}/reservar/${reservation.confirmation_token}`;
 
-  const body =
-    `Hola ${reservation.guest_name} 👋 Tu reserva en *${restaurantName}* está confirmada.\n\n` +
-    `📅 ${date}\n🕒 ${time} · ${reservation.party_size} ${reservation.party_size === 1 ? "persona" : "personas"}\n\n` +
-    `Ver o cancelar: ${cancelUrl}` +
-    (restaurantPhone ? `\n¿Dudas? Llámanos al ${restaurantPhone}.` : "");
-
-  await sendWhatsApp(to, body);
+  await sendTemplate(to, TEMPLATE_CONFIRM, [
+    reservation.guest_name,
+    restaurantName,
+    date,
+    time,
+    String(reservation.party_size),
+    cancelUrl,
+  ]);
 }
 
 export async function sendCancellationWhatsApp({
@@ -132,9 +149,11 @@ export async function sendCancellationWhatsApp({
   const date = formatDate(reservation.starts_at, timeZone);
   const time = formatTime(reservation.starts_at, timeZone);
 
-  const body =
-    `Hola ${reservation.guest_name}, hemos cancelado tu reserva en *${restaurantName}* ` +
-    `del ${date} a las ${time}.\n\nPuedes hacer una nueva cuando quieras: ${appUrl}/reservar`;
-
-  await sendWhatsApp(to, body);
+  await sendTemplate(to, TEMPLATE_CANCEL, [
+    reservation.guest_name,
+    restaurantName,
+    date,
+    time,
+    `${appUrl}/reservar`,
+  ]);
 }
