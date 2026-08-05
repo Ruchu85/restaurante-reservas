@@ -171,14 +171,20 @@ export async function sendConfirmationEmail({
   `.trim();
 
   try {
-    await getResend()!.emails.send({
+    // El SDK de Resend no lanza en errores de la API (dominio no verificado,
+    // límite de tasa...): los devuelve en `{ error }` sin tocar `data`. Sin
+    // comprobarlo, un envío que Resend rechaza queda indistinguible de uno
+    // que ha ido bien — así se nos pasó por alto el primer fallo real.
+    const { error } = await getResend()!.emails.send({
       from: process.env.RESEND_FROM_EMAIL,
       to: reservation.guest_email,
       subject: `Reserva confirmada — ${restaurantName} · ${startTime} del ${date}`,
       html,
     });
-  } catch {
-    // Email sending is best-effort; don't block the booking flow
+    if (error) console.error("Resend confirmation email error", error);
+  } catch (err) {
+    // Best-effort: un fallo de red no debe romper la reserva.
+    console.error("Resend confirmation email fetch failed", err);
   }
 }
 
@@ -237,13 +243,14 @@ export async function sendCancellationEmail({
   `.trim();
 
   try {
-    await getResend()!.emails.send({
+    const { error } = await getResend()!.emails.send({
       from: process.env.RESEND_FROM_EMAIL,
       to: reservation.guest_email,
       subject: `Reserva cancelada — ${restaurantName}`,
       html,
     });
-  } catch {
-    // Best-effort
+    if (error) console.error("Resend cancellation email error", error);
+  } catch (err) {
+    console.error("Resend cancellation email fetch failed", err);
   }
 }
