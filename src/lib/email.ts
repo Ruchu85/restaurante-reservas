@@ -170,6 +170,29 @@ export async function sendConfirmationEmail({
 </html>
   `.trim();
 
+  // Un correo con solo `html` y sin alternativa de texto plano es en sí
+  // mismo una señal de spam para varios filtros (todo cliente de correo
+  // "serio" manda las dos partes). No arregla la reputación de un dominio
+  // recién creado, pero es lo único que sí depende de nuestro código.
+  const text = [
+    `${restaurantName} — Reserva confirmada`,
+    ``,
+    `Hola ${reservation.guest_name}, tu reserva ha sido confirmada. Te esperamos.`,
+    ``,
+    `Fecha: ${date}`,
+    `Hora: ${startTime} – ${endTime}`,
+    `Comensales: ${reservation.party_size}`,
+    reservation.notes ? `Nota: ${reservation.notes}` : null,
+    ``,
+    `Ver o cancelar tu reserva: ${cancelUrl}`,
+    `Puedes cancelar con al menos 2 horas de antelación.`,
+    restaurantPhone ? `También puedes llamarnos al ${restaurantPhone}.` : null,
+    ``,
+    `Código de reserva: ${reservation.confirmation_token}`,
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+
   try {
     // El SDK de Resend no lanza en errores de la API (dominio no verificado,
     // límite de tasa...): los devuelve en `{ error }` sin tocar `data`. Sin
@@ -180,6 +203,7 @@ export async function sendConfirmationEmail({
       to: reservation.guest_email,
       subject: `Reserva confirmada — ${restaurantName} · ${startTime} del ${date}`,
       html,
+      text,
     });
     if (error) console.error("Resend confirmation email error", error);
   } catch (err) {
@@ -242,12 +266,20 @@ export async function sendCancellationEmail({
 </html>
   `.trim();
 
+  const text = [
+    `${restaurantName} — Reserva cancelada`,
+    ``,
+    `Hola ${reservation.guest_name}, hemos cancelado tu reserva del ${date} a las ${startTime}.`,
+    `Esperamos verte pronto. Puedes hacer una nueva reserva cuando quieras: ${appUrl}/reservar`,
+  ].join("\n");
+
   try {
     const { error } = await getResend()!.emails.send({
       from: process.env.RESEND_FROM_EMAIL,
       to: reservation.guest_email,
       subject: `Reserva cancelada — ${restaurantName}`,
       html,
+      text,
     });
     if (error) console.error("Resend cancellation email error", error);
   } catch (err) {
