@@ -126,15 +126,30 @@ body{width:${ANCHO}px;height:${ALTO}px;overflow:hidden;background:#161311;
 .marco{position:relative;width:100%;max-width:1515px;height:693px;border-radius:24px;
        overflow:hidden;box-shadow:0 45px 120px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);
        background:#fff}
-.marco img{position:absolute;left:0;top:0;width:100%;
-           transform-origin:top center;animation:deriva 10s ease-in-out both}
+.marco img{position:absolute;left:0;top:0;width:100%;transform-origin:top center}
 .marco.movil{max-width:432px;height:837px;border-radius:39px}
 .marco.movil img{width:100%}
 .marco.detalle img{width:150%;left:-14%;top:-225px}
-/* Solo desplazamiento vertical, sin scale(): el zoom continuo sobre el PNG
-   de una captura de interfaz reescala el texto fino en cada fotograma y sale
-   con un desenfoque de sub-píxel perceptible, sobre todo a 1080p. */
-@keyframes deriva{from{transform:translateY(0)}to{transform:translateY(-4%)}}
+/*
+  La animación va ligada a la clase .on de la escena, no puesta directamente
+  en la imagen: puesta en el elemento desde el primer pintado, las 11 escenas
+  arrancan su cuenta de 10s a la vez en cuanto carga la página (todas están
+  en el DOM, solo la opacidad las oculta). Para cuando una escena tardía se
+  hace visible, su animación ya ha terminado y el fill-mode "both" la deja
+  congelada en el estado final — un desplazamiento de -4% permanente que
+  corta cabeceras y menús pegados al borde superior de la captura durante
+  toda la escena, no solo un instante. Atada a .on, cada imagen empieza a
+  moverse justo cuando el espectador empieza a verla.
+
+  Solo desplazamiento vertical, sin scale(): el zoom continuo sobre el PNG de
+  una captura de interfaz reescala el texto fino en cada fotograma y sale con
+  un desenfoque de sub-píxel perceptible, sobre todo a 1080p.
+*/
+.escena.on .marco img{animation:deriva 10s ease-in-out both}
+/* -1,5%, no -4%: en una escena larga la animación sí llega a completarse y
+   se queda en el estado final durante el resto de la escena — con -4% eso
+   bastaba para tapar una cabecera pegada al borde superior del recorte. */
+@keyframes deriva{from{transform:translateY(0)}to{transform:translateY(-1.5%)}}
 .pie{position:absolute;left:0;right:0;bottom:0;padding:36px 87px 42px;
      background:linear-gradient(transparent,rgba(10,8,7,.95) 34%)}
 h2{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em;
