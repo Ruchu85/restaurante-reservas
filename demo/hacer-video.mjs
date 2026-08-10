@@ -52,12 +52,6 @@ for (const e of ESCENAS) {
 console.log();
 
 // ── 2. Duración real de cada escena ───────────────────────────────────
-function duracion(archivo) {
-  // ffmpeg escribe la duración en stderr; no hace falta ffprobe.
-  const salida = execFileSync(FFMPEG, ["-i", archivo], { stdio: ["ignore", "pipe", "pipe"] , encoding: "utf8"})
-    .toString();
-  return salida;
-}
 function segundos(archivo) {
   let texto = "";
   try {
@@ -80,11 +74,6 @@ console.log(`Duración total: ${total.toFixed(1)} s`);
 
 // ── 3. Audio único ────────────────────────────────────────────────────
 // Se concatena insertando el silencio de la pausa detrás de cada locución.
-const lista = escenas
-  .map((e) => `file '${join(TRABAJO, `voz-${e.id}.mp3`).replace(/\\/g, "/")}'`)
-  .join("\n");
-writeFileSync(join(TRABAJO, "lista.txt"), lista);
-
 const filtro = escenas
   .map((_, i) => `[${i}:a]adelay=0|0,apad=pad_dur=${PAUSA}[a${i}]`)
   .join(";");
@@ -100,6 +89,9 @@ execFileSync(FFMPEG, [
 console.log("Audio unificado.");
 
 // ── 4. Animación HTML ─────────────────────────────────────────────────
+// La plantilla visual reutiliza la identidad de la web real: Fraunces para
+// titulares, ámbar-700 de acento, fondo piedra oscuro — para que el vídeo se
+// sienta parte del mismo producto y no un genérico "explicador" de stock.
 function b64(archivo) {
   return readFileSync(join(CAPTURAS, archivo)).toString("base64");
 }
@@ -113,51 +105,73 @@ const conTiempo = escenas.map((e) => {
   return { ...e, inicio };
 });
 
-const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><style>
+const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{width:${ANCHO}px;height:${ALTO}px;overflow:hidden;background:#1c1917;
-     font-family:'Segoe UI',system-ui,sans-serif;color:#fff}
+body{width:${ANCHO}px;height:${ALTO}px;overflow:hidden;background:#161311;
+     font-family:'Inter',system-ui,sans-serif;color:#fff}
+.fondo{position:absolute;inset:0;background:
+  radial-gradient(1200px 700px at 15% -10%, rgba(180,83,9,.16), transparent 60%),
+  radial-gradient(900px 600px at 100% 110%, rgba(180,83,9,.10), transparent 55%),
+  #161311}
 .escena{position:absolute;inset:0;opacity:0;display:flex;flex-direction:column;
-        align-items:center;justify-content:center;padding:38px 56px 96px}
+        align-items:center;justify-content:center;padding:40px 60px 100px;
+        transition:opacity .5s ease}
 .escena.on{opacity:1}
-.marco{position:relative;width:100%;max-width:1000px;height:470px;border-radius:14px;
-       overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);background:#fff}
+.marco{position:relative;width:100%;max-width:1010px;height:462px;border-radius:16px;
+       overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);
+       background:#fff}
 .marco img{position:absolute;left:0;top:0;width:100%;
-           transform-origin:top center;animation:deriva 9s linear both}
-.marco.movil{max-width:290px;height:560px}
+           transform-origin:top center;animation:deriva 10s ease-in-out both}
+.marco.movil{max-width:288px;height:558px;border-radius:26px}
 .marco.movil img{width:100%}
 .marco.detalle img{width:150%;left:-14%;top:-150px}
-@keyframes deriva{from{transform:translateY(0)}to{transform:translateY(-6%)}}
-.pie{position:absolute;left:0;right:0;bottom:0;padding:22px 56px 26px;
-     background:linear-gradient(transparent,rgba(12,10,9,.94) 32%)}
-h2{font-size:31px;font-weight:700;letter-spacing:-.02em}
-p{font-size:17px;color:#d6d3d1;margin-top:5px}
-.barra{position:absolute;left:0;bottom:0;height:4px;background:#f59e0b;width:0;
+@keyframes deriva{from{transform:translateY(0) scale(1.0)}to{transform:translateY(-4%) scale(1.015)}}
+.pie{position:absolute;left:0;right:0;bottom:0;padding:24px 58px 28px;
+     background:linear-gradient(transparent,rgba(10,8,7,.95) 34%)}
+h2{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em;
+   font-size:32px;line-height:1.1}
+p{font-family:'Inter',sans-serif;font-size:16.5px;color:#d6cfc7;margin-top:6px}
+.barra-pista{position:absolute;left:0;bottom:0;height:3px;width:100%;background:rgba(255,255,255,.08)}
+.barra{position:absolute;left:0;bottom:0;height:3px;background:#d97706;width:0;
        animation:crece ${total}s linear both}
 @keyframes crece{to{width:100%}}
-.marca{position:absolute;top:26px;left:34px;font-size:15px;font-weight:700;
-       letter-spacing:.09em;color:#f59e0b;text-transform:uppercase}
+.marca{position:absolute;top:28px;left:36px;display:flex;align-items:center;gap:9px;
+       font-family:'Fraunces',serif;font-weight:600;font-size:18px;letter-spacing:-.01em;color:#fff}
+.marca .punto{width:7px;height:7px;border-radius:50%;background:#d97706}
+.num{position:absolute;top:30px;right:38px;font-size:13px;color:#a89f96;letter-spacing:.06em}
 </style></head><body>
-<div class="marca">Reservas para restaurantes</div>
-${conTiempo.map((e) => `<div class="escena" data-in="${e.inicio.toFixed(2)}" data-out="${(e.inicio + e.dur).toFixed(2)}">
+<div class="fondo"></div>
+<div class="marca"><span class="punto"></span>Reservas para restaurantes</div>
+${conTiempo.map((e, i) => `<div class="escena" data-in="${e.inicio.toFixed(2)}" data-out="${(e.inicio + e.dur).toFixed(2)}">
+  <div class="num">${String(i + 1).padStart(2, "0")} / ${escenas.length}</div>
   <div class="marco ${e.encuadre === "movil" ? "movil" : e.encuadre === "detalle" ? "detalle" : ""}">
     <img src="data:image/png;base64,${imagenes[e.imagen]}" alt="">
   </div>
   <div class="pie"><h2>${e.titulo}</h2><p>${e.subtitulo}</p></div>
 </div>`).join("\n")}
+<div class="barra-pista"></div>
 <div class="barra"></div>
 <script>
 const escenas=[...document.querySelectorAll('.escena')];
-const t0=performance.now();
-function pinta(){
-  const t=(performance.now()-t0)/1000;
-  for(const e of escenas){
-    const dentro = t>=+e.dataset.in && t<+e.dataset.out;
-    e.classList.toggle('on', dentro);
+// El reloj arranca solo cuando la fuente ya está aplicada: si no, el primer
+// titular sale un instante en la tipografía del sistema y se nota el salto
+// en el vídeo grabado (Playwright graba desde la navegación, no desde aquí).
+document.fonts.ready.then(()=>{
+  const t0=performance.now();
+  function pinta(){
+    const t=(performance.now()-t0)/1000;
+    for(const e of escenas){
+      const dentro = t>=+e.dataset.in && t<+e.dataset.out;
+      e.classList.toggle('on', dentro);
+    }
+    requestAnimationFrame(pinta);
   }
   requestAnimationFrame(pinta);
-}
-requestAnimationFrame(pinta);
+});
 </script></body></html>`;
 
 const htmlPath = join(TRABAJO, "anim.html");
@@ -173,6 +187,11 @@ const ctx = await navegador.newContext({
 });
 const page = await ctx.newPage();
 await page.goto("file:///" + htmlPath.replace(/\\/g, "/"), { waitUntil: "load" });
+// Espera a que las fuentes de Google Fonts terminen de cargar antes de que
+// arranque el temporizador: si no, el primer titular sale en la tipografía
+// del sistema durante un instante y se nota el "salto" al vídeo grabado.
+await page.evaluate(() => document.fonts.ready);
+await page.waitForTimeout(300);
 await page.waitForTimeout(total * 1000 + 900);
 await ctx.close();
 await navegador.close();

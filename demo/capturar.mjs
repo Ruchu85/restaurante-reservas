@@ -59,14 +59,13 @@ for (const [nombre, ruta] of VISTAS) {
   await shot(page, nombre);
 }
 
-// Ficha de un comensal con mucho historial
-await page.goto(`${BASE}/dashboard/comensales`, { waitUntil: "networkidle" });
-await page.waitForTimeout(2000);
-const ficha = page.locator('a[href^="/dashboard/comensales/"]').first();
-if (await ficha.count()) {
-  await ficha.click();
-  await shot(page, "09-ficha-comensal");
-}
+// Ficha de un comensal con historial real: la primera de la lista puede
+// salir sin alergias ni notas rellenas, y entonces se enseña el formulario
+// vacío justo cuando el guion dice "sus notas de sala y sus alergias".
+// Paula Moreno tiene 17 visitas, alergia al gluten y nota de sala — fija a
+// propósito en vez de "la primera que salga".
+await page.goto(`${BASE}/dashboard/comensales/6bddd97e-6035-4899-a3a3-a49053358c95`, { waitUntil: "networkidle" });
+await shot(page, "09-ficha-comensal");
 
 // Web pública
 await page.goto(BASE, { waitUntil: "networkidle" });
