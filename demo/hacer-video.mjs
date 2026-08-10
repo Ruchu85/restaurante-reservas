@@ -206,6 +206,12 @@ const ctx = await navegador.newContext({
   recordVideo: { dir: TRABAJO, size: { width: ANCHO, height: ALTO } },
 });
 const page = await ctx.newPage();
+// La grabación empieza en cuanto se crea el contexto, con el fondo blanco
+// por defecto de about:blank — y anim.html tarda un instante en parsear
+// (lleva las 11 capturas incrustadas en base64, varios MB) antes de pintar
+// su propio fondo oscuro. Sin este paso, el vídeo arrancaba con ~0,35s de
+// fogonazo blanco mientras la locución ya había empezado a sonar.
+await page.goto(`data:text/html,<style>html,body{background:${encodeURIComponent("#161311")};height:100%}</style>`);
 await page.goto("file:///" + htmlPath.replace(/\\/g, "/"), { waitUntil: "load" });
 // Espera a que las fuentes de Google Fonts terminen de cargar antes de que
 // arranque el temporizador: si no, el primer titular sale en la tipografía

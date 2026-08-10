@@ -1,2 +1,5 @@
 # Trabajo intermedio del generador de vídeo
 .trabajo/
+
+# Capturas/recortes que dejan los agentes de auditoría al analizar el vídeo
+.audit*/
