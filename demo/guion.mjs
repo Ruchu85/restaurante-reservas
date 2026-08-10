@@ -42,7 +42,9 @@ export const ESCENAS = [
   {
     id: "03",
     titulo: "Una web que vende sola",
-    subtitulo: "Temporada, bodega, galería — detalles que generan confianza",
+    // Sin "galería" en el subtítulo: la captura de esta escena solo enseña
+    // temporada y bodega, y prometer algo que no se ve en pantalla resta.
+    subtitulo: "Temporada y bodega — detalles que generan confianza",
     imagen: "11-temporada.png",
     encuadre: "arriba",
     texto:
@@ -92,10 +94,15 @@ export const ESCENAS = [
     id: "08",
     titulo: "La sala, bajo control",
     subtitulo: "Mesas juntadas y ritmo de cocina",
-    imagen: "03-dia.png",
-    encuadre: "arriba",
+    // Antes usaba 03-dia.png, que es la misma vista de calendario que la
+    // escena 09 con otra fecha — parecían la misma captura repetida y no
+    // enseñaba ninguna mesa mientras se hablaba de mesas.
+    imagen: "07-mesas.png",
+    encuadre: "detalle",
     texto:
-      "Para los grupos grandes, junta mesas solo. Y puedes limitar cuántos comensales entran a la vez, " +
+      // "junta mesas solo" se lee como "solamente", no como "sola/automática";
+      // con concordancia femenina porque el sujeto es "la aplicación".
+      "Para los grupos grandes, la aplicación junta las mesas automáticamente. Y puedes limitar cuántos comensales entran a la vez, " +
       "para que la cocina no se ahogue.",
   },
   {
@@ -111,8 +118,13 @@ export const ESCENAS = [
   {
     id: "10",
     titulo: "Los números del negocio",
-    subtitulo: "Ocupación, origen y tasa de no-show",
-    imagen: "06-informes.png",
+    subtitulo: "Comensales, cancelaciones y de dónde vienen tus reservas",
+    // No es 06-informes.png entera: esa captura se hizo en un día que la
+    // aplicación marca como "hoy" y el tile "Comensales hoy" salía a 0 —
+    // parece un dato roto justo en la escena que vende "mira cuánto sabes de
+    // tu negocio". Este recorte se queda con las dos secciones que no
+    // dependen del día exacto de la captura.
+    imagen: "15-informes-origen.png",
     encuadre: "arriba",
     texto:
       "Al final del mes sabes cuánta gente ha pasado, de dónde vienen tus reservas... y cuántos te han fallado.",

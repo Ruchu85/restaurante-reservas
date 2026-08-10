@@ -8,6 +8,9 @@
 <meta property="og:title" content="Reservas para restaurantes">
 <meta property="og:description" content="Tu web con reservas online y el panel de sala que las gestiona. Siete días gratis.">
 <meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   :root{
@@ -15,16 +18,20 @@
     --papel:#faf9f7; --linea:#e7e5e4; --acento:#d97706; --acento2:#b45309;
   }
   html{scroll-behavior:smooth}
-  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--tinta);
+  body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--tinta);
        background:var(--papel);line-height:1.6;-webkit-font-smoothing:antialiased}
   .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
   a{color:inherit}
+  /* Misma identidad que la web del producto y el vídeo: Fraunces para
+     titulares. Sin esto, la página que aloja el vídeo tenía un aspecto de
+     landing de SaaS genérica muy distinto al del propio vídeo que enseña. */
+  h1,h2,.logo{font-family:'Fraunces',Georgia,serif}
 
   /* Cabecera */
   header{position:sticky;top:0;z-index:50;background:rgba(250,249,247,.92);
          backdrop-filter:blur(8px);border-bottom:1px solid var(--linea)}
   header .wrap{display:flex;align-items:center;justify-content:space-between;height:62px}
-  .logo{font-weight:800;letter-spacing:-.02em}
+  .logo{font-weight:600;font-size:19px;letter-spacing:-.01em}
   .logo span{color:var(--acento)}
   .btn{display:inline-block;background:var(--acento);color:#fff;text-decoration:none;
        padding:11px 22px;border-radius:10px;font-weight:600;transition:background .15s}
@@ -37,7 +44,7 @@
   .portada{text-align:center;padding:64px 0 40px}
   .pill{display:inline-block;background:#fff7ed;color:var(--acento2);border:1px solid #fed7aa;
         border-radius:999px;padding:6px 15px;font-size:13px;font-weight:600;margin-bottom:22px}
-  h1{font-size:clamp(31px,5.2vw,52px);line-height:1.12;letter-spacing:-.03em;font-weight:800}
+  h1{font-size:clamp(31px,5.2vw,52px);line-height:1.12;letter-spacing:-.01em;font-weight:600}
   .sub{font-size:clamp(16px,2.2vw,20px);color:var(--tinta2);max-width:640px;margin:20px auto 0}
   .acciones{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px}
 
@@ -52,7 +59,7 @@
   .cabecera{text-align:center;max-width:680px;margin:0 auto 44px}
   .eyebrow{color:var(--acento);font-weight:700;font-size:13px;letter-spacing:.09em;
            text-transform:uppercase}
-  h2{font-size:clamp(25px,3.6vw,36px);letter-spacing:-.02em;margin-top:10px;font-weight:800}
+  h2{font-size:clamp(25px,3.6vw,36px);letter-spacing:-.01em;margin-top:10px;font-weight:600}
   .cabecera p{color:var(--tinta2);margin-top:14px}
 
   /* Los dos productos */
@@ -128,7 +135,7 @@
       Tu navegador no reproduce vídeo. <a href="media/demo.mp4">Descárgalo aquí</a>.
     </video>
   </div>
-  <p class="pie-video">Vídeo de 2:05 · Grabado sobre la aplicación real, con datos de un restaurante de ejemplo</p>
+  <p class="pie-video">Vídeo de 2:07 · Grabado sobre la aplicación real, con datos de un restaurante de ejemplo</p>
 </div>
 
 <section id="incluye">
@@ -201,10 +208,10 @@
       </figure>
 
       <figure>
-        <img src="capturas/06-informes.jpg" alt="Informes de ocupación y no-shows" loading="lazy">
+        <img src="capturas/06-informes.jpg" alt="Resumen del mes y origen de las reservas" loading="lazy">
         <figcaption>
           <b>Informes</b>
-          <span>Comensales, origen de las reservas y tasa de no-show.</span>
+          <span>Comensales del mes y de dónde viene cada reserva: web, teléfono o mostrador.</span>
         </figcaption>
       </figure>
 

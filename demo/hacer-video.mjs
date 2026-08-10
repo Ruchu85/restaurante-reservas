@@ -33,8 +33,10 @@ const FFMPEG = process.env.FFMPEG_PATH || join(
   "tools/node_modules/.pnpm/ffmpeg-static@5.3.0/node_modules/ffmpeg-static/ffmpeg.exe",
 );
 
-const ANCHO = 1280;
-const ALTO = 720;
+// 1080p: 720p dejaba el texto fino de las capturas de interfaz notablemente
+// menos nítido que el de la app real, sobre todo en los encuadres "detalle".
+const ANCHO = 1920;
+const ALTO = 1080;
 
 rmSync(TRABAJO, { recursive: true, force: true });
 mkdirSync(TRABAJO, { recursive: true });
@@ -118,31 +120,34 @@ body{width:${ANCHO}px;height:${ALTO}px;overflow:hidden;background:#161311;
   radial-gradient(900px 600px at 100% 110%, rgba(180,83,9,.10), transparent 55%),
   #161311}
 .escena{position:absolute;inset:0;opacity:0;display:flex;flex-direction:column;
-        align-items:center;justify-content:center;padding:40px 60px 100px;
+        align-items:center;justify-content:center;padding:60px 90px 150px;
         transition:opacity .5s ease}
 .escena.on{opacity:1}
-.marco{position:relative;width:100%;max-width:1010px;height:462px;border-radius:16px;
-       overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);
+.marco{position:relative;width:100%;max-width:1515px;height:693px;border-radius:24px;
+       overflow:hidden;box-shadow:0 45px 120px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);
        background:#fff}
 .marco img{position:absolute;left:0;top:0;width:100%;
            transform-origin:top center;animation:deriva 10s ease-in-out both}
-.marco.movil{max-width:288px;height:558px;border-radius:26px}
+.marco.movil{max-width:432px;height:837px;border-radius:39px}
 .marco.movil img{width:100%}
-.marco.detalle img{width:150%;left:-14%;top:-150px}
-@keyframes deriva{from{transform:translateY(0) scale(1.0)}to{transform:translateY(-4%) scale(1.015)}}
-.pie{position:absolute;left:0;right:0;bottom:0;padding:24px 58px 28px;
+.marco.detalle img{width:150%;left:-14%;top:-225px}
+/* Solo desplazamiento vertical, sin scale(): el zoom continuo sobre el PNG
+   de una captura de interfaz reescala el texto fino en cada fotograma y sale
+   con un desenfoque de sub-píxel perceptible, sobre todo a 1080p. */
+@keyframes deriva{from{transform:translateY(0)}to{transform:translateY(-4%)}}
+.pie{position:absolute;left:0;right:0;bottom:0;padding:36px 87px 42px;
      background:linear-gradient(transparent,rgba(10,8,7,.95) 34%)}
 h2{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.01em;
-   font-size:32px;line-height:1.1}
-p{font-family:'Inter',sans-serif;font-size:16.5px;color:#d6cfc7;margin-top:6px}
-.barra-pista{position:absolute;left:0;bottom:0;height:3px;width:100%;background:rgba(255,255,255,.08)}
-.barra{position:absolute;left:0;bottom:0;height:3px;background:#d97706;width:0;
+   font-size:48px;line-height:1.1}
+p{font-family:'Inter',sans-serif;font-size:25px;color:#d6cfc7;margin-top:9px}
+.barra-pista{position:absolute;left:0;bottom:0;height:4px;width:100%;background:rgba(255,255,255,.08)}
+.barra{position:absolute;left:0;bottom:0;height:4px;background:#d97706;width:0;
        animation:crece ${total}s linear both}
 @keyframes crece{to{width:100%}}
-.marca{position:absolute;top:28px;left:36px;display:flex;align-items:center;gap:9px;
-       font-family:'Fraunces',serif;font-weight:600;font-size:18px;letter-spacing:-.01em;color:#fff}
-.marca .punto{width:7px;height:7px;border-radius:50%;background:#d97706}
-.num{position:absolute;top:30px;right:38px;font-size:13px;color:#a89f96;letter-spacing:.06em}
+.marca{position:absolute;top:42px;left:54px;display:flex;align-items:center;gap:14px;
+       font-family:'Fraunces',serif;font-weight:600;font-size:27px;letter-spacing:-.01em;color:#fff}
+.marca .punto{width:10px;height:10px;border-radius:50%;background:#d97706}
+.num{position:absolute;top:45px;right:57px;font-size:20px;color:#a89f96;letter-spacing:.06em}
 </style></head><body>
 <div class="fondo"></div>
 <div class="marca"><span class="punto"></span>Reservas para restaurantes</div>
