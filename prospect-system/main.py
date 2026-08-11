@@ -511,17 +511,25 @@ def pipeline(
     """
     console.print(f"\n[bold magenta]Pipeline completo para '{location}'[/bold magenta]")
 
+    # Las llamadas de abajo invocan las funciones de comando como Python
+    # normal, no a través del parser de Typer — así que cualquier parámetro
+    # que no se pase explícitamente aquí toma como valor por defecto el
+    # propio objeto typer.Option(...), no el valor que envuelve (eso solo lo
+    # resuelve Typer al invocar por CLI). Sin esto, `prospect` buscaba
+    # literalmente "<typer.models.OptionInfo object at ...> Valladolid" en
+    # Google Places y no encontraba nada — silencioso, sin error.
+
     # Step 1: prospect
-    prospect(location=location, limit=limit, pages=3)
+    prospect(location=location, limit=limit, pages=3, query="restaurante")
 
     # Step 2: enrich
-    enrich(limit=limit * 2, status="new")
+    enrich(limit=limit * 2, status="new", province=None, city=None)
 
     # Step 3: score
     score(status="enriched", limit=limit * 2)
 
     # Step 4: generate email drafts
-    emails_generate(min_score=min_score, limit=limit)
+    emails_generate(min_score=min_score, limit=limit, province=None, city=None)
 
     console.print(
         f"\n[bold green]Pipeline completado.[/bold green]\n"
