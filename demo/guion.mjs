@@ -76,6 +76,11 @@ export const ESCENAS = [
     subtitulo: "Visitas, alergias y no-shows, sin preguntar",
     imagen: "04-reservas.png",
     encuadre: "detalle",
+    // El offset por defecto de "detalle" (-225px) enseña habituales y
+    // no-shows pero se queda antes de la fila con la alergia — justo el
+    // dato que la locución menciona. Este desplazamiento baja el zoom hasta
+    // la fila de Lucía Rubio ("Alergias: Pescado azul").
+    zoomTop: "-458px",
     texto:
       "Y esto marca la diferencia: la aplicación reconoce a quien ya ha venido. Te avisa si es " +
       "habitual, si tiene alergia al marisco... o si ya te dejó dos mesas vacías.",
@@ -122,9 +127,13 @@ export const ESCENAS = [
     // No es 06-informes.png entera: esa captura se hizo en un día que la
     // aplicación marca como "hoy" y el tile "Comensales hoy" salía a 0 —
     // parece un dato roto justo en la escena que vende "mira cuánto sabes de
-    // tu negocio". Este recorte se queda con las dos secciones que no
-    // dependen del día exacto de la captura.
-    imagen: "15-informes-origen.png",
+    // tu negocio". El primer recorte (15-informes-origen) se quedaba con
+    // "Resumen del mes" y "Origen de reservas", pero su proporción no
+    // encajaba en el marco: al escalar al ancho, el gráfico de origen —lo
+    // que la voz menciona explícitamente— quedaba recortado fuera. Este
+    // compuesto apila las dos secciones más ajustadas, en la proporción del
+    // marco, para que quepan enteras sin que la deriva las tape.
+    imagen: "16-informes-compuesto.png",
     encuadre: "arriba",
     texto:
       "Al final del mes sabes cuánta gente ha pasado, de dónde vienen tus reservas... y cuántos te han fallado.",

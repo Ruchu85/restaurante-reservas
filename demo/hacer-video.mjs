@@ -129,7 +129,11 @@ body{width:${ANCHO}px;height:${ALTO}px;overflow:hidden;background:#161311;
 .marco img{position:absolute;left:0;top:0;width:100%;transform-origin:top center}
 .marco.movil{max-width:432px;height:837px;border-radius:39px}
 .marco.movil img{width:100%}
-.marco.detalle img{width:150%;left:-14%;top:-225px}
+/* El desplazamiento vertical del zoom se fija por escena (estilo inline,
+   variable --zoom-top) en vez de aquí: dos escenas usan "detalle" sobre
+   capturas distintas, y una posición fija para las dos dejaba la fila con
+   la etiqueta de alergia fuera del encuadre en la escena que la menciona. */
+.marco.detalle img{width:150%;left:-14%;top:var(--zoom-top, -225px)}
 /*
   La animación va ligada a la clase .on de la escena, no puesta directamente
   en la imagen: puesta en el elemento desde el primer pintado, las 11 escenas
@@ -168,7 +172,8 @@ p{font-family:'Inter',sans-serif;font-size:25px;color:#d6cfc7;margin-top:9px}
 <div class="marca"><span class="punto"></span>Reservas para restaurantes</div>
 ${conTiempo.map((e, i) => `<div class="escena" data-in="${e.inicio.toFixed(2)}" data-out="${(e.inicio + e.dur).toFixed(2)}">
   <div class="num">${String(i + 1).padStart(2, "0")} / ${escenas.length}</div>
-  <div class="marco ${e.encuadre === "movil" ? "movil" : e.encuadre === "detalle" ? "detalle" : ""}">
+  <div class="marco ${e.encuadre === "movil" ? "movil" : e.encuadre === "detalle" ? "detalle" : ""}"
+       ${e.zoomTop ? `style="--zoom-top:${e.zoomTop}"` : ""}>
     <img src="data:image/png;base64,${imagenes[e.imagen]}" alt="">
   </div>
   <div class="pie"><h2>${e.titulo}</h2><p>${e.subtitulo}</p></div>
