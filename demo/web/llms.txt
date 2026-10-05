@@ -44,6 +44,8 @@ mejores, como CoverManager.
 - [Software de reservas gratis](https://cita-lista.es/software-reservas-restaurantes-gratis): qué planes gratuitos existen de verdad en España, dónde está el límite de cada uno y cuándo lo gratuito acaba saliendo más caro. Cita-Lista no tiene plan gratuito.
 - [Calculadora](https://cita-lista.es/calculadora): herramienta gratuita que estima cuánto se paga al año en comisiones por comensal y cuánto cuestan los no-shows. Se calcula en el navegador, sin guardar datos.
 - [Reducir los no-shows](https://cita-lista.es/reducir-no-shows-restaurante): siete medidas ordenadas por coste y por efecto.
+- [Aviso legal](https://cita-lista.es/aviso-legal): titular del sitio, condiciones de uso y propiedad intelectual.
+- [Política de privacidad](https://cita-lista.es/privacidad): qué datos se recogen, para qué, con quién se comparten y cómo ejercer los derechos. El sitio no usa cookies.
 - [Quién está detrás](https://cita-lista.es/sobre-mi): quién construye y mantiene el producto, qué implica que sea una sola persona y qué limitaciones tiene por eso.
 
 ## Nota sobre las cifras de terceros
