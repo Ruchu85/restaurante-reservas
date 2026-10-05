@@ -25,7 +25,7 @@
 <meta name="theme-color" content="#1c1917" media="(prefers-color-scheme: dark)">
 <link rel="preload" href="/fuentes/inter.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fuentes/fraunces.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/estilo.css?v=20261005b">
+<link rel="stylesheet" href="/estilo.css">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -391,47 +391,34 @@
           </div>
         </div>
         <div class="campos" style="margin-top:12px">
-          <div class="campo">
-            <label for="f-email">Email</label>
-            <input id="f-email" name="email" type="email" required autocomplete="email">
-          </div>
-        </div>
-        <details class="mas-datos">
-          <summary>Añadir teléfono, mesas y cómo prefieres empezar <span>(opcional)</span></summary>
-          <div>
-            <div class="campos dos">
-              <div class="campo">
-                <label for="f-telefono">Teléfono</label>
-                <input id="f-telefono" name="telefono" type="tel" autocomplete="tel">
-              </div>
-              <div class="campo">
-                <label for="f-mesas">¿Cuántas mesas tienes?</label>
-                <input id="f-mesas" name="mesas" type="text" inputmode="numeric" placeholder="Por ejemplo, 12">
-              </div>
-            </div>
-            <div class="campos dos" style="margin-top:12px">
-              <div class="campo">
-                <label for="f-web">¿Tienes web?</label>
-                <select id="f-web" name="tiene_web">
-                  <option value="">Elige una</option>
-                  <option>Sí, y funciona bien</option>
-                  <option>Sí, pero está anticuada</option>
-                  <option>No tengo web</option>
-                </select>
-              </div>
-              <div class="campo">
-                <label for="f-pref">¿Cómo prefieres empezar?</label>
-                <select id="f-pref" name="preferencia">
-                  <option value="">Como veas</option>
-                  <option>Que me lo montes y lo pruebo yo</option>
-                  <option>Una videollamada de 15 minutos</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </details>
-        <input type="hidden" name="origen" id="f-origen" value="">
-        <div class="trampa" aria-hidden="true">
+<div class="campo"><label for="f-email">Email</label><input id="f-email" name="email" type="email" required autocomplete="email" inputmode="email" enterkeyhint="next"></div>
+</div>
+<details class="mas-datos">
+<summary>Añadir teléfono, mesas y cómo prefieres empezar <span>(opcional)</span></summary>
+<div>
+<div class="campos dos">
+<div class="campo"><label for="f-telefono">Teléfono</label><input id="f-telefono" name="telefono" type="tel" autocomplete="tel"></div>
+<div class="campo"><label for="f-mesas">¿Cuántas mesas tienes?</label><input id="f-mesas" name="mesas" type="text" inputmode="numeric" placeholder="Por ejemplo, 12"></div>
+</div>
+<div class="campos dos" style="margin-top:12px">
+<div class="campo"><label for="f-web">¿Tienes web?</label>
+<select id="f-web" name="tiene_web">
+<option value="">Elige una</option>
+<option>Sí, y funciona bien</option>
+<option>Sí, pero está anticuada</option>
+<option>No tengo web</option>
+</select></div>
+<div class="campo"><label for="f-pref">¿Cómo prefieres empezar?</label>
+<select id="f-pref" name="preferencia">
+<option value="">Como veas</option>
+<option>Que me lo montes y lo pruebo yo</option>
+<option>Una videollamada de 15 minutos</option>
+</select></div>
+</div>
+</div>
+</details>
+<input type="hidden" name="origen" id="f-origen" value="">
+<div class="trampa" aria-hidden="true">
           <label for="f-web-url">No rellenes este campo</label>
           <input id="f-web-url" name="web_url" type="text" tabindex="-1" autocomplete="off">
         </div>
@@ -504,7 +491,7 @@
           <li><a href="/alternativa-covermanager">Alternativa a CoverManager</a></li>
           <li><a href="/precios-covermanager">Precios de CoverManager</a></li>
           <li><a href="/software-reservas-restaurantes-gratis">Opciones gratuitas</a></li>
-          <li><a href="/calculadora">Calculadora</a></li>
+<li><a href="/calculadora">Calculadora</a></li>
           <li><a href="/reducir-no-shows-restaurante">Reducir no-shows</a></li>
         </ul>
       </div>
@@ -516,7 +503,7 @@
   </div>
 </footer>
 
-<script src="/formulario.js?v=20261005b" defer></script>
+<script src="/formulario.js?v=20261005c" defer></script>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
 </body>

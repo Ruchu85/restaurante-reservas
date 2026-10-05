@@ -23,10 +23,11 @@
   if (fuente) o.fuente = fuente;
   if (r || fuente) guardar(o);
 
-  // Personalización de la portada (solo donde la página lo pide).
+  // Personalización de la portada (solo donde la página lo pide). Se usa
+  // textContent, nunca innerHTML: el nombre viene de la URL.
   if (o.r && document.body.hasAttribute('data-saludo')) {
-    var pill = document.querySelector('.portada .pill');
-    if (pill) pill.textContent = 'Preparado para ' + o.r + ' · desde 20 €/mes';
+    var pill = document.querySelector('.pastilla, .portada .pill');
+    if (pill) pill.textContent = 'Preparado para ' + o.r + ' · desde 20 € al mes';
     var cierre = document.querySelector('.cierre h2');
     if (cierre) cierre.textContent = 'Pruébalo en ' + o.r;
   }
@@ -43,11 +44,21 @@
 
   f.addEventListener('submit', function (e) {
     e.preventDefault();
+    // La home lleva `novalidate`, así que la comprobación se hace aquí.
+    if (!f.checkValidity()) {
+      var mal = f.querySelector(':invalid');
+      out.className = 'resultado mal';
+      out.textContent = mal && mal.type === 'checkbox'
+        ? 'Marca la casilla de protección de datos para poder enviarlo.'
+        : 'Revisa los campos marcados: nombre, restaurante y un email válido son obligatorios.';
+      if (mal) mal.focus();
+      return;
+    }
     var datos = {};
     new FormData(f).forEach(function (v, k) { datos[k] = v; });
     var texto = boton.textContent;
     boton.disabled = true; boton.textContent = 'Enviando…';
-    out.className = 'resultado';
+    out.className = 'resultado'; out.textContent = '';
     fetch('/api/contacto', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

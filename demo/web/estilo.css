@@ -283,18 +283,6 @@ caption{caption-side:bottom;padding:12px 16px;font-size:13px;color:var(--suave);
 .capa-basica strong{color:#fff}
 .capa-basica a{color:#fff}
 
-/* Campos opcionales plegados: pedir solo nombre, restaurante y correo baja la
-   fricción del primer paso; lo demás lo pregunto yo al contestar. */
-.mas-datos{margin-top:14px}
-.mas-datos summary{font-size:14px;color:#d6d3d1;cursor:pointer;list-style:none;
-  text-decoration:underline;text-underline-offset:2px}
-.mas-datos summary::-webkit-details-marker{display:none}
-.mas-datos summary::before{content:"+ "}
-.mas-datos[open] summary::before{content:"\2212 "}
-.mas-datos summary span{color:#a8a29e}
-.mas-datos > div{margin-top:12px}
-.campo select{appearance:auto}
-
 .formulario .btn{width:100%;margin-top:16px;padding:14px 22px;font-size:16.5px}
 .aviso-form{font-size:13px;color:#a8a29e;margin-top:12px;text-align:center}
 .aviso-form a{color:#e7e5e4}
@@ -312,6 +300,18 @@ footer{border-top:1px solid var(--linea);padding:40px 0 30px;font-size:14px;colo
 .pie-rejilla a:hover{color:var(--acento2)}
 .pie-legal{border-top:1px solid var(--linea);margin-top:30px;padding-top:20px;
            font-size:13px;display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:space-between}
+
+/* Campos opcionales plegados: pedir solo nombre, restaurante y correo baja la
+   fricción del primer paso; lo demás lo pregunto yo al contestar. */
+.mas-datos{margin-top:14px}
+.mas-datos summary{font-size:14px;color:#d6d3d1;cursor:pointer;list-style:none;
+  text-decoration:underline;text-underline-offset:2px}
+.mas-datos summary::-webkit-details-marker{display:none}
+.mas-datos summary::before{content:"+ "}
+.mas-datos[open] summary::before{content:"\2212 "}
+.mas-datos summary span{color:#a8a29e}
+.mas-datos > div{margin-top:12px}
+.campo select{appearance:auto}
 
 /* ---------- Cómo empezar, en tres pasos ---------- */
 .pasos{display:grid;gap:18px;grid-template-columns:1fr;counter-reset:paso}
@@ -399,3 +399,6 @@ footer{border-top:1px solid var(--linea);padding:40px 0 30px;font-size:14px;colo
 @media(prefers-reduced-motion:reduce){
   .barra-relleno,.chip,.rng input[type=range]::-webkit-slider-thumb{transition:none}
 }
+
+p.entra a.enlace-calc-hero{display:inline-block;margin:26px 0 4px;font-size:16px;font-weight:600;color:#fcd34d;text-decoration:underline;text-underline-offset:4px}
+p.entra a.enlace-calc-hero:hover{color:#fff}

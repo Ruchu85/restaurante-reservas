@@ -1,5 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node build.mjs",
+  "outputDirectory": "public",
+  "installCommand": "echo sin-dependencias",
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [
@@ -33,6 +36,10 @@
         {
           "key": "Strict-Transport-Security",
           "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=()"
         }
       ]
     },
@@ -69,6 +76,24 @@
     },
     {
       "source": "/(estilo\\.css|formulario\\.js|calculadora\\.js)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/sitio.js",
       "headers": [
         {
           "key": "Cache-Control",
