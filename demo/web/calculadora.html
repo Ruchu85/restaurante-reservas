@@ -25,7 +25,7 @@
 <meta name="theme-color" content="#1c1917" media="(prefers-color-scheme: dark)">
 <link rel="preload" href="/fuentes/inter.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fuentes/fraunces.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/estilo.css">
+<link rel="stylesheet" href="/estilo.css?v=20261005b">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -113,73 +113,114 @@
 
 <section style="padding-top:10px">
   <div class="wrap">
-    <div class="calc">
-      <form class="calc-entrada" onsubmit="return false" aria-label="Datos del restaurante">
-        <h2>Tus números</h2>
-        <div class="calc-campo">
-          <label for="c-comensales">Comensales al mes que llegan por un portal</label>
-          <input id="c-comensales" type="number" inputmode="numeric" min="0" step="10" value="200">
-        </div>
-        <div class="calc-campo">
-          <label for="c-comision">Comisión por comensal (€)</label>
-          <input id="c-comision" type="number" inputmode="decimal" min="0" step="0.05" value="2.25">
-          <small>Rango que circula: 2 a 2,50 €. No es tarifa oficial.</small>
-        </div>
-        <div class="calc-campo">
-          <label for="c-reservas">Reservas totales al mes, de todos los canales</label>
-          <input id="c-reservas" type="number" inputmode="numeric" min="0" step="10" value="150">
-        </div>
-        <div class="calc-campo">
-          <label for="c-personas">Personas por reserva, de media</label>
-          <input id="c-personas" type="number" inputmode="decimal" min="1" step="0.1" value="2.8">
-        </div>
-        <div class="calc-campo">
-          <label for="c-ticket">Ticket medio por persona (€)</label>
-          <input id="c-ticket" type="number" inputmode="decimal" min="0" step="1" value="30">
-        </div>
-        <div class="calc-campo">
-          <label for="c-noshow">Tasa de no-shows (%)</label>
-          <input id="c-noshow" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="3.3">
-          <small>Media en España en 2025: en torno al 3,3 %.</small>
-        </div>
-      </form>
 
-      <div class="calc-salida" aria-live="polite">
-        <h2>Lo que sale</h2>
-
-        <div class="calc-tarjeta">
-          <div class="calc-etq">Comisión del portal</div>
-          <div class="calc-cifra" id="o-portal-mes">—</div>
-          <div class="calc-det">al mes · <span id="o-portal-anio">—</span> al año</div>
+    <div class="calc-hero" aria-live="polite">
+      <div class="calc-hero-izq">
+        <div class="calc-hero-etq" id="h-etq">Con cuota fija, al año te ahorrarías</div>
+        <div class="calc-hero-num" id="h-num">0 €</div>
+        <p class="calc-hero-sub" id="h-sub">Con tus números, si esos comensales vinieran igual por tu web.</p>
+        <a class="btn" href="#probar">Probar 30 días gratis</a>
+        <p class="calc-hero-nota">Sin tarjeta y sin permanencia.</p>
+      </div>
+      <div class="calc-hero-der">
+        <div class="calc-hero-tit">Lo que cuesta al año, con tus números</div>
+        <div class="barras" role="img" aria-label="Comparación del coste anual entre un portal de reservas, CoverManager y Cita-Lista">
+          <div class="barra">
+            <div class="barra-cab"><span>Portal de reservas <small>comisión por comensal</small></span><b id="v-portal">0 €</b></div>
+            <div class="barra-pista"><div class="barra-relleno portal" id="b-portal"></div></div>
+          </div>
+          <div class="barra">
+            <div class="barra-cab"><span>CoverManager <small>estimado</small></span><b id="v-cover">0 €</b></div>
+            <div class="barra-pista"><div class="barra-relleno cover" id="b-cover"></div></div>
+          </div>
+          <div class="barra">
+            <div class="barra-cab"><span>Cita-Lista <small>cuota fija</small></span><b id="v-cita">240 €</b></div>
+            <div class="barra-pista"><div class="barra-relleno cita" id="b-cita"></div></div>
+          </div>
         </div>
-
-        <div class="calc-tarjeta">
-          <div class="calc-etq">Con Cita-Lista</div>
-          <div class="calc-cifra verde">20 €</div>
-          <div class="calc-det">al mes, fijos · 240 € al año</div>
-        </div>
-
-        <div class="calc-tarjeta destacada">
-          <div class="calc-etq">Diferencia al año</div>
-          <div class="calc-cifra" id="o-ahorro">—</div>
-          <div class="calc-det" id="o-ahorro-nota">—</div>
-        </div>
-
-        <div class="calc-tarjeta">
-          <div class="calc-etq">Lo que te cuestan los no-shows</div>
-          <div class="calc-cifra" id="o-noshow-mes">—</div>
-          <div class="calc-det">al mes · <span id="o-noshow-anio">—</span> al año</div>
-        </div>
-
-        <div class="calc-tarjeta">
-          <div class="calc-etq">Si usaras CoverManager (estimado)</div>
-          <div class="calc-cifra" id="o-cover-mes">—</div>
-          <div class="calc-det">al mes · 79 € de cuota + ~1,50 € por reserva</div>
-        </div>
+        <p class="calc-hero-pie">CoverManager: 79 € de cuota + ~1,50 € por reserva. Cifras no oficiales.</p>
       </div>
     </div>
 
-    <div class="prosa" style="margin-top:34px">
+    <div class="calc-panel">
+      <div class="calc-card">
+        <div class="calc-card-cab">
+          <h2>Ajusta tus números</h2>
+          <div class="chips" role="group" aria-label="Ejemplos de partida">
+            <button type="button" class="chip" data-preset="pequeno">Local pequeño</button>
+            <button type="button" class="chip" data-preset="medio" aria-pressed="true">Local medio</button>
+            <button type="button" class="chip" data-preset="grande">Local grande</button>
+          </div>
+        </div>
+
+        <div class="rng">
+          <div class="rng-cab">
+            <label id="l-comensales" for="c-comensales">Comensales al mes que llegan por un portal</label>
+            <span class="rng-val"><input id="c-comensales" type="number" inputmode="numeric" min="0" step="10" value="200"><em>comensales</em></span>
+          </div>
+          <input id="c-comensales-r" type="range" min="0" max="1000" step="10" value="200" aria-labelledby="l-comensales">
+        </div>
+
+        <div class="rng">
+          <div class="rng-cab">
+            <label id="l-comision" for="c-comision">Comisión por comensal</label>
+            <span class="rng-val"><input id="c-comision" type="number" inputmode="decimal" min="0" step="0.05" value="2.25"><em>€</em></span>
+          </div>
+          <input id="c-comision-r" type="range" min="1" max="3.5" step="0.05" value="2.25" aria-labelledby="l-comision">
+          <small>Rango que circula: 2 a 2,50 €. No es tarifa oficial.</small>
+        </div>
+
+        <div class="rng">
+          <div class="rng-cab">
+            <label id="l-reservas" for="c-reservas">Reservas al mes, de todos los canales</label>
+            <span class="rng-val"><input id="c-reservas" type="number" inputmode="numeric" min="0" step="10" value="150"><em>reservas</em></span>
+          </div>
+          <input id="c-reservas-r" type="range" min="0" max="1000" step="10" value="150" aria-labelledby="l-reservas">
+        </div>
+
+        <div class="rng">
+          <div class="rng-cab">
+            <label id="l-personas" for="c-personas">Personas por reserva, de media</label>
+            <span class="rng-val"><input id="c-personas" type="number" inputmode="decimal" min="1" step="0.1" value="2.8"><em>personas</em></span>
+          </div>
+          <input id="c-personas-r" type="range" min="1" max="8" step="0.1" value="2.8" aria-labelledby="l-personas">
+        </div>
+
+        <div class="rng">
+          <div class="rng-cab">
+            <label id="l-ticket" for="c-ticket">Ticket medio por persona</label>
+            <span class="rng-val"><input id="c-ticket" type="number" inputmode="decimal" min="0" step="1" value="30"><em>€</em></span>
+          </div>
+          <input id="c-ticket-r" type="range" min="5" max="150" step="1" value="30" aria-labelledby="l-ticket">
+        </div>
+
+        <div class="rng">
+          <div class="rng-cab">
+            <label id="l-noshow" for="c-noshow">Tasa de no-shows</label>
+            <span class="rng-val"><input id="c-noshow" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="3.3"><em>%</em></span>
+          </div>
+          <input id="c-noshow-r" type="range" min="0" max="15" step="0.1" value="3.3" aria-labelledby="l-noshow">
+          <small>Media en España en 2025: en torno al 3,3 %.</small>
+        </div>
+      </div>
+
+      <div class="calc-card calc-noshow" aria-live="polite">
+        <div class="calc-noshow-icono" aria-hidden="true">🍽️</div>
+        <h2>Lo que te cuestan los no-shows</h2>
+        <div class="calc-noshow-num" id="o-noshow-mes">0 €</div>
+        <div class="calc-noshow-det">al mes · <b id="o-noshow-anio">0 €</b> al año</div>
+        <div class="calc-noshow-pers">
+          <b id="o-noshow-pers">0</b> comensales al mes que reservan y no aparecen
+        </div>
+        <p class="calc-noshow-txt">
+          Es el dato que casi nadie suma, y el que se puede recortar gratis con medidas que no
+          dependen de ningún programa.
+        </p>
+        <a class="calc-noshow-enlace" href="/reducir-no-shows-restaurante">Ver las siete medidas, de la más barata a la más cara →</a>
+      </div>
+    </div>
+
+    <div class="prosa" style="margin-top:38px">
       <div class="aviso" style="background:#fffbeb;border-color:#fde68a;color:#78350f">
         <b>Esto es una estimación, no un presupuesto.</b> Ni TheFork ni CoverManager publican
         tarifa abierta. Las cifras proceden de comparativas de terceros consultadas en
@@ -196,11 +237,6 @@
         y solo usan el portal porque es cómodo. Si no sabes cuántos son, el primer paso es
         medirlo, y
         <a href="/alternativa-thefork">aquí explico cómo hacerlo sin darte de baja de nada</a>.
-      </p>
-      <p>
-        El coste de los no-shows es el que casi nadie suma. Y es el que se puede recortar
-        gratis con medidas que no dependen de ningún programa:
-        <a href="/reducir-no-shows-restaurante">siete, ordenadas por coste</a>.
       </p>
     </div>
   </div>
@@ -391,8 +427,8 @@
   </div>
 </footer>
 
-<script src="/calculadora.js" defer></script>
-<script src="/formulario.js" defer></script>
+<script src="/calculadora.js?v=20261005b" defer></script>
+<script src="/formulario.js?v=20261005b" defer></script>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
 </body>
