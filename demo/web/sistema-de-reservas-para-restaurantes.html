@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sistema de reservas para restaurantes: cómo elegirlo</title>
+<meta name="description" content="Las ocho cosas que tiene que resolver un sistema de reservas, las tres que casi nadie comprueba y los modelos de cobro del mercado español.">
+<link rel="canonical" href="https://cita-lista.es/sistema-de-reservas-para-restaurantes">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<meta property="og:site_name" content="Cita-Lista">
+<meta property="og:locale" content="es_ES">
+<meta property="og:url" content="https://cita-lista.es/sistema-de-reservas-para-restaurantes">
+<meta property="og:title" content="Sistema de reservas para restaurantes: cómo elegirlo en 2026">
+<meta property="og:description" content="Las ocho cosas que tiene que resolver un programa de reservas, y las tres que casi nadie mira hasta que le explotan en el servicio.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://cita-lista.es/capturas/04-reservas.jpg">
+<meta property="og:image:width" content="1440">
+<meta property="og:image:height" content="900">
+<meta property="og:image:alt" content="Panel con las reservas del día de un restaurante">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#faf9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1c1917" media="(prefers-color-scheme: dark)">
+<link rel="preload" href="/fuentes/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fuentes/fraunces.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/estilo.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://cita-lista.es/" },
+        { "@type": "ListItem", "position": 2, "name": "Sistema de reservas para restaurantes", "item": "https://cita-lista.es/sistema-de-reservas-para-restaurantes" }
+      ]
+    },
+    {
+      "@type": "Article",
+      "headline": "Sistema de reservas para restaurantes: cómo elegirlo en 2026",
+      "description": "Qué tiene que hacer un sistema de reservas para restaurantes, qué modelos de cobro existen y cómo evitar dobles reservas y no-shows.",
+      "inLanguage": "es-ES",
+      "datePublished": "2026-09-07",
+      "dateModified": "2026-09-07",
+      "author": { "@type": "Person", "@id": "https://cita-lista.es/sobre-mi#persona", "name": "Pablo Fernández", "url": "https://cita-lista.es/sobre-mi" },
+      "publisher": { "@type": "Organization", "name": "Cita-Lista", "url": "https://cita-lista.es/", "logo": { "@type": "ImageObject", "url": "https://cita-lista.es/logo-citalista.png", "width": 512, "height": 512 } },
+      "image": "https://cita-lista.es/capturas/04-reservas.jpg",
+      "mainEntityOfPage": "https://cita-lista.es/sistema-de-reservas-para-restaurantes"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "¿Qué es un sistema de reservas para restaurantes?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Es el programa que sustituye al libro de reservas de papel. Recoge las reservas que entran por la web, por teléfono y en el mostrador, las coloca sobre las mesas reales del restaurante, impide que dos se pisen y guarda el historial de cada comensal. El buen indicador de que funciona es que el maître deja de contar mesas con el dedo."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cuál es la diferencia entre un sistema de reservas y un portal como TheFork?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Un sistema de reservas es una herramienta que gestiona las reservas que tú ya generas y cuyos clientes son tuyos. Un portal es además un canal de captación: te trae comensales nuevos a cambio de una comisión por cada uno, y esos comensales son clientes del portal, que los usa para recomendarles otros restaurantes. No son excluyentes, pero cobran de forma distinta y el dueño de los datos es distinto."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cómo se evitan las dobles reservas sobre la misma mesa?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La forma fiable es que la propia base de datos rechace el solapamiento, no que lo compruebe el programa antes de guardar. Si la comprobación está en el código, dos reservas que entran en el mismo instante pueden pasar las dos la validación y guardarse las dos. Con una restricción de exclusión en la base de datos, la segunda se rechaza siempre, aunque llegue en la misma milésima."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cuánto cuesta un sistema de reservas para un restaurante pequeño?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Hay planes gratuitos con límite de reservas, cuotas fijas que van de 20 a 200 € al mes y modelos de comisión por comensal en los que el coste crece con la ocupación. Para un restaurante independiente de 5 a 20 mesas, lo razonable es una cuota fija sin comisión por reserva: es la única que no penaliza llenar el comedor."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="/">Cita<span>·</span>Lista</a>
+    <nav class="menu" aria-label="Principal">
+      <a href="/sistema-de-reservas-para-restaurantes" aria-current="page">Sistema de reservas</a>
+      <a href="/pagina-web-para-restaurantes">Web para restaurantes</a>
+      <a href="/precios">Precios</a>
+      <a href="/alternativa-thefork">Alternativas</a>
+    </nav>
+    <a class="btn sm" href="#probar">Probar gratis</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="migas" aria-label="Migas de pan">
+    <a href="/">Inicio</a> › <span>Sistema de reservas para restaurantes</span>
+  </nav>
+</div>
+
+<main id="contenido">
+
+<section style="padding-top:34px">
+  <div class="wrap">
+    <div class="prosa">
+      <h1 style="font-size:clamp(29px,4.6vw,44px)">Sistema de reservas para restaurantes: cómo elegir el tuyo</h1>
+      <p class="fecha">Actualizado en septiembre de 2026 · Escrito por Pablo Fernández, que programó y mantiene Cita-Lista</p>
+
+      <div class="respuesta">
+        <p>
+          <strong>En corto:</strong> un sistema de reservas para restaurantes es el programa
+          que sustituye al libro de papel: recoge las reservas de la web, del teléfono y del
+          mostrador, las coloca sobre tus mesas reales, impide que se pisen y guarda el
+          historial de cada comensal.
+        </p>
+        <p>
+          Al elegirlo, lo que de verdad decide la factura no son las funciones, es
+          <strong>el modelo de cobro</strong>: cuota fija o comisión por comensal. Con
+          comisión, cuanto más lleno estés, más pagas.
+        </p>
+      </div>
+
+      <p class="entradilla">
+        Esta guía es lo que le contesto a un hostelero cuando me pregunta qué tiene que
+        mirar. No hay ranking de «los 10 mejores»: hay ocho cosas que el sistema tiene que
+        resolver y tres que casi nadie comprueba hasta que le explotan un sábado a las diez.
+      </p>
+
+      <h2>Qué hace exactamente un sistema de reservas</h2>
+      <p>
+        Un restaurante con reservas tiene tres entradas distintas: la gente que reserva por
+        internet a cualquier hora, la que llama por teléfono y la que se acerca a la puerta.
+        El libro de papel las junta todas en una hoja por día, y funciona hasta que el que
+        escribe no es el que lee, o hasta que alguien anota «8 pax» sin mirar que a esa hora
+        ya no queda mesa de ocho.
+      </p>
+      <p>
+        Un sistema de reservas hace tres cosas que el papel no puede hacer:
+      </p>
+      <ol>
+        <li>
+          <strong>Conoce tus mesas.</strong> No apunta «una reserva de 4 a las 21:00»: le
+          asigna la mesa 7 de la terraza, que tiene cuatro sillas, y bloquea esa mesa
+          durante el tiempo que dure el servicio.
+        </li>
+        <li>
+          <strong>Está disponible cuando tú no.</strong> La mitad de las reservas online
+          entran fuera del horario en que alguien puede coger el teléfono: por la noche
+          tarde y a media mañana, cuando estás con el género.
+        </li>
+        <li>
+          <strong>Recuerda.</strong> Que esta señora ya vino nueve veces, que es alérgica al
+          marisco y que en marzo te dejó una mesa de seis sin avisar. Eso el papel lo pierde
+          en cuanto pasas de página.
+        </li>
+      </ol>
+
+      <figure style="margin:30px 0">
+        <picture><source srcset="/capturas/04-reservas.webp" type="image/webp"><img src="/capturas/04-reservas.jpg" alt="Panel con las reservas del día: cada línea muestra el comensal, la mesa asignada, las alergias y los no-shows previos" loading="lazy"></picture>
+        <figcaption>
+          <b>El servicio del día en Cita-Lista</b>
+          <span>Cada reserva lleva colgada la información que la sala necesita antes de sentar a nadie.</span>
+        </figcaption>
+      </figure>
+
+      <h2>Las ocho cosas que tiene que resolver</h2>
+
+      <h3>1. Que no se pise una mesa jamás</h3>
+      <p>
+        Parece lo básico y es donde más sistemas fallan de forma sutil. La mayoría comprueba
+        la disponibilidad y después guarda. Entre esas dos operaciones hay unos milisegundos,
+        y si dos personas reservan la última mesa en el mismo instante, <strong>las dos pasan
+        la comprobación y las dos se guardan</strong>. Es raro, pero pasa justo los días de
+        más volumen, que son los que peor te viene.
+      </p>
+      <p>
+        La forma sólida es que lo impida la propia base de datos con una restricción de
+        exclusión: la segunda reserva se rechaza siempre, aunque llegue en la misma milésima,
+        porque no depende del orden en que se ejecute el programa. Cuando valores un sistema,
+        pregunta esto tal cual. La respuesta te dice mucho de quién lo ha construido.
+      </p>
+
+      <h3>2. Grupos grandes que no caben en una mesa</h3>
+      <p>
+        Un grupo de diez en un comedor donde la mesa más grande es de seis. El sistema tiene
+        que poder juntar dos mesas de la misma sala y tratarlas como una sola reserva, de
+        modo que ninguna de las dos se pueda vender por separado. Si no lo hace, alguien lo
+        apunta en una libreta aparte y ya has vuelto al papel.
+      </p>
+
+      <h3>3. Que la cocina no se ahogue</h3>
+      <p>
+        Cuarenta comensales repartidos por el servicio son un servicio normal. Cuarenta
+        comensales entrando todos a las 21:30 son una cocina bloqueada, veinte minutos de
+        espera en cada plato y reseñas malas. Hace falta poder limitar cuántos comensales
+        entran en cada franja, y —esto es lo importante— <strong>poder saltárselo</strong>
+        cuando el maître decide que hoy sí.
+      </p>
+
+      <h3>4. Reconocer al habitual antes de que llegue</h3>
+      <p>
+        La ficha del comensal se tiene que crear sola con cada reserva y acumular: cuántas
+        veces ha venido, qué le pasa con el gluten, si es de los que no aparecen. No es un
+        CRM de manual, es que quien coge el teléfono sepa con quién habla.
+      </p>
+
+      <h3>5. Los no-shows, con nombre y apellidos</h3>
+      <p>
+        La tasa media de reservas fantasma en España rondó el 3,3 % en 2025. Suena poco hasta
+        que lo pones en mesas: en un comedor de 40 plazas con dos turnos, son unas ocho
+        plazas perdidas por semana. Un sistema serio marca el no-show, lo acumula en la ficha
+        y te deja decidir qué haces con quien va por el tercero.
+        <a href="/reducir-no-shows-restaurante">Aquí están las siete medidas ordenadas por lo que cuestan</a>.
+      </p>
+
+      <h3>6. Confirmar y recordar sin que lo hagas tú</h3>
+      <p>
+        El correo de confirmación con enlace para cancelar hace dos cosas a la vez: tranquiliza
+        al cliente y te devuelve la mesa cuando cambia de planes, en vez de dejártela vacía.
+        El recordatorio el día antes reduce los no-shows de forma medible.
+      </p>
+
+      <h3>7. Que se vea bien en el móvil, los dos lados</h3>
+      <p>
+        El cliente reserva desde el móvil, casi siempre. Pero es que tú también consultas el
+        servicio desde el móvil, de pie, con una mano y en una sala con poca luz. Muchos
+        paneles son una hoja de cálculo disfrazada que en el teléfono no hay quien la use.
+      </p>
+
+      <h3>8. Cerrar días y cambiar horarios sin llamar a nadie</h3>
+      <p>
+        Vacaciones, el lunes que cierras, la boda que te ocupa el comedor entero. Tiene que
+        poder hacerlo el encargado en treinta segundos, no un soporte técnico en 48 horas.
+      </p>
+
+      <h2>Las tres que casi nadie comprueba</h2>
+
+      <h3>El servicio que cruza la medianoche</h3>
+      <p>
+        Si cierras a la una de la madrugada, una reserva de las 00:30 pertenece al servicio
+        del sábado, no al del domingo. Un número sorprendente de programas la manda al día
+        siguiente y te descuadra el listado, el aforo y los informes. Es fácil de probar:
+        pon un horario de cierre a la 01:00 y mira dónde cae.
+      </p>
+
+      <h3>De quién son los clientes</h3>
+      <p>
+        En un sistema de reservas, el comensal es tuyo. En un portal, el comensal es del
+        portal: sus datos alimentan las recomendaciones que le mandan del restaurante de al
+        lado. Pregunta si puedes exportar tu base de datos de clientes y qué pasa con ella
+        si te das de baja. Si la respuesta es vaga, ya sabes.
+      </p>
+
+      <h3>Qué pasa cuando escribes pidiendo ayuda</h3>
+      <p>
+        Un sábado a las nueve de la noche con el sistema caído no es momento para un
+        formulario de soporte. Antes de firmar, escribe una pregunta cualquiera al soporte
+        y mira cuánto tardan en contestar y quién contesta.
+      </p>
+
+      <h2>Los tres modelos de cobro, y cuál te conviene</h2>
+      <p>
+        Esta es la decisión que más dinero mueve, muy por encima de la lista de funciones.
+      </p>
+
+      <div class="tabla-caja">
+        <table>
+          <caption>
+            Comparación de modelos de cobro habituales en el mercado español a septiembre
+            de 2026. Los importes son órdenes de magnitud publicados por los propios
+            proveedores y por comparativas de terceros; confírmalos antes de contratar.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Modelo</th>
+              <th scope="col">Cómo cobra</th>
+              <th scope="col">A quién le conviene</th>
+              <th scope="col">El riesgo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Comisión por comensal</th>
+              <td>Un importe por cada persona sentada que venga del canal</td>
+              <td>Quien necesita que le traigan clientes nuevos y acepta pagar por captación</td>
+              <td class="no">La factura crece justo cuando llenas. Y los clientes son del portal</td>
+            </tr>
+            <tr>
+              <th scope="row">Cuota + coste por reserva</th>
+              <td>Una mensualidad y además un importe por reserva procesada</td>
+              <td>Grupos y restaurantes con estructura que necesitan funciones avanzadas</td>
+              <td class="no">Es el modelo más difícil de estimar: la cuota engaña</td>
+            </tr>
+            <tr>
+              <th scope="row">Cuota fija</th>
+              <td>Una mensualidad y nada más</td>
+              <td>Restaurantes independientes que ya tienen su clientela</td>
+              <td>No te trae clientes nuevos: eso lo tienes que hacer tú</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        La conclusión práctica: si ya llenas y lo que quieres es <strong>ordenar</strong> las
+        reservas que tienes, la comisión por comensal es pagar por algo que no necesitas. Si
+        estás vacío y necesitas que te descubran, un portal tiene sentido —pero como canal de
+        marketing, no como tu sistema de gestión.
+      </p>
+      <p>
+        Mucha gente acaba con los dos: el portal como escaparate y un sistema propio como
+        libro de reservas. Es una combinación cara pero defendible.
+        <a href="/alternativa-thefork">Aquí lo desarrollo con números concretos</a>.
+      </p>
+
+      <h2>Cómo lo hace Cita-Lista</h2>
+      <p>
+        Con el sesgo evidente de que lo he hecho yo, este es el resumen honesto de dónde
+        encaja:
+      </p>
+      <ul>
+        <li>
+          <strong>Cuota fija de 20 € al mes</strong>, sin comisión por comensal ni coste por
+          reserva. Reservas y usuarios ilimitados.
+        </li>
+        <li>
+          <strong>El anti-solapamiento está en la base de datos</strong>, no en el código: es
+          el punto 1 de esta guía y es la razón por la que lo puse primero.
+        </li>
+        <li>
+          <strong>Mesas juntadas, límite por franja saltable, servicios de madrugada</strong>
+          y ficha de comensal con visitas, alergias y no-shows.
+        </li>
+        <li>
+          <strong>La web del restaurante</strong>, si la quieres, por 150 € una sola vez. Eso
+          es lo que no hace casi nadie más.
+        </li>
+        <li>
+          <strong>Lo que no hace:</strong> no te trae comensales nuevos, no tiene integración
+          con TPV todavía, no cobra anticipos con tarjeta y el soporte soy yo. Si necesitas
+          esas cosas, hay productos mejores y te los digo.
+        </li>
+      </ul>
+
+      <p>
+        La forma más rápida de juzgarlo es entrar y trastear:
+        <a href="/demo" target="_blank" rel="noopener">la demo se abre sin usuario ni contraseña</a>
+        y tiene datos de un restaurante ficticio con un año de reservas.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cabecera">
+      <div class="eyebrow">Preguntas frecuentes</div>
+      <h2>Lo que se pregunta más</h2>
+    </div>
+    <div class="faq">
+      <details>
+        <summary>¿Qué es un sistema de reservas para restaurantes?</summary>
+        <div>
+          <p>
+            El programa que sustituye al libro de reservas de papel. Recoge las reservas de la
+            web, del teléfono y del mostrador, las coloca sobre las mesas reales del
+            restaurante, impide que dos se pisen y guarda el historial de cada comensal.
+          </p>
+        </div>
+      </details>
+      <details>
+        <summary>¿En qué se diferencia de un portal como TheFork?</summary>
+        <div>
+          <p>
+            Un sistema de reservas gestiona las reservas que tú ya generas, y sus clientes son
+            tuyos. Un portal es además un canal de captación: te trae comensales a cambio de
+            una comisión, y esos comensales son clientes del portal. No son excluyentes, pero
+            cobran distinto y el dueño de los datos es distinto.
+          </p>
+        </div>
+      </details>
+      <details>
+        <summary>¿Cómo se evitan las dobles reservas de verdad?</summary>
+        <div>
+          <p>
+            Haciendo que la rechace la base de datos con una restricción de exclusión, no
+            comprobándolo en el programa antes de guardar. Si la comprobación está en el
+            código, dos reservas simultáneas pueden pasarla las dos y guardarse las dos.
+          </p>
+        </div>
+      </details>
+      <details>
+        <summary>¿Cuánto cuesta para un restaurante pequeño?</summary>
+        <div>
+          <p>
+            Hay planes gratuitos con límite de reservas, cuotas fijas de 20 a 200 € al mes y
+            modelos de comisión donde el coste sube con la ocupación. Para 5-20 mesas, lo
+            razonable es cuota fija sin comisión: es la única que no penaliza llenar.
+            <a href="/precios">Aquí está el desglose de lo que cuesta Cita-Lista</a>.
+          </p>
+        </div>
+      </details>
+      <details>
+        <summary>¿Puedo seguir cogiendo reservas por teléfono?</summary>
+        <div>
+          <p>
+            Sí, y es lo normal. Las reservas de teléfono y mostrador se apuntan en el mismo
+            panel, así que el aforo y las mesas se cuentan juntos. Los informes te dicen luego
+            qué porcentaje entra por cada vía, que suele sorprender.
+          </p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap estrecho">
+    <div class="cabecera">
+      <div class="eyebrow">Sigue por aquí</div>
+      <h2>Lo siguiente que suele leerse</h2>
+    </div>
+    <div class="siguiente">
+      <div class="sig-item"><a href="/precios">Cuánto cuesta Cita-Lista</a><span>20 €/mes, y 150 € una vez si quieres la web.</span></div>
+      <div class="sig-item"><a href="/pagina-web-para-restaurantes">La web del restaurante</a><span>Por qué la web y las reservas juntas funcionan mejor.</span></div>
+      <div class="sig-item"><a href="/alternativa-thefork">Alternativa a TheFork</a><span>Qué cambia al dejar la comisión por comensal.</span></div>
+      <div class="sig-item"><a href="/reducir-no-shows-restaurante">Reducir los no-shows</a><span>Siete medidas por coste y por lo que devuelven.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="probar">
+  <div class="wrap">
+    <div class="cierre">
+      <h2>Pruébalo con tus mesas y tus horarios</h2>
+      <p>
+        30 días gratis, montado con la configuración real de tu restaurante. Sin
+        tarjeta, sin comisiones y sin permanencia.
+      </p>
+      <form class="formulario" id="form-prueba" method="post" action="/api/contacto">
+        <div class="campos dos">
+          <div class="campo">
+            <label for="f-nombre">Tu nombre</label>
+            <input id="f-nombre" name="nombre" type="text" required autocomplete="name">
+          </div>
+          <div class="campo">
+            <label for="f-restaurante">Tu restaurante</label>
+            <input id="f-restaurante" name="restaurante" type="text" required autocomplete="organization">
+          </div>
+        </div>
+        <div class="campos" style="margin-top:12px">
+          <div class="campo">
+            <label for="f-email">Email</label>
+            <input id="f-email" name="email" type="email" required autocomplete="email">
+          </div>
+        </div>
+        <details class="mas-datos">
+          <summary>Añadir teléfono, mesas y cómo prefieres empezar <span>(opcional)</span></summary>
+          <div>
+            <div class="campos dos">
+              <div class="campo">
+                <label for="f-telefono">Teléfono</label>
+                <input id="f-telefono" name="telefono" type="tel" autocomplete="tel">
+              </div>
+              <div class="campo">
+                <label for="f-mesas">¿Cuántas mesas tienes?</label>
+                <input id="f-mesas" name="mesas" type="text" inputmode="numeric" placeholder="Por ejemplo, 12">
+              </div>
+            </div>
+            <div class="campos dos" style="margin-top:12px">
+              <div class="campo">
+                <label for="f-web">¿Tienes web?</label>
+                <select id="f-web" name="tiene_web">
+                  <option value="">Elige una</option>
+                  <option>Sí, y funciona bien</option>
+                  <option>Sí, pero está anticuada</option>
+                  <option>No tengo web</option>
+                </select>
+              </div>
+              <div class="campo">
+                <label for="f-pref">¿Cómo prefieres empezar?</label>
+                <select id="f-pref" name="preferencia">
+                  <option value="">Como veas</option>
+                  <option>Que me lo montes y lo pruebo yo</option>
+                  <option>Una videollamada de 15 minutos</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </details>
+        <input type="hidden" name="origen" id="f-origen" value="">
+        <div class="trampa" aria-hidden="true">
+          <label for="f-web-url">No rellenes este campo</label>
+          <input id="f-web-url" name="web_url" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="consentimiento">
+          <input id="f-consiento" name="consiento" type="checkbox" required>
+          <label for="f-consiento">
+            He leído y acepto cómo se tratan mis datos.
+          </label>
+        </div>
+        <details class="capa-basica">
+          <summary>Información básica sobre protección de datos</summary>
+          <div>
+            <p><strong>Responsable:</strong> Pablo Fernández (Cita-Lista).</p>
+            <p><strong>Finalidad:</strong> atender tu solicitud, montarte la prueba de 30 días
+              y responderte. Nada más: no hay newsletter ni envíos comerciales que no hayas pedido.</p>
+            <p><strong>Legitimación:</strong> tu consentimiento, que marcas en la casilla de arriba.</p>
+            <p><strong>Destinatarios:</strong> el correo se entrega a través de Resend, el proveedor
+              de envío, que actúa como encargado del tratamiento. No se ceden tus datos a nadie más
+              ni se usan para publicidad.</p>
+            <p><strong>Conservación:</strong> mientras dure la conversación y, si no contratas,
+              hasta que me pidas que los borre.</p>
+            <p><strong>Derechos:</strong> acceder, rectificar, suprimir, oponerte y portar tus datos
+              escribiendo a
+              <a href="mailto:pablo.fernandez@cita-lista.es">pablo.fernandez@cita-lista.es</a>.
+              También puedes reclamar ante la Agencia Española de Protección de Datos.</p>
+          </div>
+        </details>
+        <button class="btn" type="submit">Quiero probarlo 30 días gratis</button>
+        <p class="aviso-form">
+          Sin tarjeta y sin permanencia. Te contesto yo, normalmente el mismo día.<br>
+          O escríbeme a <a href="mailto:pablo.fernandez@cita-lista.es">pablo.fernandez@cita-lista.es</a>.
+        </p>
+        <div class="resultado" id="form-resultado" role="status" aria-live="polite"></div>
+      </form>
+      <a class="btn btn-2" href="/demo" target="_blank" rel="noopener">
+        Entrar en la demo
+      </a>
+      <div class="nota">La demo es un restaurante ficticio. Entras sin usuario ni contraseña.</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="pie-rejilla">
+      <div>
+        <b>Cita·Lista</b>
+        <p style="max-width:340px">
+          Reservas y web propia para restaurantes independientes. Cuota fija,
+          sin comisiones por comensal. Hecho y mantenido por una persona, en España.
+        </p>
+      </div>
+      <div>
+        <b>Producto</b>
+        <ul>
+          <li><a href="/sistema-de-reservas-para-restaurantes">Sistema de reservas</a></li>
+          <li><a href="/pagina-web-para-restaurantes">Web para restaurantes</a></li>
+          <li><a href="/precios">Precios</a></li>
+          <li><a href="/sobre-mi">Quién está detrás</a></li>
+          <li><a href="/demo">Demo en vivo</a></li>
+        </ul>
+      </div>
+      <div>
+        <b>Comparativas</b>
+        <ul>
+          <li><a href="/alternativa-thefork">Alternativa a TheFork</a></li>
+          <li><a href="/precios-thefork">Comisiones de TheFork</a></li>
+          <li><a href="/alternativa-covermanager">Alternativa a CoverManager</a></li>
+          <li><a href="/precios-covermanager">Precios de CoverManager</a></li>
+          <li><a href="/software-reservas-restaurantes-gratis">Opciones gratuitas</a></li>
+          <li><a href="/calculadora">Calculadora</a></li>
+          <li><a href="/reducir-no-shows-restaurante">Reducir no-shows</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="pie-legal">
+      <span>© 2026 Cita-Lista · <a href="/sobre-mi">Quién está detrás</a> · <a href="mailto:pablo.fernandez@cita-lista.es">pablo.fernandez@cita-lista.es</a></span>
+      <span>TheFork y CoverManager son marcas de sus respectivos titulares. Esta web no está asociada a ellas.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/formulario.js" defer></script>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

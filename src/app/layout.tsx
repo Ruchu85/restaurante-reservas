@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Fraunces } from "next/font/google";
 import { Toaster } from "sonner";
+import { esDemoPublica } from "@/lib/demo-publica";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -34,6 +35,13 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "Restaurante Demo — Reservas Online",
   description: "Reserva tu mesa en Restaurante Demo. Cocina mediterránea de autor en Madrid.",
+  // El restaurante de la demo es ficticio. Indexado competía con la página de
+  // producto por las búsquedas de la marca: quien buscaba «Cita-Lista» acababa
+  // en un restaurante que no existe. El `robots.txt` ya lo bloquea, pero una
+  // URL enlazada desde fuera puede indexarse igual sin esta cabecera.
+  ...(esDemoPublica() && {
+    robots: { index: false, follow: true, nocache: true },
+  }),
 };
 
 /**

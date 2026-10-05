@@ -1,0 +1,54 @@
+# Cita-Lista
+
+> Software de reservas y web propia para restaurantes independientes en España.
+> Cuota fija de 20 € al mes sin comisión por comensal, y 150 € de pago único si
+> además se quiere la web del restaurante. Creado y mantenido por Pablo Fernández.
+
+## Datos clave
+
+- **Precio:** 20 €/mes el sistema de reservas. 0 € por reserva. 150 € una sola vez por la web.
+- **Sin permanencia, sin coste de alta** en el plan de reservas, sin comisión por comensal.
+- **Prueba:** 30 días gratis, sin tarjeta, montado con las mesas y horarios reales del restaurante.
+- **Demo pública:** /demo — se abre sin usuario ni contraseña, con
+  datos de un restaurante ficticio.
+- **Contacto:** pablo.fernandez@cita-lista.es
+- **Ámbito:** España.
+
+## Qué hace
+
+Panel de sala con el servicio del día, ficha de comensal con historial de visitas,
+alergias y no-shows, gestión de mesas y salas, mesas juntadas para grupos grandes,
+límite de comensales por franja horaria, servicios que cruzan la medianoche,
+confirmación por email con enlace de cancelación, avisos por WhatsApp e informes de
+ocupación y tasa de no-show. La prevención de solapamientos se aplica en la base de
+datos mediante una restricción de exclusión, no en el código de la aplicación.
+
+## Qué NO hace
+
+No es un portal de reservas y no capta clientes nuevos. No tiene integración con TPV,
+no cobra anticipos ni depósitos con tarjeta, no gestiona varios locales con central de
+reservas y no tiene app móvil nativa (es web adaptada a móvil). El soporte lo presta una
+sola persona, sin acuerdo de nivel de servicio. Para esas necesidades hay productos
+mejores, como CoverManager.
+
+## Páginas
+
+- [Inicio](https://cita-lista.es/): resumen del producto y comparación de coste mensual.
+- [Precios](https://cita-lista.es/precios): los dos planes, qué no cuesta más y preguntas frecuentes.
+- [Sistema de reservas para restaurantes](https://cita-lista.es/sistema-de-reservas-para-restaurantes): guía de las ocho cosas que debe resolver un sistema de reservas y los tres modelos de cobro del mercado.
+- [Página web para restaurantes](https://cita-lista.es/pagina-web-para-restaurantes): qué incluye la web, qué cuesta una web de restaurante en el mercado español y el proceso de encargo.
+- [Alternativa a TheFork](https://cita-lista.es/alternativa-thefork): comparación del modelo de comisión por comensal frente a cuota fija, incluyendo qué se pierde al abandonar el portal. TheFork operaba en España como ElTenedor.
+- [Comisiones y precios de TheFork](https://cita-lista.es/precios-thefork): recopilación de lo que las fuentes públicas dicen sobre su comisión por comensal, con el grado de fiabilidad de cada cifra.
+- [Alternativa a CoverManager](https://cita-lista.es/alternativa-covermanager): comparación función a función y por perfil de restaurante.
+- [Precios de CoverManager](https://cita-lista.es/precios-covermanager): recopilación de lo que las fuentes públicas dicen sobre su precio, con su grado de fiabilidad.
+- [Software de reservas gratis](https://cita-lista.es/software-reservas-restaurantes-gratis): qué planes gratuitos existen de verdad en España, dónde está el límite de cada uno y cuándo lo gratuito acaba saliendo más caro. Cita-Lista no tiene plan gratuito.
+- [Calculadora](https://cita-lista.es/calculadora): herramienta gratuita que estima cuánto se paga al año en comisiones por comensal y cuánto cuestan los no-shows. Se calcula en el navegador, sin guardar datos.
+- [Reducir los no-shows](https://cita-lista.es/reducir-no-shows-restaurante): siete medidas ordenadas por coste y por efecto.
+- [Quién está detrás](https://cita-lista.es/sobre-mi): quién construye y mantiene el producto, qué implica que sea una sola persona y qué limitaciones tiene por eso.
+
+## Nota sobre las cifras de terceros
+
+Ni TheFork ni CoverManager publican tarifas abiertas. Todas las cifras sobre sus precios
+que aparecen en este sitio proceden de comparativas de terceros consultadas en septiembre
+de 2026, están marcadas como no oficiales y se acompañan de su grado de fiabilidad. Los
+precios de Cita-Lista sí son oficiales.

@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora de comisiones de TheFork y no-shows</title>
+<meta name="description" content="Calcula en 20 segundos cuánto pagas al año en comisiones por comensal y cuánto te cuestan los no-shows, y compáralo con una cuota fija de 20 €/mes.">
+<link rel="canonical" href="https://cita-lista.es/calculadora">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<meta property="og:site_name" content="Cita-Lista">
+<meta property="og:locale" content="es_ES">
+<meta property="og:url" content="https://cita-lista.es/calculadora">
+<meta property="og:title" content="Calculadora de comisiones de TheFork y no-shows">
+<meta property="og:description" content="Cuánto pagas al año en comisiones por comensal y cuánto te cuestan los no-shows. Con tus números, en 20 segundos.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://cita-lista.es/capturas/16-informes-compuesto.jpg">
+<meta property="og:image:width" content="976">
+<meta property="og:image:height" content="388">
+<meta property="og:image:alt" content="Informe de comensales del mes con el origen de cada reserva">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#faf9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1c1917" media="(prefers-color-scheme: dark)">
+<link rel="preload" href="/fuentes/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fuentes/fraunces.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/estilo.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://cita-lista.es/" },
+        { "@type": "ListItem", "position": 2, "name": "Calculadora", "item": "https://cita-lista.es/calculadora" }
+      ]
+    },
+    {
+      "@type": "WebApplication",
+      "name": "Calculadora de comisiones y no-shows para restaurantes",
+      "url": "https://cita-lista.es/calculadora",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Navegador web",
+      "inLanguage": "es-ES",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+      "publisher": { "@type": "Organization", "name": "Cita-Lista", "url": "https://cita-lista.es/", "logo": { "@type": "ImageObject", "url": "https://cita-lista.es/logo-citalista.png", "width": 512, "height": 512 } },
+      "author": { "@type": "Person", "@id": "https://cita-lista.es/sobre-mi#persona", "name": "Pablo Fernández", "url": "https://cita-lista.es/sobre-mi" }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "¿Cómo se calcula la comisión de TheFork?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "TheFork no publica su tarifa. Las comparativas de terceros consultadas en septiembre de 2026 sitúan la comisión por comensal sentado en el entorno de 2 a 2,50 €. La calculadora multiplica los comensales que llegan por el portal cada mes por esa cifra, que puedes cambiar. Es una estimación, no un presupuesto."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "¿Cuánto cuestan los no-shows en un restaurante?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Se calcula multiplicando las personas que reservan cada mes por la tasa de reservas fantasma y por el ticket medio. La tasa media en España se situó en torno al 3,3 % en 2025 según datos del sector, aunque cada restaurante tiene la suya."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="/">Cita<span>·</span>Lista</a>
+    <nav class="menu" aria-label="Principal">
+      <a href="/sistema-de-reservas-para-restaurantes">Sistema de reservas</a>
+      <a href="/pagina-web-para-restaurantes">Web para restaurantes</a>
+      <a href="/precios">Precios</a>
+      <a href="/alternativa-thefork">Alternativas</a>
+    </nav>
+    <a class="btn sm" href="#probar">Probar gratis</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="migas" aria-label="Migas de pan">
+    <a href="/">Inicio</a> › <span>Calculadora</span>
+  </nav>
+</div>
+
+<main id="contenido">
+
+<div class="wrap">
+  <div class="portada">
+    <span class="pill">Con tus números · 20 segundos</span>
+    <h1>Calculadora de comisiones y de no-shows</h1>
+    <p class="sub">
+      Cuánto pagas al año por comensal en un portal de reservas, cuánto te
+      cuestan las mesas que no aparecen, y qué cambiaría con una cuota fija.
+      No guardo lo que escribes.
+    </p>
+  </div>
+</div>
+
+<section style="padding-top:10px">
+  <div class="wrap">
+    <div class="calc">
+      <form class="calc-entrada" onsubmit="return false" aria-label="Datos del restaurante">
+        <h2>Tus números</h2>
+        <div class="calc-campo">
+          <label for="c-comensales">Comensales al mes que llegan por un portal</label>
+          <input id="c-comensales" type="number" inputmode="numeric" min="0" step="10" value="200">
+        </div>
+        <div class="calc-campo">
+          <label for="c-comision">Comisión por comensal (€)</label>
+          <input id="c-comision" type="number" inputmode="decimal" min="0" step="0.05" value="2.25">
+          <small>Rango que circula: 2 a 2,50 €. No es tarifa oficial.</small>
+        </div>
+        <div class="calc-campo">
+          <label for="c-reservas">Reservas totales al mes, de todos los canales</label>
+          <input id="c-reservas" type="number" inputmode="numeric" min="0" step="10" value="150">
+        </div>
+        <div class="calc-campo">
+          <label for="c-personas">Personas por reserva, de media</label>
+          <input id="c-personas" type="number" inputmode="decimal" min="1" step="0.1" value="2.8">
+        </div>
+        <div class="calc-campo">
+          <label for="c-ticket">Ticket medio por persona (€)</label>
+          <input id="c-ticket" type="number" inputmode="decimal" min="0" step="1" value="30">
+        </div>
+        <div class="calc-campo">
+          <label for="c-noshow">Tasa de no-shows (%)</label>
+          <input id="c-noshow" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="3.3">
+          <small>Media en España en 2025: en torno al 3,3 %.</small>
+        </div>
+      </form>
+
+      <div class="calc-salida" aria-live="polite">
+        <h2>Lo que sale</h2>
+
+        <div class="calc-tarjeta">
+          <div class="calc-etq">Comisión del portal</div>
+          <div class="calc-cifra" id="o-portal-mes">—</div>
+          <div class="calc-det">al mes · <span id="o-portal-anio">—</span> al año</div>
+        </div>
+
+        <div class="calc-tarjeta">
+          <div class="calc-etq">Con Cita-Lista</div>
+          <div class="calc-cifra verde">20 €</div>
+          <div class="calc-det">al mes, fijos · 240 € al año</div>
+        </div>
+
+        <div class="calc-tarjeta destacada">
+          <div class="calc-etq">Diferencia al año</div>
+          <div class="calc-cifra" id="o-ahorro">—</div>
+          <div class="calc-det" id="o-ahorro-nota">—</div>
+        </div>
+
+        <div class="calc-tarjeta">
+          <div class="calc-etq">Lo que te cuestan los no-shows</div>
+          <div class="calc-cifra" id="o-noshow-mes">—</div>
+          <div class="calc-det">al mes · <span id="o-noshow-anio">—</span> al año</div>
+        </div>
+
+        <div class="calc-tarjeta">
+          <div class="calc-etq">Si usaras CoverManager (estimado)</div>
+          <div class="calc-cifra" id="o-cover-mes">—</div>
+          <div class="calc-det">al mes · 79 € de cuota + ~1,50 € por reserva</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prosa" style="margin-top:34px">
+      <div class="aviso" style="background:#fffbeb;border-color:#fde68a;color:#78350f">
+        <b>Esto es una estimación, no un presupuesto.</b> Ni TheFork ni CoverManager publican
+        tarifa abierta. Las cifras proceden de comparativas de terceros consultadas en
+        septiembre de 2026 y las fuentes están enlazadas en
+        <a href="/precios-thefork">comisiones de TheFork</a> y en
+        <a href="/precios-covermanager">precios de CoverManager</a>. Cámbialas por las tuyas
+        si las conoces. La de Cita-Lista sí es oficial.
+      </div>
+
+      <h2>Cómo leer el resultado</h2>
+      <p>
+        La comisión no es dinero tirado si esos comensales no te habrían encontrado de otra
+        forma: ahí es publicidad. Es dinero tirado si la mitad son vecinos que ya te conocían
+        y solo usan el portal porque es cómodo. Si no sabes cuántos son, el primer paso es
+        medirlo, y
+        <a href="/alternativa-thefork">aquí explico cómo hacerlo sin darte de baja de nada</a>.
+      </p>
+      <p>
+        El coste de los no-shows es el que casi nadie suma. Y es el que se puede recortar
+        gratis con medidas que no dependen de ningún programa:
+        <a href="/reducir-no-shows-restaurante">siete, ordenadas por coste</a>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cabecera">
+      <div class="eyebrow">Preguntas frecuentes</div>
+      <h2>Sobre la calculadora</h2>
+    </div>
+    <div class="faq">
+      <details>
+        <summary>¿Cómo se calcula la comisión de TheFork?</summary>
+        <div>
+          <p>
+            TheFork no publica su tarifa. Las comparativas de terceros de septiembre de 2026
+            sitúan la comisión por comensal sentado en el entorno de <strong>2 a 2,50 €</strong>.
+            La calculadora multiplica los comensales que llegan por el portal cada mes por esa
+            cifra, que puedes cambiar. Es una estimación, no un presupuesto.
+          </p>
+        </div>
+      </details>
+      <details>
+        <summary>¿Cómo se calcula el coste de los no-shows?</summary>
+        <div>
+          <p>
+            Personas que reservan al mes (reservas por personas por reserva), por la tasa de
+            no-shows, por el ticket medio. La media en España fue de en torno al
+            <strong>3,3 % en 2025</strong>; la tuya puede ser otra, y por eso es editable.
+          </p>
+        </div>
+      </details>
+      <details>
+        <summary>¿Guardáis lo que escribo?</summary>
+        <div>
+          <p>
+            No. Los cálculos se hacen en tu navegador y no se envía nada a ningún servidor.
+          </p>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section id="probar">
+  <div class="wrap">
+    <div class="cierre">
+      <h2>Si las cuentas te salen, pruébalo</h2>
+      <p>
+        30 días sin tarjeta, montado por mí con tus mesas y tus horarios. Si no te encaja,
+        no hay nada que cancelar.
+      </p>
+      <form class="formulario" id="form-prueba" method="post" action="/api/contacto">
+        <div class="campos dos">
+          <div class="campo">
+            <label for="f-nombre">Tu nombre</label>
+            <input id="f-nombre" name="nombre" type="text" required autocomplete="name">
+          </div>
+          <div class="campo">
+            <label for="f-restaurante">Tu restaurante</label>
+            <input id="f-restaurante" name="restaurante" type="text" required autocomplete="organization">
+          </div>
+        </div>
+        <div class="campos" style="margin-top:12px">
+          <div class="campo">
+            <label for="f-email">Email</label>
+            <input id="f-email" name="email" type="email" required autocomplete="email">
+          </div>
+        </div>
+        <details class="mas-datos">
+          <summary>Añadir teléfono, mesas y cómo prefieres empezar <span>(opcional)</span></summary>
+          <div>
+            <div class="campos dos">
+              <div class="campo">
+                <label for="f-telefono">Teléfono</label>
+                <input id="f-telefono" name="telefono" type="tel" autocomplete="tel">
+              </div>
+              <div class="campo">
+                <label for="f-mesas">¿Cuántas mesas tienes?</label>
+                <input id="f-mesas" name="mesas" type="text" inputmode="numeric" placeholder="Por ejemplo, 12">
+              </div>
+            </div>
+            <div class="campos dos" style="margin-top:12px">
+              <div class="campo">
+                <label for="f-web">¿Tienes web?</label>
+                <select id="f-web" name="tiene_web">
+                  <option value="">Elige una</option>
+                  <option>Sí, y funciona bien</option>
+                  <option>Sí, pero está anticuada</option>
+                  <option>No tengo web</option>
+                </select>
+              </div>
+              <div class="campo">
+                <label for="f-pref">¿Cómo prefieres empezar?</label>
+                <select id="f-pref" name="preferencia">
+                  <option value="">Como veas</option>
+                  <option>Que me lo montes y lo pruebo yo</option>
+                  <option>Una videollamada de 15 minutos</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </details>
+        <input type="hidden" name="origen" id="f-origen" value="">
+        <div class="trampa" aria-hidden="true">
+          <label for="f-web-url">No rellenes este campo</label>
+          <input id="f-web-url" name="web_url" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="consentimiento">
+          <input id="f-consiento" name="consiento" type="checkbox" required>
+          <label for="f-consiento">
+            He leído y acepto cómo se tratan mis datos.
+          </label>
+        </div>
+        <details class="capa-basica">
+          <summary>Información básica sobre protección de datos</summary>
+          <div>
+            <p><strong>Responsable:</strong> Pablo Fernández (Cita-Lista).</p>
+            <p><strong>Finalidad:</strong> atender tu solicitud, montarte la prueba de 30 días
+              y responderte. Nada más: no hay newsletter ni envíos comerciales que no hayas pedido.</p>
+            <p><strong>Legitimación:</strong> tu consentimiento, que marcas en la casilla de arriba.</p>
+            <p><strong>Destinatarios:</strong> el correo se entrega a través de Resend, el proveedor
+              de envío, que actúa como encargado del tratamiento. No se ceden tus datos a nadie más
+              ni se usan para publicidad.</p>
+            <p><strong>Conservación:</strong> mientras dure la conversación y, si no contratas,
+              hasta que me pidas que los borre.</p>
+            <p><strong>Derechos:</strong> acceder, rectificar, suprimir, oponerte y portar tus datos
+              escribiendo a
+              <a href="mailto:pablo.fernandez@cita-lista.es">pablo.fernandez@cita-lista.es</a>.
+              También puedes reclamar ante la Agencia Española de Protección de Datos.</p>
+          </div>
+        </details>
+        <button class="btn" type="submit">Quiero probarlo 30 días gratis</button>
+        <p class="aviso-form">
+          Sin tarjeta y sin permanencia. Te contesto yo, normalmente el mismo día.<br>
+          O escríbeme a <a href="mailto:pablo.fernandez@cita-lista.es">pablo.fernandez@cita-lista.es</a>.
+        </p>
+        <div class="resultado" id="form-resultado" role="status" aria-live="polite"></div>
+      </form>
+      <a class="btn btn-2" href="/demo" target="_blank" rel="noopener">
+        Antes, ver la demo
+      </a>
+      <div class="nota">La demo es un restaurante ficticio. Entras sin usuario ni contraseña.</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="pie-rejilla">
+      <div>
+        <b>Cita·Lista</b>
+        <p style="max-width:340px">
+          Reservas y web propia para restaurantes independientes. Cuota fija,
+          sin comisiones por comensal. Hecho y mantenido por una persona, en España.
+        </p>
+      </div>
+      <div>
+        <b>Producto</b>
+        <ul>
+          <li><a href="/sistema-de-reservas-para-restaurantes">Sistema de reservas</a></li>
+          <li><a href="/pagina-web-para-restaurantes">Web para restaurantes</a></li>
+          <li><a href="/precios">Precios</a></li>
+          <li><a href="/sobre-mi">Quién está detrás</a></li>
+          <li><a href="/demo">Demo en vivo</a></li>
+        </ul>
+      </div>
+      <div>
+        <b>Comparativas</b>
+        <ul>
+          <li><a href="/alternativa-thefork">Alternativa a TheFork</a></li>
+          <li><a href="/precios-thefork">Comisiones de TheFork</a></li>
+          <li><a href="/alternativa-covermanager">Alternativa a CoverManager</a></li>
+          <li><a href="/precios-covermanager">Precios de CoverManager</a></li>
+          <li><a href="/software-reservas-restaurantes-gratis">Opciones gratuitas</a></li>
+          <li><a href="/calculadora">Calculadora</a></li>
+          <li><a href="/reducir-no-shows-restaurante">Reducir no-shows</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="pie-legal">
+      <span>© 2026 Cita-Lista · <a href="/sobre-mi">Quién está detrás</a> · <a href="mailto:pablo.fernandez@cita-lista.es">pablo.fernandez@cita-lista.es</a></span>
+      <span>TheFork y CoverManager son marcas de sus respectivos titulares. Esta web no está asociada a ellas.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/calculadora.js" defer></script>
+<script src="/formulario.js" defer></script>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

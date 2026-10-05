@@ -3,140 +3,270 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Reservas para restaurantes — web propia y sistema de reservas</title>
-<meta name="description" content="Una web para tu restaurante y un sistema de reservas que evita dobles reservas, reconoce a tus clientes habituales y controla el ritmo de la cocina.">
-<meta property="og:title" content="Reservas para restaurantes">
-<meta property="og:description" content="Tu web con reservas online y el panel de sala que las gestiona. Siete días gratis.">
+<title>Software de reservas para restaurantes sin comisiones</title>
+<meta name="description" content="Sistema de reservas y web propia para tu restaurante por 20 €/mes, sin comisión por comensal. Demo en vivo sin registro y 30 días de prueba gratis.">
+<link rel="canonical" href="https://cita-lista.es/">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<meta name="author" content="Cita-Lista">
+<meta property="og:site_name" content="Cita-Lista">
+<meta property="og:locale" content="es_ES">
+<meta property="og:url" content="https://cita-lista.es/">
+<meta property="og:title" content="Software de reservas para restaurantes sin comisiones">
+<meta property="og:description" content="Tu web con reservas online y el panel de sala que las gestiona. 20 €/mes, sin comisiones por reserva. 30 días gratis.">
 <meta property="og:type" content="website">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  :root{
-    --tinta:#1c1917; --tinta2:#44403c; --suave:#78716c;
-    --papel:#faf9f7; --linea:#e7e5e4; --acento:#d97706; --acento2:#b45309;
-  }
-  html{scroll-behavior:smooth}
-  body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--tinta);
-       background:var(--papel);line-height:1.6;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
-  a{color:inherit}
-  /* Misma identidad que la web del producto y el vídeo: Fraunces para
-     titulares. Sin esto, la página que aloja el vídeo tenía un aspecto de
-     landing de SaaS genérica muy distinto al del propio vídeo que enseña. */
-  h1,h2,.logo{font-family:'Fraunces',Georgia,serif}
-
-  /* Cabecera */
-  header{position:sticky;top:0;z-index:50;background:rgba(250,249,247,.92);
-         backdrop-filter:blur(8px);border-bottom:1px solid var(--linea)}
-  header .wrap{display:flex;align-items:center;justify-content:space-between;height:62px}
-  .logo{font-weight:600;font-size:19px;letter-spacing:-.01em}
-  .logo span{color:var(--acento)}
-  .btn{display:inline-block;background:var(--acento);color:#fff;text-decoration:none;
-       padding:11px 22px;border-radius:10px;font-weight:600;transition:background .15s}
-  .btn:hover{background:var(--acento2)}
-  .btn.claro{background:#fff;color:var(--acento2);border:1px solid var(--linea)}
-  .btn.claro:hover{background:#fff7ed}
-  .btn.sm{padding:8px 16px;font-size:14px}
-
-  /* Portada */
-  .portada{text-align:center;padding:64px 0 40px}
-  .pill{display:inline-block;background:#fff7ed;color:var(--acento2);border:1px solid #fed7aa;
-        border-radius:999px;padding:6px 15px;font-size:13px;font-weight:600;margin-bottom:22px}
-  h1{font-size:clamp(31px,5.2vw,52px);line-height:1.12;letter-spacing:-.01em;font-weight:600}
-  .sub{font-size:clamp(16px,2.2vw,20px);color:var(--tinta2);max-width:640px;margin:20px auto 0}
-  .acciones{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px}
-
-  /* Vídeo */
-  .video-caja{margin:46px auto 0;max-width:940px;border-radius:16px;overflow:hidden;
-              box-shadow:0 22px 60px rgba(28,25,23,.22);background:#000;line-height:0}
-  .video-caja video{width:100%;display:block}
-  .pie-video{text-align:center;font-size:14px;color:var(--suave);margin-top:12px}
-
-  /* Secciones */
-  section{padding:64px 0}
-  .cabecera{text-align:center;max-width:680px;margin:0 auto 44px}
-  .eyebrow{color:var(--acento);font-weight:700;font-size:13px;letter-spacing:.09em;
-           text-transform:uppercase}
-  h2{font-size:clamp(25px,3.6vw,36px);letter-spacing:-.01em;margin-top:10px;font-weight:600}
-  .cabecera p{color:var(--tinta2);margin-top:14px}
-
-  /* Los dos productos */
-  .productos{display:grid;gap:22px;grid-template-columns:1fr}
-  @media(min-width:800px){.productos{grid-template-columns:1fr 1fr}}
-  .producto{background:#fff;border:1px solid var(--linea);border-radius:16px;padding:30px;
-            display:flex;flex-direction:column}
-  .producto h3{font-size:21px;margin-bottom:6px}
-  .producto .que{color:var(--suave);font-size:14px;margin-bottom:18px}
-  .producto ul{list-style:none;margin-top:auto}
-  .producto li{padding-left:26px;position:relative;margin-bottom:9px;font-size:15px;color:var(--tinta2)}
-  .producto li::before{content:"";position:absolute;left:6px;top:10px;width:7px;height:7px;
-                        border-radius:50%;background:var(--acento)}
-
-  /* Capturas */
-  .tiras{display:grid;gap:20px;grid-template-columns:1fr}
-  @media(min-width:760px){.tiras{grid-template-columns:1fr 1fr}}
-  figure{background:#fff;border:1px solid var(--linea);border-radius:14px;overflow:hidden}
-  figure img{width:100%;display:block;border-bottom:1px solid var(--linea)}
-  figcaption{padding:14px 18px}
-  figcaption b{display:block;font-size:15px}
-  figcaption span{font-size:13.5px;color:var(--suave)}
-  .ancha{grid-column:1/-1}
-
-  /* Funciones */
-  .rejilla{display:grid;gap:18px;grid-template-columns:1fr}
-  @media(min-width:700px){.rejilla{grid-template-columns:repeat(3,1fr)}}
-  .tarjeta{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:22px}
-  .tarjeta .ico{font-size:22px}
-  .tarjeta b{display:block;margin:10px 0 5px;font-size:16px}
-  .tarjeta p{font-size:14.5px;color:var(--tinta2)}
-
-  /* Cierre */
-  .cierre{background:var(--tinta);color:#fff;border-radius:20px;padding:46px 32px;text-align:center}
-  .cierre h2{color:#fff}
-  .cierre p{color:#d6d3d1;max-width:520px;margin:14px auto 26px}
-  .cierre .btn{background:var(--acento)}
-  .nota{font-size:13px;color:#a8a29e;margin-top:16px}
-
-  footer{border-top:1px solid var(--linea);padding:30px 0;text-align:center;
-         font-size:13.5px;color:var(--suave)}
-</style>
+<!-- Sin og:image, el enlace compartido por WhatsApp —que es como llega esta
+     página a los restaurantes— sale como un rectángulo de texto sin miniatura. -->
+<meta property="og:image" content="https://cita-lista.es/capturas/poster-video.jpg">
+<meta property="og:image:width" content="1920">
+<meta property="og:image:height" content="1080">
+<meta property="og:image:alt" content="Panel de sala de Cita-Lista con las reservas del día">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#faf9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1c1917" media="(prefers-color-scheme: dark)">
+<link rel="preload" href="/fuentes/inter.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fuentes/fraunces.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/estilo.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://cita-lista.es/#organizacion",
+      "name": "Cita-Lista",
+      "url": "https://cita-lista.es/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://cita-lista.es/logo-citalista.png",
+        "width": 512,
+        "height": 512
+      },
+      "email": "pablo.fernandez@cita-lista.es",
+      "founder": {
+        "@type": "Person",
+        "@id": "https://cita-lista.es/sobre-mi#persona",
+        "name": "Pablo Fernández",
+        "url": "https://cita-lista.es/sobre-mi"
+      },
+      "areaServed": { "@type": "Country", "name": "España" },
+      "description": "Software de reservas y web propia para restaurantes independientes, con cuota fija y sin comisiones por comensal."
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://cita-lista.es/#web",
+      "url": "https://cita-lista.es/",
+      "name": "Cita-Lista",
+      "inLanguage": "es-ES",
+      "publisher": { "@id": "https://cita-lista.es/#organizacion" }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://cita-lista.es/#producto",
+      "name": "Cita-Lista",
+      "applicationCategory": "BusinessApplication",
+      "applicationSubCategory": "Software de reservas para restaurantes",
+      "operatingSystem": "Navegador web (Chrome, Safari, Firefox, Edge)",
+      "inLanguage": "es-ES",
+      "url": "https://cita-lista.es/",
+      "publisher": { "@id": "https://cita-lista.es/#organizacion" },
+      "description": "Sistema de reservas para restaurantes con panel de sala, ficha de comensal, gestión de mesas y web propia. Cuota fija sin comisiones por reserva.",
+      "featureList": [
+        "Reservas online desde la web del restaurante",
+        "Panel de sala con el servicio del día",
+        "Ficha de comensal con historial, alergias y no-shows",
+        "Mesas juntadas para grupos grandes",
+        "Límite de comensales por franja horaria",
+        "Informes de ocupación y tasa de no-show",
+        "Avisos por WhatsApp y email"
+      ],
+      "offers": {
+        "@type": "AggregateOffer",
+        "priceCurrency": "EUR",
+        "lowPrice": "20",
+        "highPrice": "150",
+        "offerCount": "2",
+        "availability": "https://schema.org/InStock",
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Reservas",
+            "price": "20",
+            "priceCurrency": "EUR",
+            "url": "https://cita-lista.es/precios",
+            "availability": "https://schema.org/InStock",
+            "description": "Sistema de reservas completo. 20 € al mes, sin comisiones por comensal.",
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": "20",
+              "priceCurrency": "EUR",
+              "unitText": "MES",
+              "billingDuration": 1,
+              "billingIncrement": 1
+            }
+          },
+          {
+            "@type": "Offer",
+            "name": "Web + Reservas",
+            "price": "150",
+            "priceCurrency": "EUR",
+            "url": "https://cita-lista.es/precios",
+            "availability": "https://schema.org/InStock",
+            "description": "Alta única de 150 € por la web del restaurante, más 20 € al mes del sistema de reservas, sin comisiones por comensal.",
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": "150",
+              "priceCurrency": "EUR",
+              "valueAddedTaxIncluded": false,
+              "description": "Pago único de alta. La cuota mensual de 20 € se factura aparte."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+</script>
 </head>
-<body>
+<body data-saludo>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
 
 <header>
   <div class="wrap">
-    <div class="logo">Reservas<span>·</span>Restaurantes</div>
+    <a class="logo" href="/">Cita<span>·</span>Lista</a>
+    <nav class="menu" aria-label="Principal">
+      <a href="/sistema-de-reservas-para-restaurantes">Sistema de reservas</a>
+      <a href="/pagina-web-para-restaurantes">Web para restaurantes</a>
+      <a href="/precios">Precios</a>
+      <a href="/alternativa-thefork">Alternativas</a>
+    </nav>
     <a class="btn sm" href="#probar">Probar gratis</a>
   </div>
 </header>
 
+<main id="contenido">
+
 <div class="wrap">
   <div class="portada">
-    <span class="pill">Web propia + sistema de reservas</span>
-    <h1>Tu restaurante deja de perder<br>reservas por teléfono</h1>
+    <span class="pill">Web propia + reservas · desde 20 €/mes</span>
+    <h1>Software de reservas para restaurantes sin comisiones</h1>
     <p class="sub">
-      Te montamos la web de tu restaurante y, dentro, un sistema de reservas que
-      trabaja solo: sin dobles reservas, reconociendo a tus clientes habituales
-      y controlando el ritmo de entrada a cocina.
+      Tu restaurante deja de perder reservas por teléfono. Te monto la web y,
+      dentro, un sistema que trabaja solo: sin dobles reservas, reconociendo a
+      tus clientes habituales y controlando el ritmo de entrada a cocina.
+      <strong>20 € al mes, sin comisión por comensal.</strong>
     </p>
     <div class="acciones">
-      <a class="btn" href="#probar">Quiero probarlo</a>
-      <a class="btn claro" href="https://reservas-restaurante-demo.vercel.app" target="_blank" rel="noopener">
+      <a class="btn" href="#probar">Probar 30 días gratis</a>
+      <a class="btn claro" href="/demo" target="_blank" rel="noopener">
         Ver la demo en vivo
       </a>
     </div>
+    <p class="bajo-cta">Sin tarjeta, sin permanencia. La demo se abre sin usuario ni contraseña.</p>
+    <p class="bajo-cta"><a class="enlace-calc" href="/calculadora">¿Cuánto pagas hoy en comisiones? Calcúlalo en 20 segundos →</a></p>
   </div>
 
   <div class="video-caja">
-    <video controls preload="metadata" playsinline poster="capturas/04-reservas.jpg">
-      <source src="media/demo.mp4" type="video/mp4">
-      Tu navegador no reproduce vídeo. <a href="media/demo.mp4">Descárgalo aquí</a>.
+    <video controls preload="metadata" playsinline poster="/capturas/poster-video.jpg">
+      <source src="/media/demo.mp4" type="video/mp4">
+      Tu navegador no reproduce vídeo. <a href="/media/demo.mp4">Descárgalo aquí</a>.
     </video>
   </div>
-  <p class="pie-video">Vídeo de 2:07 · Grabado sobre la aplicación real, con datos de un restaurante de ejemplo</p>
+  <p class="pie-video">Vídeo de 1:45 · Grabado sobre la aplicación real, con datos de un restaurante de ejemplo</p>
 </div>
+
+<section id="empezar" style="padding-bottom:20px">
+  <div class="wrap">
+    <div class="cabecera">
+      <div class="eyebrow">Cómo empieza</div>
+      <h2>Tres pasos, y el trabajo lo hago yo</h2>
+      <p>No te toca configurar nada ni aprender un programa antes de saber si te sirve.</p>
+    </div>
+    <div class="pasos">
+      <div class="paso">
+        <b>Me escribes</b>
+        <p>Tu nombre, el del restaurante y un correo. Dos minutos, sin tarjeta.</p>
+      </div>
+      <div class="paso">
+        <b>Te lo dejo montado</b>
+        <p>Con tus mesas, tus salas y tus horarios reales, en un par de días desde que me los cuentas.</p>
+        <small>Tú no rellenas ningún asistente.</small>
+      </div>
+      <div class="paso">
+        <b>Lo pruebas 30 días</b>
+        <p>Con reservas de verdad. Si no te encaja, no hay nada que cancelar.</p>
+        <small>Sin permanencia y sin comisión por reserva.</small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="cuanto">
+  <div class="wrap">
+    <div class="cabecera">
+      <div class="eyebrow">Lo primero, porque es lo que importa</div>
+      <h2>Lo que pagarías al mes con 150 reservas</h2>
+      <p>
+        Casi todos los sistemas de reservas cobran por comensal sentado. Eso
+        significa que cuanto mejor te va, más pagas. Aquí la cuota es fija.
+      </p>
+    </div>
+
+    <div class="tabla-caja">
+      <table>
+        <caption>
+          Precios de referencia de septiembre de 2026, para un restaurante independiente
+          con unas 150 reservas al mes. <strong>Ni CoverManager ni TheFork publican una
+          tarifa abierta</strong>: sus importes proceden de comparativas de terceros
+          consultadas en septiembre de 2026, no son cifras oficiales y varían según el plan
+          y el volumen. Confírmalos con cada proveedor antes de decidir. Los de Cita-Lista
+          sí son oficiales. Cada cifra va con su fuente nombrada y enlazada en
+          <a href="/precios-covermanager">precios de CoverManager</a> y en
+          <a href="/precios-thefork">comisiones de TheFork</a>.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Sistema</th>
+            <th scope="col">Cuota</th>
+            <th scope="col">Coste por reserva</th>
+            <th scope="col">Total estimado al mes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Cita-Lista</th>
+            <td>20 €/mes</td>
+            <td class="si">0 €</td>
+            <td class="si"><strong>20 €</strong></td>
+          </tr>
+          <tr>
+            <th scope="row">CoverManager</th>
+            <td>desde 79 €/mes</td>
+            <td class="no">~1,50 €</td>
+            <td class="no">~304 €</td>
+          </tr>
+          <tr>
+            <th scope="row">TheFork Manager</th>
+            <td>según plan</td>
+            <td class="no">comisión por comensal</td>
+            <td class="no">variable, sube con el volumen</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="aviso">
+      <b>Por qué puedo cobrar eso:</b> no soy una empresa con comerciales y oficinas.
+      Es un producto que he construido yo y que mantengo yo. No hay que financiar una
+      red de ventas, así que el precio es el coste de tenerlo funcionando y poco más.
+      <a href="/sobre-mi">Quién está detrás →</a>
+    </div>
+
+  </div>
+</section>
 
 <section id="incluye">
   <div class="wrap">
@@ -157,6 +287,7 @@
           <li>Email de confirmación con enlace para cancelar</li>
           <li>Dominio propio si lo quieres</li>
         </ul>
+        <p style="margin-top:18px"><a href="/pagina-web-para-restaurantes" style="color:var(--acento2);font-weight:600;text-decoration:none">Cómo es la web que te monto →</a></p>
       </div>
 
       <div class="producto">
@@ -169,6 +300,7 @@
           <li>Límite de comensales por franja</li>
           <li>Informes de ocupación y tasa de no-show</li>
         </ul>
+        <p style="margin-top:18px"><a href="/sistema-de-reservas-para-restaurantes" style="color:var(--acento2);font-weight:600;text-decoration:none">Todo lo que hace el sistema →</a></p>
       </div>
     </div>
   </div>
@@ -184,7 +316,7 @@
 
     <div class="tiras">
       <figure class="ancha">
-        <img src="capturas/04-reservas.jpg" alt="Listado de reservas del día con señales del comensal" loading="lazy">
+        <picture><source srcset="/capturas/04-reservas.webp" type="image/webp"><img src="/capturas/04-reservas.jpg" alt="Listado de reservas del día en el panel de Cita-Lista, con las señales de cada comensal" loading="lazy" width="1440" height="900"></picture>
         <figcaption>
           <b>El servicio del día</b>
           <span>Cada reserva muestra si es cliente habitual, sus alergias y cuántas veces te ha fallado.</span>
@@ -192,7 +324,7 @@
       </figure>
 
       <figure>
-        <img src="capturas/09-ficha-comensal.jpg" alt="Ficha de un comensal con su historial" loading="lazy">
+        <picture><source srcset="/capturas/09-ficha-comensal.webp" type="image/webp"><img src="/capturas/09-ficha-comensal.jpg" alt="Ficha de comensal con su historial de visitas, alergias y no-shows" loading="lazy" width="1440" height="900"></picture>
         <figcaption>
           <b>Ficha del comensal</b>
           <span>Se crea sola con cada reserva. Historial, notas de sala y alergias.</span>
@@ -200,7 +332,7 @@
       </figure>
 
       <figure>
-        <img src="capturas/02-calendario.jpg" alt="Calendario mensual con ocupación" loading="lazy">
+        <picture><source srcset="/capturas/02-calendario.webp" type="image/webp"><img src="/capturas/02-calendario.jpg" alt="Calendario mensual de ocupación del restaurante" loading="lazy" width="1440" height="900"></picture>
         <figcaption>
           <b>Calendario de ocupación</b>
           <span>De un vistazo, qué días vas lleno y cuáles hay que empujar.</span>
@@ -208,7 +340,7 @@
       </figure>
 
       <figure>
-        <img src="capturas/16-informes-compuesto.jpg" alt="Resumen del mes y origen de las reservas" loading="lazy">
+        <picture><source srcset="/capturas/16-informes-compuesto.webp" type="image/webp"><img src="/capturas/16-informes-compuesto.jpg" alt="Informe mensual de comensales y origen de las reservas" loading="lazy" width="976" height="388"></picture>
         <figcaption>
           <b>Informes</b>
           <span>Comensales del mes y de dónde viene cada reserva: web, teléfono o mostrador.</span>
@@ -216,7 +348,7 @@
       </figure>
 
       <figure>
-        <img src="capturas/07-mesas.jpg" alt="Gestión de mesas por salas" loading="lazy">
+        <picture><source srcset="/capturas/07-mesas.webp" type="image/webp"><img src="/capturas/07-mesas.jpg" alt="Pantalla de gestión de mesas y salas del restaurante" loading="lazy" width="1440" height="900"></picture>
         <figcaption>
           <b>Tus mesas y salas</b>
           <span>Interior, terraza, privado. Con capacidad y si se pueden juntar.</span>
@@ -224,7 +356,7 @@
       </figure>
 
       <figure class="ancha">
-        <img src="capturas/10-web-publica.jpg" alt="Web pública del restaurante" loading="lazy">
+        <picture><source srcset="/capturas/10-web-publica.webp" type="image/webp"><img src="/capturas/10-web-publica.jpg" alt="Web pública del restaurante con la carta y el botón de reservar mesa" loading="lazy" width="1440" height="820"></picture>
         <figcaption>
           <b>Tu web, con la carta y el botón de reservar</b>
           <span>Diseñada para móvil, que es por donde entra la mayoría de las reservas.</span>
@@ -242,35 +374,62 @@
     </div>
     <div class="rejilla">
       <div class="tarjeta">
-        <div class="ico">🔒</div>
+        <div class="ico" aria-hidden="true">🔒</div>
         <b>Nunca dos veces la misma mesa</b>
         <p>La garantía no está en el programa, está en la base de datos. Aunque entren dos reservas a la vez, solo una se queda con la mesa.</p>
       </div>
       <div class="tarjeta">
-        <div class="ico">👋</div>
+        <div class="ico" aria-hidden="true">👋</div>
         <b>Reconoce al habitual</b>
         <p>Al abrir la reserva ves que es su décima visita, que es alérgico al marisco y que ya te dejó dos mesas vacías.</p>
       </div>
       <div class="tarjeta">
-        <div class="ico">🍽️</div>
+        <div class="ico" aria-hidden="true">🍽️</div>
         <b>Grupos grandes sin líos</b>
         <p>Si un grupo no cabe en una mesa, junta varias de la misma sala automáticamente.</p>
       </div>
       <div class="tarjeta">
-        <div class="ico">⏱️</div>
+        <div class="ico" aria-hidden="true">⏱️</div>
         <b>La cocina no se ahoga</b>
         <p>Limita cuántos comensales entran en cada franja. El maître puede saltárselo cuando hace falta.</p>
       </div>
       <div class="tarjeta">
-        <div class="ico">🌙</div>
+        <div class="ico" aria-hidden="true">🌙</div>
         <b>Cierres de madrugada</b>
         <p>Si cierras a la una, las reservas de las 00:30 salen en el servicio correcto y no en el día siguiente.</p>
       </div>
       <div class="tarjeta">
-        <div class="ico">💬</div>
+        <div class="ico" aria-hidden="true">💬</div>
         <b>Aviso por WhatsApp</b>
-        <p>Confirmar, recordar o avisar de que se ha liberado mesa, con el mensaje ya escrito.</p>
+        <p>Confirmar, recordar o avisar de que se ha liberado mesa: abres WhatsApp con el mensaje ya escrito y solo le das a enviar.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<section id="mas">
+  <div class="wrap estrecho">
+    <div class="cabecera">
+      <div class="eyebrow">Sigue por aquí</div>
+      <h2>Si estás comparando</h2>
+    </div>
+    <div class="siguiente">
+      <a href="/precios">
+        <b>Precios y qué incluye cada plan</b>
+        <span>20 €/mes las reservas; 150 € una sola vez si además quieres la web.</span>
+      </a>
+      <a href="/alternativa-thefork">
+        <b>Alternativa a TheFork</b>
+        <span>Qué cambia cuando dejas de pagar comisión por cada comensal.</span>
+      </a>
+      <a href="/alternativa-covermanager">
+        <b>Alternativa a CoverManager</b>
+        <span>Qué tiene CoverManager que aquí no vas a encontrar, y al revés.</span>
+      </a>
+      <a href="/reducir-no-shows-restaurante">
+        <b>Cómo reducir los no-shows</b>
+        <span>Siete medidas ordenadas por lo que cuestan y lo que devuelven.</span>
+      </a>
     </div>
   </div>
 </section>
@@ -280,23 +439,149 @@
     <div class="cierre">
       <h2>Pruébalo con tu restaurante</h2>
       <p>
-        Siete días gratis, con tus mesas y tus horarios cargados. Si no te encaja,
-        lo dejas y no pasa nada.
+        30 días gratis, con tus mesas y tus horarios ya cargados: me dices cómo
+        trabajas y te lo dejo montado. Sin comisiones por reserva y sin
+        permanencia. Si no te encaja, lo dejas y no pasa nada.
       </p>
-      <a class="btn" href="https://reservas-restaurante-demo.vercel.app" target="_blank" rel="noopener">
+      <form class="formulario" id="form-prueba" method="post" action="/api/contacto">
+        <div class="campos dos">
+          <div class="campo">
+            <label for="f-nombre">Tu nombre</label>
+            <input id="f-nombre" name="nombre" type="text" required autocomplete="name">
+          </div>
+          <div class="campo">
+            <label for="f-restaurante">Tu restaurante</label>
+            <input id="f-restaurante" name="restaurante" type="text" required autocomplete="organization">
+          </div>
+        </div>
+        <div class="campos" style="margin-top:12px">
+          <div class="campo">
+            <label for="f-email">Email</label>
+            <input id="f-email" name="email" type="email" required autocomplete="email">
+          </div>
+        </div>
+        <details class="mas-datos">
+          <summary>Añadir teléfono, mesas y cómo prefieres empezar <span>(opcional)</span></summary>
+          <div>
+            <div class="campos dos">
+              <div class="campo">
+                <label for="f-telefono">Teléfono</label>
+                <input id="f-telefono" name="telefono" type="tel" autocomplete="tel">
+              </div>
+              <div class="campo">
+                <label for="f-mesas">¿Cuántas mesas tienes?</label>
+                <input id="f-mesas" name="mesas" type="text" inputmode="numeric" placeholder="Por ejemplo, 12">
+              </div>
+            </div>
+            <div class="campos dos" style="margin-top:12px">
+              <div class="campo">
+                <label for="f-web">¿Tienes web?</label>
+                <select id="f-web" name="tiene_web">
+                  <option value="">Elige una</option>
+                  <option>Sí, y funciona bien</option>
+                  <option>Sí, pero está anticuada</option>
+                  <option>No tengo web</option>
+                </select>
+              </div>
+              <div class="campo">
+                <label for="f-pref">¿Cómo prefieres empezar?</label>
+                <select id="f-pref" name="preferencia">
+                  <option value="">Como veas</option>
+                  <option>Que me lo montes y lo pruebo yo</option>
+                  <option>Una videollamada de 15 minutos</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </details>
+        <input type="hidden" name="origen" id="f-origen" value="">
+        <div class="trampa" aria-hidden="true">
+          <label for="f-web-url">No rellenes este campo</label>
+          <input id="f-web-url" name="web_url" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="consentimiento">
+          <input id="f-consiento" name="consiento" type="checkbox" required>
+          <label for="f-consiento">
+            He leído y acepto cómo se tratan mis datos.
+          </label>
+        </div>
+        <details class="capa-basica">
+          <summary>Información básica sobre protección de datos</summary>
+          <div>
+            <p><strong>Responsable:</strong> Pablo Fernández (Cita-Lista).</p>
+            <p><strong>Finalidad:</strong> atender tu solicitud, montarte la prueba de 30 días
+              y responderte. Nada más: no hay newsletter ni envíos comerciales que no hayas pedido.</p>
+            <p><strong>Legitimación:</strong> tu consentimiento, que marcas en la casilla de arriba.</p>
+            <p><strong>Destinatarios:</strong> el correo se entrega a través de Resend, el proveedor
+              de envío, que actúa como encargado del tratamiento. No se ceden tus datos a nadie más
+              ni se usan para publicidad.</p>
+            <p><strong>Conservación:</strong> mientras dure la conversación y, si no contratas,
+              hasta que me pidas que los borre.</p>
+            <p><strong>Derechos:</strong> acceder, rectificar, suprimir, oponerte y portar tus datos
+              escribiendo a
+              <a href="mailto:pablo.fernandez@cita-lista.es">pablo.fernandez@cita-lista.es</a>.
+              También puedes reclamar ante la Agencia Española de Protección de Datos.</p>
+          </div>
+        </details>
+        <button class="btn" type="submit">Quiero probarlo 30 días gratis</button>
+        <p class="aviso-form">
+          Sin tarjeta y sin permanencia. Te contesto yo, normalmente el mismo día.<br>
+          O escríbeme a <a href="mailto:pablo.fernandez@cita-lista.es">pablo.fernandez@cita-lista.es</a>.
+        </p>
+        <div class="resultado" id="form-resultado" role="status" aria-live="polite"></div>
+      </form>
+      <a class="btn btn-2" href="/demo" target="_blank" rel="noopener">
         Entrar en la demo
       </a>
-      <div class="nota">La demo es un restaurante ficticio. Puedes reservar en ella sin compromiso.</div>
+      <div class="nota">La demo es un restaurante ficticio, con datos de ejemplo. Entras sin usuario ni contraseña.</div>
     </div>
   </div>
 </section>
 
+</main>
+
 <footer>
   <div class="wrap">
-    Reservas para restaurantes · Demo con datos ficticios ·
-    <a href="https://reservas-restaurante-demo.vercel.app">reservas-restaurante-demo.vercel.app</a>
+    <div class="pie-rejilla">
+      <div>
+        <b>Cita·Lista</b>
+        <p style="max-width:340px">
+          Reservas y web propia para restaurantes independientes. Cuota fija,
+          sin comisiones por comensal. Hecho y mantenido por una persona, en España.
+        </p>
+      </div>
+      <div>
+        <b>Producto</b>
+        <ul>
+          <li><a href="/sistema-de-reservas-para-restaurantes">Sistema de reservas</a></li>
+          <li><a href="/pagina-web-para-restaurantes">Web para restaurantes</a></li>
+          <li><a href="/precios">Precios</a></li>
+          <li><a href="/sobre-mi">Quién está detrás</a></li>
+          <li><a href="/demo">Demo en vivo</a></li>
+        </ul>
+      </div>
+      <div>
+        <b>Comparativas</b>
+        <ul>
+          <li><a href="/alternativa-thefork">Alternativa a TheFork</a></li>
+          <li><a href="/precios-thefork">Comisiones de TheFork</a></li>
+          <li><a href="/alternativa-covermanager">Alternativa a CoverManager</a></li>
+          <li><a href="/precios-covermanager">Precios de CoverManager</a></li>
+          <li><a href="/software-reservas-restaurantes-gratis">Opciones gratuitas</a></li>
+          <li><a href="/calculadora">Calculadora</a></li>
+          <li><a href="/reducir-no-shows-restaurante">Reducir no-shows</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="pie-legal">
+      <span>© 2026 Cita-Lista · <a href="/sobre-mi">Quién está detrás</a> · <a href="mailto:pablo.fernandez@cita-lista.es">pablo.fernandez@cita-lista.es</a></span>
+      <span>TheFork y CoverManager son marcas de sus respectivos titulares. Esta web no está asociada a ellas.</span>
+    </div>
   </div>
 </footer>
 
+<script src="/formulario.js" defer></script>
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

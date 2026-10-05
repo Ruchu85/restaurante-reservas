@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+
+# Los rastreadores de los buscadores con IA tienen permiso explícito: parte de
+# la estrategia es que citen las páginas de precios y de comparación, donde
+# somos de los pocos que publican cifras abiertas.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://cita-lista.es/sitemap.xml

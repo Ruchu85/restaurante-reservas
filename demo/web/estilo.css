@@ -1,0 +1,344 @@
+/* Cita-Lista — hoja de estilos compartida por todas las páginas.
+   Antes cada página llevaba su <style> embebido; con 8 páginas eso significaba
+   8 copias que se desincronizan. Un fichero externo además se cachea entre
+   navegaciones, que es justo el recorrido que hace un prospecto: portada →
+   precios → alternativa a X. */
+
+/* Fuentes autoalojadas. Antes venían de fonts.googleapis.com, que era la única
+   dependencia externa que bloqueaba el pintado de una web que por lo demás es
+   HTML estático sin JavaScript. De paso, servirlas desde aquí evita mandar la
+   IP de cada visitante a un tercero, que en la UE tiene su propio problema.
+   Son las variables completas en subconjunto latino: cubren el español entero
+   (acentos, eñe, diéresis y los signos de apertura) en 115 KB entre las dos. */
+@font-face{
+  font-family:'Fraunces';
+  font-style:normal;
+  font-weight:500 700;
+  font-display:swap;
+  src:url('/fuentes/fraunces.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Inter';
+  font-style:normal;
+  font-weight:400 700;
+  font-display:swap;
+  src:url('/fuentes/inter.woff2') format('woff2');
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --tinta:#1c1917; --tinta2:#44403c; --suave:#78716c;
+  --papel:#faf9f7; --linea:#e7e5e4; --acento:#d97706; --acento2:#b45309;
+  --verde:#15803d; --verde-suave:#f0fdf4; --rojo:#b91c1c; --rojo-suave:#fef2f2;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--tinta);
+     background:var(--papel);line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.wrap.estrecho{max-width:760px}
+a{color:inherit}
+h1,h2,h3,.logo{font-family:'Fraunces',Georgia,serif}
+
+/* Enlace de salto: sin él la navegación por teclado obliga a tabular todo el
+   menú en cada página. */
+.saltar{position:absolute;left:-9999px;top:0;background:var(--tinta);color:#fff;
+        padding:10px 16px;border-radius:0 0 8px 0;z-index:100}
+.saltar:focus{left:0}
+
+/* ---------- Cabecera ---------- */
+header{position:sticky;top:0;z-index:50;background:rgba(250,249,247,.92);
+       backdrop-filter:blur(8px);border-bottom:1px solid var(--linea)}
+header .wrap{display:flex;align-items:center;gap:18px;height:62px}
+.logo{font-weight:600;font-size:19px;letter-spacing:-.01em;text-decoration:none;flex-shrink:0}
+.logo span{color:var(--acento)}
+nav.menu{display:none;margin-left:auto;gap:22px;align-items:center}
+@media(min-width:900px){nav.menu{display:flex}}
+nav.menu a{text-decoration:none;font-size:14.5px;font-weight:500;color:var(--tinta2)}
+nav.menu a:hover,nav.menu a[aria-current=page]{color:var(--acento2)}
+header .btn{margin-left:auto}
+@media(min-width:900px){header .btn{margin-left:0}}
+
+.btn{display:inline-block;background:var(--acento);color:#fff;text-decoration:none;
+     padding:11px 22px;border-radius:10px;font-weight:600;transition:background .15s;
+     border:none;cursor:pointer;font-size:16px;font-family:inherit}
+.btn:hover{background:var(--acento2)}
+.btn.claro{background:#fff;color:var(--acento2);border:1px solid var(--linea)}
+.btn.claro:hover{background:#fff7ed}
+/* 8px de relleno dejaban el botón de la cabecera en 38 px de alto, por debajo
+   del mínimo táctil de 44-48 px. En escritorio no importa; en el móvil, que es
+   por donde entra este público, es el botón principal de toda la página. */
+.btn.sm{padding:14px 18px;font-size:14px;line-height:1.3}
+@media(min-width:900px){.btn.sm{padding:9px 16px}}
+.btn.btn-2{background:transparent;border:1px solid rgba(255,255,255,.35);margin-left:10px;color:#fff}
+.btn.btn-2:hover{background:rgba(255,255,255,.10)}
+/* Cuando va detrás del formulario deja de ser un botón hermano en línea y pasa
+   a ser la acción secundaria, centrada debajo. */
+.formulario ~ .btn-2{display:block;width:fit-content;margin:22px auto 0}
+
+/* ---------- Portada ---------- */
+.portada{text-align:center;padding:60px 0 36px}
+.pill{display:inline-block;background:#fff7ed;color:var(--acento2);border:1px solid #fed7aa;
+      border-radius:999px;padding:6px 15px;font-size:13px;font-weight:600;margin-bottom:22px}
+h1{font-size:clamp(31px,5.2vw,52px);line-height:1.12;letter-spacing:-.01em;font-weight:600}
+.sub{font-size:clamp(16px,2.2vw,20px);color:var(--tinta2);max-width:660px;margin:20px auto 0}
+.acciones{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+.bajo-cta{font-size:13.5px;color:var(--suave);margin-top:16px}
+
+/* ---------- Migas ---------- */
+.migas{font-size:13.5px;color:var(--suave);padding:18px 0 0}
+.migas a{color:var(--suave)}
+.migas a:hover{color:var(--acento2)}
+
+/* ---------- Vídeo ---------- */
+.video-caja{margin:44px auto 0;max-width:940px;border-radius:16px;overflow:hidden;
+            box-shadow:0 22px 60px rgba(28,25,23,.22);background:#000;line-height:0}
+.video-caja video{width:100%;display:block}
+.pie-video{text-align:center;font-size:14px;color:var(--suave);margin-top:12px}
+
+/* ---------- Secciones ---------- */
+section{padding:60px 0}
+.cabecera{text-align:center;max-width:700px;margin:0 auto 44px}
+.eyebrow{color:var(--acento);font-weight:700;font-size:13px;letter-spacing:.09em;
+         text-transform:uppercase}
+h2{font-size:clamp(25px,3.6vw,36px);letter-spacing:-.01em;margin-top:10px;font-weight:600}
+.cabecera p{color:var(--tinta2);margin-top:14px}
+
+/* ---------- Texto largo (artículos y páginas de comparación) ---------- */
+.prosa{max-width:760px;margin:0 auto}
+.prosa h2{margin:44px 0 14px;text-align:left}
+.prosa h3{font-size:21px;margin:30px 0 10px;font-weight:600}
+.prosa p{margin-bottom:16px;color:var(--tinta2)}
+.prosa ul,.prosa ol{margin:0 0 18px 22px;color:var(--tinta2)}
+.prosa li{margin-bottom:8px}
+.prosa strong{color:var(--tinta);font-weight:600}
+.prosa a{color:var(--acento2);text-decoration:underline;text-underline-offset:2px}
+.entradilla{font-size:19px;color:var(--tinta2);margin-bottom:26px}
+.fecha{font-size:13.5px;color:var(--suave);margin-bottom:8px}
+
+/* Respuesta corta al principio: es lo que citan los buscadores con IA y lo que
+   lee alguien que ha llegado desde una búsqueda concreta. */
+.respuesta{background:#fff;border:1px solid var(--linea);border-left:4px solid var(--acento);
+           border-radius:0 12px 12px 0;padding:20px 24px;margin:0 0 30px}
+.respuesta p{margin:0;color:var(--tinta);font-size:16.5px}
+.respuesta p+p{margin-top:10px}
+
+/* ---------- Tarjetas de producto ---------- */
+.productos{display:grid;gap:22px;grid-template-columns:1fr}
+@media(min-width:800px){.productos{grid-template-columns:1fr 1fr}}
+.producto{background:#fff;border:1px solid var(--linea);border-radius:16px;padding:30px;
+          display:flex;flex-direction:column}
+.producto h3{font-size:21px;margin-bottom:6px}
+.producto .que{color:var(--suave);font-size:14px;margin-bottom:18px}
+.producto ul{list-style:none;margin-top:auto}
+.producto li{padding-left:26px;position:relative;margin-bottom:9px;font-size:15px;color:var(--tinta2)}
+.producto li::before{content:"";position:absolute;left:6px;top:10px;width:7px;height:7px;
+                      border-radius:50%;background:var(--acento)}
+
+/* ---------- Capturas ---------- */
+.tiras{display:grid;gap:20px;grid-template-columns:1fr}
+@media(min-width:760px){.tiras{grid-template-columns:1fr 1fr}}
+figure{background:#fff;border:1px solid var(--linea);border-radius:14px;overflow:hidden;margin:0}
+/* <picture> es inline por defecto y dejaba una franja bajo la imagen dentro de
+   la tarjeta de figure. */
+figure picture{display:block}
+figure img{width:100%;display:block;border-bottom:1px solid var(--linea);height:auto}
+figcaption{padding:14px 18px}
+figcaption b{display:block;font-size:15px}
+figcaption span{font-size:13.5px;color:var(--suave)}
+.ancha{grid-column:1/-1}
+
+/* ---------- Rejilla de funciones ---------- */
+.rejilla{display:grid;gap:18px;grid-template-columns:1fr}
+@media(min-width:700px){.rejilla{grid-template-columns:repeat(3,1fr)}}
+.tarjeta{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:22px}
+.tarjeta .ico{font-size:22px;line-height:1}
+.tarjeta b{display:block;margin:10px 0 5px;font-size:16px}
+.tarjeta p{font-size:14.5px;color:var(--tinta2)}
+
+/* ---------- Precios ---------- */
+.planes{display:grid;gap:22px;grid-template-columns:1fr;align-items:start}
+@media(min-width:820px){.planes{grid-template-columns:1fr 1fr}}
+.plan{background:#fff;border:1px solid var(--linea);border-radius:18px;padding:32px;
+      display:flex;flex-direction:column;height:100%}
+.plan.destacado{border:2px solid var(--acento);box-shadow:0 14px 40px rgba(217,119,6,.13)}
+.plan .etiqueta{display:inline-block;align-self:flex-start;background:var(--acento);color:#fff;
+                font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+                padding:4px 10px;border-radius:999px;margin-bottom:14px}
+/* Encabezado de la tarjeta de plan. Va en h2, no en h3: en /precios el h1 es
+   el título de la página y estas tarjetas son su primer nivel de sección, así
+   que un h3 saltaba un nivel y rompía el esquema de encabezados. */
+.plan h2{font-size:22px;margin-top:0}
+.plan .para{color:var(--suave);font-size:14.5px;margin:4px 0 20px}
+.cifra{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.cifra b{font-family:'Fraunces',Georgia,serif;font-size:44px;font-weight:600;line-height:1}
+.cifra span{color:var(--suave);font-size:15px}
+.cifra-extra{margin-top:8px;font-size:15px;color:var(--tinta2)}
+.plan ul{list-style:none;margin:22px 0}
+.plan li{padding-left:27px;position:relative;margin-bottom:10px;font-size:15px;color:var(--tinta2)}
+.plan li::before{content:"✓";position:absolute;left:2px;top:0;color:var(--verde);font-weight:700}
+.plan .btn{margin-top:auto;text-align:center}
+
+/* ---------- Tablas comparativas ---------- */
+.tabla-caja{overflow-x:auto;margin:26px 0;border:1px solid var(--linea);border-radius:14px;background:#fff}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:15px}
+th,td{padding:13px 16px;text-align:left;border-bottom:1px solid var(--linea);vertical-align:top}
+thead th{background:#f5f5f4;font-weight:600;font-size:14px;color:var(--tinta)}
+tbody tr:last-child td{border-bottom:none}
+td.si{color:var(--verde);font-weight:600}
+td.no{color:var(--rojo);font-weight:600}
+caption{caption-side:bottom;padding:12px 16px;font-size:13px;color:var(--suave);text-align:left}
+
+/* ---------- Preguntas frecuentes ---------- */
+.faq{max-width:760px;margin:0 auto}
+.faq details{background:#fff;border:1px solid var(--linea);border-radius:12px;
+             padding:0;margin-bottom:12px;overflow:hidden}
+.faq summary{padding:18px 22px;font-weight:600;cursor:pointer;list-style:none;
+             display:flex;justify-content:space-between;gap:14px;align-items:center}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-size:22px;color:var(--acento);flex-shrink:0;line-height:1}
+.faq details[open] summary::after{content:"−"}
+.faq details > div{padding:0 22px 20px;color:var(--tinta2);font-size:15.5px}
+.faq details > div p+p{margin-top:12px}
+
+/* ---------- Aviso honesto ---------- */
+.aviso{background:var(--verde-suave);border:1px solid #bbf7d0;border-radius:12px;
+       padding:18px 22px;margin:26px 0;font-size:15px;color:#14532d}
+.aviso b{color:#14532d}
+
+/* ---------- Enlaces entre páginas ---------- */
+.siguiente{display:grid;gap:16px;grid-template-columns:1fr;margin-top:10px}
+@media(min-width:760px){.siguiente{grid-template-columns:1fr 1fr}}
+/* Enlace extendido. Antes la tarjeta entera era un <a> que envolvía título y
+   subtítulo, así que el texto del ancla salía pegado ("Precios de Cita-Lista20
+   €/mes, publicados y sin letra pequeña.") y no transmitía relevancia. Ahora el
+   ancla es solo el título y el ::after estira su área de clic a toda la tarjeta. */
+.sig-item{position:relative;background:#fff;border:1px solid var(--linea);border-radius:12px;
+          padding:20px 22px;transition:border-color .15s,transform .15s}
+.sig-item:hover{border-color:var(--acento);transform:translateY(-2px)}
+.sig-item:focus-within{border-color:var(--acento);outline:2px solid var(--acento);outline-offset:2px}
+.sig-item a{display:block;font-size:16px;font-weight:600;margin-bottom:4px;text-decoration:none}
+.sig-item a::after{content:"";position:absolute;inset:0;border-radius:12px}
+.sig-item a:focus{outline:none}
+.sig-item span{font-size:14px;color:var(--suave);display:block}
+
+/* ---------- Cierre ---------- */
+.cierre{background:var(--tinta);color:#fff;border-radius:20px;padding:46px 32px;text-align:center}
+.cierre h2{color:#fff;margin-top:0}
+.cierre p{color:#d6d3d1;max-width:540px;margin:14px auto 26px}
+.cierre .btn{background:var(--acento)}
+.nota{font-size:13px;color:#a8a29e;margin-top:16px}
+
+/* ---------- Pie ---------- */
+/* ---------- Fuentes citadas ----------
+   Las cifras de la competencia salían antes como "según comparativas de
+   terceros", sin decir cuáles. Eso es imposible de verificar para el lector y
+   es justo lo que los buscadores con IA no citan. */
+.fuentes{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:24px 26px;margin:34px 0}
+.fuentes h3{font-size:17px;margin:0 0 6px}
+.fuentes > p{font-size:14.5px;color:var(--suave);margin-bottom:16px}
+.fuentes ol{margin:0 0 0 20px;font-size:14.5px;color:var(--tinta2)}
+.fuentes li{margin-bottom:11px}
+.fuentes a{color:var(--acento2);text-decoration:underline;text-underline-offset:2px;word-break:break-word}
+.fuentes .marca{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.04em;
+                text-transform:uppercase;padding:2px 7px;border-radius:4px;margin-left:6px;vertical-align:1px}
+.fuentes .marca.rival{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
+.fuentes .marca.neutra{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+.fuentes .marca.oficial{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+
+/* ---------- Formulario de contacto ----------
+   Vive dentro del bloque oscuro de cierre, así que los campos van en claro
+   translúcido. Sustituye al enlace `mailto:`, que en el móvil se perdía en
+   silencio cuando el visitante no tenía cliente de correo configurado. */
+.formulario{max-width:520px;margin:0 auto;text-align:left}
+.campos{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:560px){.campos.dos{grid-template-columns:1fr 1fr}}
+.campo label{display:block;font-size:13px;font-weight:600;color:#e7e5e4;margin-bottom:5px}
+.campo input,.campo select,.campo textarea{
+  width:100%;padding:11px 13px;border-radius:9px;border:1px solid rgba(255,255,255,.22);
+  background:rgba(255,255,255,.07);color:#fff;font:inherit;font-size:15.5px}
+.campo textarea{min-height:74px;resize:vertical}
+.campo input::placeholder,.campo textarea::placeholder{color:#a8a29e}
+.campo input:focus,.campo select:focus,.campo textarea:focus{
+  outline:2px solid var(--acento);outline-offset:1px;background:rgba(255,255,255,.12)}
+.campo select option{background:#1c1917;color:#fff}
+/* La trampa para robots: fuera de pantalla pero no `display:none`, que algunos
+   la detectan. `aria-hidden` y `tabindex=-1` la ocultan a quien usa lector. */
+.trampa{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+/* Consentimiento del RGPD. La casilla es obligatoria y la "capa básica" va en
+   un desplegable para no romper el formulario con un muro de texto legal. */
+.consentimiento{display:flex;gap:11px;align-items:flex-start;margin-top:18px}
+.consentimiento input[type=checkbox]{width:19px;height:19px;flex-shrink:0;margin-top:2px;
+  accent-color:var(--acento);cursor:pointer}
+.consentimiento label{font-size:14px;color:#e7e5e4;line-height:1.45;cursor:pointer}
+.capa-basica{margin-top:10px}
+.capa-basica summary{font-size:13.5px;color:#a8a29e;cursor:pointer;text-decoration:underline;
+  text-underline-offset:2px;list-style:none}
+.capa-basica summary::-webkit-details-marker{display:none}
+.capa-basica summary::before{content:"▸ "}
+.capa-basica[open] summary::before{content:"▾ "}
+.capa-basica > div{margin-top:10px;padding:14px 16px;border-radius:9px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14)}
+.capa-basica p{font-size:13px;color:#d6d3d1;margin-bottom:8px;line-height:1.5}
+.capa-basica p:last-child{margin-bottom:0}
+.capa-basica strong{color:#fff}
+.capa-basica a{color:#fff}
+
+/* Campos opcionales plegados: pedir solo nombre, restaurante y correo baja la
+   fricción del primer paso; lo demás lo pregunto yo al contestar. */
+.mas-datos{margin-top:14px}
+.mas-datos summary{font-size:14px;color:#d6d3d1;cursor:pointer;list-style:none;
+  text-decoration:underline;text-underline-offset:2px}
+.mas-datos summary::-webkit-details-marker{display:none}
+.mas-datos summary::before{content:"+ "}
+.mas-datos[open] summary::before{content:"\2212 "}
+.mas-datos summary span{color:#a8a29e}
+.mas-datos > div{margin-top:12px}
+.campo select{appearance:auto}
+
+.formulario .btn{width:100%;margin-top:16px;padding:14px 22px;font-size:16.5px}
+.aviso-form{font-size:13px;color:#a8a29e;margin-top:12px;text-align:center}
+.aviso-form a{color:#e7e5e4}
+.resultado{margin-top:16px;padding:14px 16px;border-radius:10px;font-size:15px;display:none}
+.resultado.bien{display:block;background:rgba(34,197,94,.16);border:1px solid rgba(34,197,94,.4);color:#dcfce7}
+.resultado.mal{display:block;background:rgba(239,68,68,.16);border:1px solid rgba(239,68,68,.4);color:#fee2e2}
+
+footer{border-top:1px solid var(--linea);padding:40px 0 30px;font-size:14px;color:var(--suave);margin-top:20px}
+.pie-rejilla{display:grid;gap:26px;grid-template-columns:1fr}
+@media(min-width:700px){.pie-rejilla{grid-template-columns:2fr 1fr 1fr}}
+.pie-rejilla b{display:block;color:var(--tinta);font-size:14.5px;margin-bottom:10px}
+.pie-rejilla ul{list-style:none}
+.pie-rejilla li{margin-bottom:7px}
+.pie-rejilla a{text-decoration:none}
+.pie-rejilla a:hover{color:var(--acento2)}
+.pie-legal{border-top:1px solid var(--linea);margin-top:30px;padding-top:20px;
+           font-size:13px;display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:space-between}
+
+/* ---------- Cómo empezar, en tres pasos ---------- */
+.pasos{display:grid;gap:18px;grid-template-columns:1fr;counter-reset:paso}
+@media(min-width:760px){.pasos{grid-template-columns:repeat(3,1fr)}}
+.paso{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:24px 22px;position:relative}
+.paso::before{counter-increment:paso;content:counter(paso);display:flex;align-items:center;
+  justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--acento);
+  color:#fff;font-weight:700;margin-bottom:12px}
+.paso b{display:block;font-size:17px;margin-bottom:6px}
+.paso p{font-size:15px;color:var(--tinta2)}
+.paso small{display:block;margin-top:8px;color:var(--suave);font-size:13px}
+.enlace-calc{display:inline-block;margin-top:6px;font-weight:600;color:var(--acento2)}
+
+/* ---------- Calculadora ---------- */
+.calc{display:grid;gap:22px;grid-template-columns:1fr;align-items:start}
+@media(min-width:860px){.calc{grid-template-columns:1fr 1fr}}
+.calc-entrada,.calc-salida{background:#fff;border:1px solid var(--linea);border-radius:16px;padding:26px}
+.calc-entrada h2,.calc-salida h2{font-size:22px;margin:0 0 16px}
+.calc-campo{margin-bottom:16px}
+.calc-campo label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+.calc-campo input{width:100%;padding:12px 13px;border:1px solid var(--linea);border-radius:9px;
+  font:inherit;font-size:16px;background:#fff;color:var(--tinta)}
+.calc-campo input:focus{outline:2px solid var(--acento);outline-offset:1px}
+.calc-campo small{display:block;margin-top:5px;color:var(--suave);font-size:13px}
+.calc-tarjeta{border:1px solid var(--linea);border-radius:12px;padding:16px 18px;margin-bottom:12px;background:var(--papel)}
+.calc-tarjeta.destacada{border:2px solid var(--acento);background:#fff7ed}
+.calc-etq{font-size:13px;font-weight:600;color:var(--suave);text-transform:uppercase;letter-spacing:.05em}
+.calc-cifra{font-family:'Fraunces',Georgia,serif;font-size:34px;font-weight:600;line-height:1.15;margin:4px 0}
+.calc-cifra.verde{color:var(--verde)}
+.calc-det{font-size:14px;color:var(--tinta2)}
