@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStaffSession } from "@/lib/auth";
 import { getBusinessHours, getBlockedDays, getActiveTables } from "@/lib/restaurant";
-import { getReservationsForRange } from "@/lib/reservations";
-import { toLocalDate, addDays } from "@/lib/dates";
+import { getReservationsForCalendar } from "@/lib/reservations";
+import { toLocalDate, addDays, rangoDelMes } from "@/lib/dates";
 import { CalendarClient } from "./CalendarClient";
 
 export const metadata = { title: "Calendario de Reservas" };
@@ -23,17 +23,18 @@ export default async function CalendarioPage({
   const admin = createAdminClient();
   const rid = session.restaurantId;
 
-  // ±60 días alrededor del día visible, para poder navegar sin recargar.
-  const fromStr = addDays(today, -60);
-  const toStr = addDays(today, 60);
+  // Solo el mes que se va a ver. Antes eran ±60 días: mil reservas y 466 KB de
+  // respuesta para pintar una rejilla de treinta días. Los demás meses los pide
+  // el cliente conforme el usuario navega.
+  const { desde, hasta } = rangoDelMes(today);
 
+  // Los días cerrados sí se traen de par en par de años: es una fila por día
+  // cerrado, pesa nada, y así al cambiar de mes los cierres ya están puestos
+  // en vez de aparecer un segundo después.
   const [reservations, businessHours, blockedDays, tables] = await Promise.all([
-    getReservationsForRange(admin, rid, fromStr, toStr, {
-      withRelations: true,
-      timeZone: session.timezone,
-    }),
+    getReservationsForCalendar(admin, rid, desde, hasta, session.timezone),
     getBusinessHours(admin, rid),
-    getBlockedDays(admin, rid, fromStr, toStr),
+    getBlockedDays(admin, rid, addDays(today, -365), addDays(today, 365)),
     getActiveTables(admin, rid),
   ]);
 

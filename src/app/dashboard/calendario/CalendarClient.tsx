@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Calendar, Users, Clock, Moon, AlertCircle } from "lucide-react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { ChevronLeft, ChevronRight, ChevronDown, Calendar, Users, Clock, Moon, AlertCircle } from "lucide-react";
 import { cn, formatTime } from "@/lib/utils";
-import { toLocalDate, dayOfWeek } from "@/lib/dates";
+import { toLocalDate, dayOfWeek, rangoDelMes, claveMes } from "@/lib/dates";
 import { resolveServiceDate } from "@/lib/availability";
+import { toast } from "sonner";
 import type { Reservation, BusinessHours, BlockedDay, RestaurantTable } from "@/types";
 
 // ─── constants ───────────────────────────────────────────────────────────────
@@ -16,10 +17,10 @@ const MONTHS = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  confirmed: "bg-blue-100 border-blue-200 text-blue-800",
-  seated:    "bg-green-100 border-green-200 text-green-800",
+  confirmed: "bg-blue-100 dark:bg-blue-500/15 border-blue-200 dark:border-blue-500/25 text-blue-800 dark:text-blue-300",
+  seated:    "bg-green-100 dark:bg-green-500/15 border-green-200 dark:border-green-500/25 text-green-800 dark:text-green-300",
   completed: "bg-stone-100 border-stone-200 text-stone-500",
-  no_show:   "bg-red-100 border-red-200 text-red-700",
+  no_show:   "bg-red-100 dark:bg-red-500/15 border-red-200 dark:border-red-500/25 text-red-700 dark:text-red-300",
   cancelled: "bg-stone-50 border-stone-100 text-stone-400",
 };
 const STATUS_LABEL: Record<string, string> = {
@@ -53,14 +54,37 @@ function getMonthDays(year: number, month: number): (Date | null)[] {
   return cells;
 }
 
+/**
+ * Hora local de una reserva, en minutos desde medianoche.
+ *
+ * El formateador se guarda por zona y el resultado por fecha: esta función se
+ * llama una vez por reserva y franja, o sea decenas de miles de veces al
+ * pintar un mes. Construyendo un `Intl.DateTimeFormat` en cada llamada, que
+ * era lo que hacía, el calendario se comía más de dos segundos de CPU antes
+ * de aparecer en pantalla.
+ */
+const formateadoresHora = new Map<string, Intl.DateTimeFormat>();
+const minutosPorFecha = new Map<string, number>();
+
 function localMins(isoStr: string, timeZone: string): number {
-  const d = new Date(isoStr);
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone, hour: "2-digit", minute: "2-digit", hour12: false,
-  }).formatToParts(d);
+  const clave = timeZone + isoStr;
+  const guardado = minutosPorFecha.get(clave);
+  if (guardado !== undefined) return guardado;
+
+  let dtf = formateadoresHora.get(timeZone);
+  if (!dtf) {
+    dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone, hour: "2-digit", minute: "2-digit", hour12: false,
+    });
+    formateadoresHora.set(timeZone, dtf);
+  }
+
+  const parts = dtf.formatToParts(new Date(isoStr));
   const h = parseInt(parts.find(p => p.type === "hour")!.value, 10);
   const m = parseInt(parts.find(p => p.type === "minute")!.value, 10);
-  return h * 60 + m;
+  const total = h * 60 + m;
+  minutosPorFecha.set(clave, total);
+  return total;
 }
 
 function timeToMins(t: string): number {
@@ -137,6 +161,73 @@ export function CalendarClient({
   const [viewDate, setViewDate] = useState(new Date(today + "T12:00:00"));
   const [selectedDate, setSelectedDate] = useState(today);
 
+  // ── Carga por meses ────────────────────────────────────────────────────────
+  // La página solo trae el mes inicial. Los demás se piden cuando el usuario
+  // llega a ellos y se quedan guardados, así que ir y volver entre meses no
+  // vuelve a llamar al servidor.
+  const [reservations, setReservations] = useState<Reservation[]>(initialReservations);
+  const mesesCargados = useRef<Set<string>>(new Set([claveMes(today)]));
+  const [cargandoMes, setCargandoMes] = useState(false);
+
+  // El mes que hay que tener cargado: el de la rejilla en vista de mes, y el
+  // del día elegido cuando se navega día a día con las flechas.
+  const mesNecesario = view === "day" ? claveMes(selectedDate) : claveMes(isoDate(viewDate));
+
+  useEffect(() => {
+    if (mesesCargados.current.has(mesNecesario)) return;
+    // Se marca antes de pedir: si no, un doble render dispararía dos peticiones.
+    mesesCargados.current.add(mesNecesario);
+
+    const { desde, hasta } = rangoDelMes(mesNecesario + "-01");
+    let cancelado = false;
+    setCargandoMes(true);
+
+    fetch(`/api/dashboard/calendario?desde=${desde}&hasta=${hasta}`)
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error("fallo"))))
+      .then(({ reservations: nuevas }: { reservations: Reservation[] }) => {
+        if (cancelado) return;
+        setReservations(prev => {
+          // Por id, porque los márgenes de siete días hacen que dos meses
+          // contiguos compartan reservas y si no saldrían duplicadas.
+          const porId = new Map(prev.map(r => [r.id, r]));
+          for (const r of nuevas) {
+            if (["confirmed", "seated", "completed"].includes(r.status)) porId.set(r.id, r);
+          }
+          return [...porId.values()];
+        });
+      })
+      .catch(() => {
+        // Si falla, se olvida para poder reintentar al volver a ese mes.
+        mesesCargados.current.delete(mesNecesario);
+        toast.error("No se han podido cargar las reservas de ese mes");
+      })
+      .finally(() => !cancelado && setCargandoMes(false));
+
+    return () => { cancelado = true; };
+  }, [mesNecesario]);
+  // Franjas desplegadas en la vista de día (clave: "turno·HH:MM").
+  const [openSlots, setOpenSlots] = useState<Set<string>>(new Set());
+  // Para saltar a una reserva concreta al pulsar su mesa dentro de una franja.
+  const reservationRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+
+  function toggleSlot(key: string) {
+    setOpenSlots(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function jumpToReservation(id: string) {
+    const el = reservationRefs.current.get(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightedId(id);
+    window.setTimeout(() => setHighlightedId(cur => (cur === id ? null : cur)), 1600);
+  }
+
   const totalSeats = useMemo(() => tables.reduce((s, t) => s + t.capacity, 0), [tables]);
 
   // Agrupadas por DÍA DE SERVICIO, no por el día del reloj.
@@ -148,7 +239,7 @@ export function CalendarClient({
   // motor de reservas, así que panel y validación cuentan lo mismo.
   const byDate = useMemo(() => {
     const m = new Map<string, Reservation[]>();
-    for (const r of initialReservations) {
+    for (const r of reservations) {
       const d =
         resolveServiceDate(new Date(r.starts_at), new Date(r.ends_at), businessHours, {
           timeZone,
@@ -157,7 +248,7 @@ export function CalendarClient({
       m.get(d)!.push(r);
     }
     return m;
-  }, [initialReservations, businessHours, timeZone]);
+  }, [reservations, businessHours, timeZone]);
 
   const blockedSet = useMemo(() => new Set(blockedDays.map(b => b.date)), [blockedDays]);
   const blockedReasonMap = useMemo(() => {
@@ -227,6 +318,17 @@ export function CalendarClient({
     setView("day");
   }
 
+  /** Busca el próximo día con servicio a partir de (sin incluir) `fromDs`, hasta 60 días vista. */
+  function findNextOpenDate(fromDs: string): string | null {
+    const d = new Date(fromDs + "T12:00:00");
+    for (let i = 0; i < 60; i++) {
+      d.setDate(d.getDate() + 1);
+      const ds = isoDate(d);
+      if (!getDayState(ds).isClosed) return ds;
+    }
+    return null;
+  }
+
   // ── Day view data ───────────────────────────────────────────────────────────
   const selState  = getDayState(selectedDate);
   const selShifts = getShiftsForDay(selectedDate);
@@ -238,26 +340,53 @@ export function CalendarClient({
   });
 
   // ── Slot occupancy for a shift ──────────────────────────────────────────────
-  function slotOccupancy(shift: Shift): Array<{ label: string; free: number; occupied: number; total: number }> {
-    const result: Array<{ label: string; free: number; occupied: number; total: number }> = [];
+  interface SlotTableStatus {
+    table: RestaurantTable;
+    reservation: Reservation | null;
+  }
+  interface SlotInfo {
+    label: string;
+    free: number;
+    occupied: number;
+    total: number;
+    tableStatuses: SlotTableStatus[];
+  }
+
+  const activeTables = useMemo(
+    () => [...tables].filter(t => t.active).sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
+    [tables],
+  );
+
+  function slotOccupancy(shift: Shift): SlotInfo[] {
+    const result: SlotInfo[] = [];
     const { openMins, closeMins } = shiftBounds(shift.open, shift.close);
     const INTERVAL = 30;
-    const total = tables.filter(t => t.active).length;
 
     for (let cur = openMins; cur < closeMins; cur += INTERVAL) {
       const slotEnd = cur + INTERVAL;
-      const occupiedTableIds = new Set<string>();
+      // Una reserva de grupo puede ocupar varias mesas juntadas: se indexa
+      // por mesa para poder pintar el detalle de cada una por separado.
+      const occupantByTable = new Map<string, Reservation>();
       for (const r of shift.reservations) {
         const rStart = normalizeToShift(localMins(r.starts_at, timeZone), openMins);
         const rEnd = normalizeToShift(localMins(r.ends_at, timeZone), rStart);
         if (rStart < slotEnd && rEnd > cur) {
-          // Una reserva de grupo puede ocupar varias mesas juntadas.
           const ids = r.table_ids?.length ? r.table_ids : r.table_id ? [r.table_id] : [];
-          for (const id of ids) occupiedTableIds.add(id);
+          for (const id of ids) occupantByTable.set(id, r);
         }
       }
-      const occupied = occupiedTableIds.size;
-      result.push({ label: minsToLabel(cur % 1440), free: total - occupied, occupied, total });
+      const tableStatuses: SlotTableStatus[] = activeTables.map(t => ({
+        table: t,
+        reservation: occupantByTable.get(t.id) ?? null,
+      }));
+      const occupied = tableStatuses.filter(s => s.reservation).length;
+      result.push({
+        label: minsToLabel(cur % 1440),
+        free: activeTables.length - occupied,
+        occupied,
+        total: activeTables.length,
+        tableStatuses,
+      });
     }
     return result;
   }
@@ -280,7 +409,7 @@ export function CalendarClient({
           <div className="flex-1">
             <h1 className="text-lg font-bold text-stone-800 capitalize">{selDateLabel}</h1>
             {selState.occ > 0 && (
-              <p className={cn("text-xs font-medium", selState.occ >= 3 ? "text-orange-600" : "text-amber-600")}>
+              <p className={cn("text-xs font-medium", selState.occ >= 3 ? "text-orange-600 dark:text-orange-400" : "text-amber-600 dark:text-amber-400")}>
                 {OCC_LABEL[selState.occ]} · {selState.covers} comensales
               </p>
             )}
@@ -312,21 +441,47 @@ export function CalendarClient({
 
         {/* Closed / Blocked */}
         {selState.isClosed && (
-          <div className={cn(
-            "rounded-2xl border p-5 flex items-center gap-3",
-            selBlocked ? "bg-red-50 border-red-100" : "bg-stone-50 border-stone-100",
-          )}>
-            {selBlocked
-              ? <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
-              : <Moon className="h-5 w-5 text-stone-400 flex-shrink-0" />
-            }
-            <div>
-              <p className="text-sm font-semibold text-stone-700">
-                {selBlocked ? "Día bloqueado" : "Restaurante cerrado"}
-              </p>
-              {selBlockReason && (
-                <p className="text-xs text-stone-500 mt-0.5">{selBlockReason}</p>
-              )}
+          <div className="min-h-[46vh] flex items-center justify-center">
+            <div className={cn(
+              "rounded-2xl border p-6 flex flex-col items-center text-center gap-3 max-w-xs",
+              selBlocked ? "bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/25" : "bg-stone-50 border-stone-100",
+            )}>
+              <div className={cn(
+                "h-11 w-11 rounded-full flex items-center justify-center",
+                selBlocked ? "bg-red-100 dark:bg-red-500/15" : "bg-stone-100",
+              )}>
+                {selBlocked
+                  ? <AlertCircle className="h-5 w-5 text-red-400" />
+                  : <Moon className="h-5 w-5 text-stone-400" />
+                }
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-stone-700">
+                  {selBlocked ? "Día bloqueado" : "Restaurante cerrado"}
+                </p>
+                {selBlockReason && (
+                  <p className="text-xs text-stone-500 mt-0.5">{selBlockReason}</p>
+                )}
+              </div>
+              {(() => {
+                const nextOpen = findNextOpenDate(selectedDate);
+                if (!nextOpen) return null;
+                const nextLabel = new Date(nextOpen + "T12:00:00").toLocaleDateString("es-ES", {
+                  weekday: "long", day: "numeric", month: "short",
+                });
+                return (
+                  <button
+                    onClick={() => setSelectedDate(nextOpen)}
+                    className="mt-1 text-amber-700 dark:text-amber-300 bg-amber-100 hover:bg-amber-200 transition-colors px-4 py-2 rounded-2xl flex flex-col items-center gap-0.5"
+                  >
+                    <span className="text-[10px] font-medium uppercase tracking-wide opacity-70">Próximo día con servicio</span>
+                    <span className="text-sm font-semibold capitalize flex items-center gap-1">
+                      {nextLabel}
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </span>
+                  </button>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -338,7 +493,7 @@ export function CalendarClient({
           const shiftOcc = occupancyLevel(shiftCovers, totalSeats, 1);
 
           return (
-            <div key={shift.label} className="rounded-2xl bg-white border border-stone-100 shadow-sm overflow-hidden">
+            <div key={shift.label} className="rounded-2xl bg-panel border border-stone-100 shadow-sm overflow-hidden">
               {/* Shift header */}
               <div className="px-5 py-3.5 border-b border-stone-50 flex items-center justify-between">
                 <div>
@@ -352,10 +507,10 @@ export function CalendarClient({
                   <span className={cn(
                     "text-xs font-semibold px-2.5 py-1 rounded-full",
                     shiftOcc === 0 ? "bg-stone-100 text-stone-500" :
-                    shiftOcc === 1 ? "bg-emerald-100 text-emerald-700" :
-                    shiftOcc === 2 ? "bg-amber-100 text-amber-700" :
-                    shiftOcc === 3 ? "bg-orange-100 text-orange-700" :
-                                     "bg-red-100 text-red-700",
+                    shiftOcc === 1 ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" :
+                    shiftOcc === 2 ? "bg-amber-100 text-amber-700 dark:text-amber-300" :
+                    shiftOcc === 3 ? "bg-orange-100 dark:bg-orange-500/15 text-orange-700 dark:text-orange-300" :
+                                     "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300",
                   )}>
                     {shiftOcc === 0 ? "Sin reservas" : OCC_LABEL[shiftOcc]}
                   </span>
@@ -365,40 +520,101 @@ export function CalendarClient({
                 </div>
               </div>
 
-              {/* Slot occupancy grid */}
+              {/* Slot occupancy grid — cada franja se puede desplegar para ver el detalle mesa a mesa */}
               {slots.length > 0 && (
                 <div className="px-5 py-3 border-b border-stone-50">
                   <p className="text-[11px] font-medium text-stone-400 uppercase tracking-wide mb-2">
-                    Mesas por franja
+                    Mesas por franja · toca una franja para ver el detalle
                   </p>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     {slots.map(slot => {
                       const pct = slot.total > 0 ? slot.occupied / slot.total : 0;
+                      const key = `${shift.label}·${slot.label}`;
+                      const isOpen = openSlots.has(key);
                       return (
-                        <div key={slot.label} className="flex items-center gap-2.5">
-                          <span className="text-xs text-stone-500 w-10 flex-shrink-0 font-mono">{slot.label}</span>
-                          <div className="flex-1 h-5 bg-stone-100 rounded-full overflow-hidden relative">
-                            {pct > 0 && (
-                              <div
-                                className={cn(
-                                  "h-full rounded-full transition-all",
-                                  pct < 0.25 ? "bg-emerald-400" :
-                                  pct < 0.55 ? "bg-amber-400" :
-                                  pct < 0.80 ? "bg-orange-500" :
-                                               "bg-red-500",
-                                )}
-                                style={{ width: `${Math.round(pct * 100)}%` }}
-                              />
+                        <div key={slot.label} className="rounded-xl overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => toggleSlot(key)}
+                            aria-expanded={isOpen}
+                            className={cn(
+                              "w-full flex items-center gap-2.5 py-2 px-2 -mx-1.5 rounded-lg border transition-colors",
+                              isOpen
+                                ? "bg-amber-50 border-amber-200"
+                                : "bg-panel border-stone-100 hover:border-amber-200 hover:bg-amber-50/40",
                             )}
+                          >
+                            <span className="text-xs text-stone-500 w-10 flex-shrink-0 font-mono">{slot.label}</span>
+                            <div className="flex-1 h-5 bg-stone-100 rounded-full overflow-hidden relative">
+                              {pct > 0 && (
+                                <div
+                                  className={cn(
+                                    "h-full rounded-full transition-all",
+                                    pct < 0.25 ? "bg-emerald-400" :
+                                    pct < 0.55 ? "bg-amber-400" :
+                                    pct < 0.80 ? "bg-orange-500" :
+                                                 "bg-red-500",
+                                  )}
+                                  style={{ width: `${Math.round(pct * 100)}%` }}
+                                />
+                              )}
+                            </div>
+                            <span className={cn(
+                              "text-xs font-medium w-12 text-right flex-shrink-0",
+                              slot.free === 0 ? "text-red-600 dark:text-red-400" :
+                              slot.free <= 2  ? "text-orange-600 dark:text-orange-400" :
+                                               "text-stone-500",
+                            )}>
+                              {slot.free}/{slot.total} lib.
+                            </span>
+                            <ChevronDown className={cn(
+                              "h-4 w-4 flex-shrink-0 transition-transform",
+                              isOpen ? "rotate-180 text-amber-600 dark:text-amber-400" : "text-amber-400",
+                            )} />
+                          </button>
+
+                          {/* Panel expandible con el detalle mesa a mesa (animado sin medir alturas) */}
+                          <div
+                            className="grid transition-[grid-template-rows] duration-200 ease-out"
+                            style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+                          >
+                            <div className="overflow-hidden">
+                              <div className="flex flex-wrap gap-1.5 pt-1 pb-2.5 pl-11 pr-1.5">
+                                {slot.tableStatuses.length === 0 ? (
+                                  <span className="text-xs text-stone-400">Sin mesas activas</span>
+                                ) : (
+                                  slot.tableStatuses.map(ts => {
+                                    const occupied = !!ts.reservation;
+                                    return (
+                                      <button
+                                        key={ts.table.id}
+                                        type="button"
+                                        disabled={!occupied}
+                                        onClick={() => occupied && jumpToReservation(ts.reservation!.id)}
+                                        className={cn(
+                                          "text-[11px] px-2.5 py-2 rounded-lg border font-medium flex items-center gap-1 transition-colors min-h-[36px]",
+                                          occupied
+                                            // En oscuro la rampa está invertida, así que `stone-800` pasa a
+                                            // ser un tono claro y el texto blanco encima desaparecía. El
+                                            // `dark:` devuelve el mismo contraste dando la vuelta al texto.
+                                            ? "bg-stone-800 border-stone-800 text-white dark:text-stone-50 hover:bg-amber-600 hover:border-amber-600 hover:text-white cursor-pointer active:scale-95"
+                                            : "bg-panel border-stone-200 text-stone-400 cursor-default",
+                                        )}
+                                        title={occupied ? `${ts.reservation!.guest_name} · ${ts.reservation!.party_size}p — ver en la lista` : "Mesa libre"}
+                                      >
+                                        <span>{ts.table.name}</span>
+                                        {occupied && (
+                                          <span className="opacity-80 font-normal">
+                                            · {ts.reservation!.guest_name.split(" ")[0]} ({ts.reservation!.party_size})
+                                          </span>
+                                        )}
+                                      </button>
+                                    );
+                                  })
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <span className={cn(
-                            "text-xs font-medium w-12 text-right flex-shrink-0",
-                            slot.free === 0 ? "text-red-600" :
-                            slot.free <= 2  ? "text-orange-600" :
-                                             "text-stone-500",
-                          )}>
-                            {slot.free}/{slot.total} lib.
-                          </span>
                         </div>
                       );
                     })}
@@ -414,7 +630,17 @@ export function CalendarClient({
               ) : (
                 <div className="divide-y divide-stone-50">
                   {shift.reservations.map(r => (
-                    <div key={r.id} className="flex items-center gap-3 px-5 py-3">
+                    <div
+                      key={r.id}
+                      ref={el => {
+                        if (el) reservationRefs.current.set(r.id, el);
+                        else reservationRefs.current.delete(r.id);
+                      }}
+                      className={cn(
+                        "flex items-center gap-3 px-5 py-3 transition-colors duration-500",
+                        highlightedId === r.id ? "bg-amber-50 ring-1 ring-inset ring-amber-300" : "bg-transparent",
+                      )}
+                    >
                       <div className="flex-shrink-0 text-center w-12">
                         <div className="text-sm font-bold text-stone-800">{formatTime(r.starts_at, timeZone)}</div>
                         <div className="text-[10px] text-stone-400">{formatTime(r.ends_at, timeZone)}</div>
@@ -443,7 +669,7 @@ export function CalendarClient({
 
         {/* Open day but no shifts configured */}
         {!selState.isClosed && selShifts.length === 0 && (
-          <div className="rounded-2xl bg-white border border-stone-100 shadow-sm py-10 text-center">
+          <div className="rounded-2xl bg-panel border border-stone-100 shadow-sm py-10 text-center">
             <Calendar className="h-7 w-7 text-stone-300 mx-auto mb-2" />
             <p className="text-stone-400 text-sm">Sin turnos configurados</p>
           </div>
@@ -461,7 +687,7 @@ export function CalendarClient({
         <h1 className="text-xl font-bold text-stone-800">Calendario</h1>
         <button
           onClick={() => { setSelectedDate(today); setView("day"); }}
-          className="text-xs text-amber-600 hover:text-amber-700 font-medium flex items-center gap-1"
+          className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium flex items-center gap-1"
         >
           <Calendar className="h-3.5 w-3.5" />
           Hoy
@@ -477,14 +703,23 @@ export function CalendarClient({
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-stone-200 inline-block" />Cerrado</span>
       </div>
 
-      <div className="rounded-2xl bg-white border border-stone-100 shadow-sm overflow-hidden">
+      <div className="rounded-2xl bg-panel border border-stone-100 shadow-sm overflow-hidden">
         {/* Month nav */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-stone-50">
           <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-stone-100 transition-colors">
             <ChevronLeft className="h-4 w-4 text-stone-600" />
           </button>
-          <span className="font-semibold text-stone-800 text-sm">
+          <span className="font-semibold text-stone-800 text-sm flex items-center gap-2">
             {MONTHS[month]} {year}
+            {/* Solo aparece al saltar a un mes que aún no está cargado; volver
+                a uno ya visitado no pide nada y no parpadea. */}
+            {cargandoMes && (
+              <span
+                className="h-3 w-3 rounded-full border-2 border-amber-500 border-t-transparent animate-spin"
+                role="status"
+                aria-label="Cargando reservas del mes"
+              />
+            )}
           </span>
           <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-stone-100 transition-colors">
             <ChevronRight className="h-4 w-4 text-stone-600" />
@@ -540,7 +775,7 @@ export function CalendarClient({
                   isToday
                     ? "bg-amber-600 text-white"
                     : isSelected
-                    ? "text-amber-700 font-bold"
+                    ? "text-amber-700 dark:text-amber-300 font-bold"
                     : isClosed
                     ? "text-stone-300"
                     : "text-stone-700",
@@ -570,7 +805,7 @@ export function CalendarClient({
 
       {/* Selected day preview (tap to open day view) */}
       <div
-        className="rounded-2xl bg-white border border-stone-100 shadow-sm overflow-hidden cursor-pointer"
+        className="rounded-2xl bg-panel border border-stone-100 shadow-sm overflow-hidden cursor-pointer"
         onClick={() => setView("day")}
       >
         <div className="px-5 py-3.5 border-b border-stone-50 flex items-center justify-between">
@@ -579,7 +814,7 @@ export function CalendarClient({
               weekday: "long", day: "numeric", month: "long",
             })}
           </h2>
-          <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
+          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
             Ver día <ChevronRight className="h-3 w-3" />
           </span>
         </div>

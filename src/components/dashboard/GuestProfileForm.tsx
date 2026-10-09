@@ -43,7 +43,7 @@ export function GuestProfileForm({ guest }: { guest: Guest }) {
   }
 
   return (
-    <div className="rounded-2xl bg-white border border-stone-100 p-5 shadow-sm space-y-4">
+    <div className="rounded-2xl bg-panel border border-stone-100 p-5 shadow-sm space-y-4">
       <h2 className="font-semibold text-stone-800">Notas de sala</h2>
 
       <div>
@@ -60,8 +60,8 @@ export function GuestProfileForm({ guest }: { guest: Guest }) {
                 className={cn(
                   "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                   active
-                    ? "border-amber-300 bg-amber-100 text-amber-900"
-                    : "border-stone-200 bg-white text-stone-500 hover:bg-stone-50",
+                    ? "border-amber-300 bg-amber-100 text-amber-900 dark:text-amber-300"
+                    : "border-stone-200 bg-panel text-stone-500 hover:bg-stone-50",
                 )}
               >
                 {TAG_LABELS[tag]}

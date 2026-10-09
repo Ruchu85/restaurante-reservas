@@ -2,9 +2,10 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Check, ChevronRight, Loader2, Users } from "lucide-react";
+import { ArrowLeft, Calendar, Check, ChevronRight, Loader2, Mail, MessageCircle, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toLocalDate, addDays } from "@/lib/dates";
+import { isSpanishMobile } from "@/lib/phone";
 import { toast } from "sonner";
 
 type Step = "date-party" | "time" | "contact" | "done";
@@ -21,6 +22,21 @@ interface ConfirmedReservation {
   starts_at: string;
   guest_name: string;
   party_size: number;
+}
+
+/**
+ * Deja el campo del teléfono en los nueve dígitos del número español.
+ *
+ * Quita separadores y, si alguien pega el número con prefijo —del contacto de
+ * su móvil o del autocompletar suele salir así—, lo recorta en vez de dejar
+ * "+34 +34 600…". Solo lo recorta cuando lo que queda son nueve dígitos, para
+ * no mutilar un número que empiece de verdad por esas cifras.
+ */
+function soloNueveDigitos(valor: string): string {
+  const digitos = valor.replace(/\D/g, "");
+  const sinPrefijo = digitos.replace(/^(?:0034|34)/, "");
+  const base = sinPrefijo.length === 9 ? sinPrefijo : digitos;
+  return base.slice(0, 9);
 }
 
 /**
@@ -83,7 +99,9 @@ export function BookingWizard({
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [guestName, setGuestName] = useState("");
+  // Solo la parte local: el "+34" lo pone el propio campo, delante y fijo.
   const [guestPhone, setGuestPhone] = useState("");
+  const telefonoCompleto = `+34${guestPhone}`;
   const [guestEmail, setGuestEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -132,9 +150,8 @@ export function BookingWizard({
       toast.error("Escribe tu nombre completo (mínimo 2 caracteres)");
       return;
     }
-    const phoneClean = guestPhone.trim();
-    if (!phoneClean || !/^[+\d\s\-().]{6,30}$/.test(phoneClean)) {
-      toast.error("Introduce un número de teléfono válido");
+    if (!/^\d{9}$/.test(guestPhone)) {
+      toast.error("El teléfono son nueve dígitos, sin el prefijo +34");
       return;
     }
     if (guestEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
@@ -152,7 +169,7 @@ export function BookingWizard({
           starts_at: selectedSlot.starts_at,
           party_size: partySize,
           guest_name: guestName.trim(),
-          guest_phone: guestPhone.trim(),
+          guest_phone: telefonoCompleto,
           guest_email: guestEmail.trim() || undefined,
           notes: notes.trim() || undefined,
         }),
@@ -204,11 +221,28 @@ export function BookingWizard({
           <Check className="h-8 w-8 text-green-600" />
         </div>
         <h2 className="text-2xl font-bold text-stone-800 mb-2">¡Reserva confirmada!</h2>
-        <p className="text-stone-500 mb-8 max-w-sm mx-auto">
+        <p className="text-stone-500 mb-4 max-w-sm mx-auto">
           Hemos guardado tu reserva. Te esperamos el{" "}
           <strong>{formatDateDisplayLower(date)}</strong> a las{" "}
           <strong>{formatTime(confirmed.starts_at)}</strong>.
         </p>
+
+        {(isSpanishMobile(telefonoCompleto) || guestEmail.trim()) && (
+          <div className="flex flex-col items-center gap-1.5 mb-8 text-sm text-stone-500">
+            {isSpanishMobile(telefonoCompleto) && (
+              <span className="flex items-center gap-1.5">
+                <MessageCircle className="h-4 w-4 text-green-600" />
+                Te hemos enviado la confirmación por WhatsApp
+              </span>
+            )}
+            {guestEmail.trim() && (
+              <span className="flex items-center gap-1.5">
+                <Mail className="h-4 w-4 text-amber-600" />
+                Y también por email, a {guestEmail.trim()}
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="rounded-2xl bg-amber-50 border border-amber-100 p-6 max-w-sm mx-auto mb-8 text-left space-y-3">
           <div className="flex justify-between text-sm">
@@ -528,17 +562,40 @@ export function BookingWizard({
               <label htmlFor="reserva-telefono" className="block text-sm font-medium text-stone-700 mb-1.5">
                 Teléfono <span className="text-red-500" aria-hidden>*</span>
               </label>
-              <input
-                id="reserva-telefono"
-                name="telefono"
-                type="tel"
-                required
-                autoComplete="tel"
-                value={guestPhone}
-                onChange={(e) => setGuestPhone(e.target.value)}
-                placeholder="+34 600 000 000"
-                className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-stone-800 placeholder:text-stone-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 transition-all"
-              />
+              {/*
+                El prefijo va fijo a la izquierda y fuera del campo editable:
+                casi todos los comensales son de aquí, y tener que escribir
+                "+34" es un roce de más en el paso donde más gente abandona.
+                El campo guarda solo los nueve dígitos; el número completo se
+                arma al enviar.
+              */}
+              <div className="flex items-stretch rounded-xl border border-stone-200 bg-stone-50 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-400/20 transition-all">
+                {/* Sin emoji de bandera: Windows no las dibuja y sale "ES"
+                    en vez del icono, así que el campo se vería distinto según
+                    el sistema. "+34" se entiende igual y se ve igual. */}
+                <span
+                  className="flex items-center pl-4 pr-3 text-stone-500 select-none border-r border-stone-200"
+                  aria-hidden
+                >
+                  +34
+                </span>
+                <input
+                  id="reserva-telefono"
+                  name="telefono"
+                  type="tel"
+                  inputMode="numeric"
+                  required
+                  autoComplete="tel-national"
+                  value={guestPhone}
+                  onChange={(e) => setGuestPhone(soloNueveDigitos(e.target.value))}
+                  placeholder="600 000 000"
+                  aria-describedby="reserva-telefono-ayuda"
+                  className="flex-1 min-w-0 rounded-r-xl bg-transparent px-3 py-3 text-stone-800 placeholder:text-stone-400 focus:outline-none"
+                />
+              </div>
+              <p id="reserva-telefono-ayuda" className="sr-only">
+                Número español de nueve dígitos, sin el prefijo del país.
+              </p>
             </div>
 
             <div>
@@ -580,7 +637,7 @@ export function BookingWizard({
 
           <button
             onClick={handleSubmit}
-            disabled={submitting || !guestName.trim() || !guestPhone.trim()}
+            disabled={submitting || !guestName.trim() || guestPhone.length !== 9}
             className="w-full rounded-xl bg-amber-700 py-3.5 font-semibold text-white hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             {submitting ? (

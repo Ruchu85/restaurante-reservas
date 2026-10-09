@@ -43,7 +43,7 @@ export function LoginForm({ redirectTo }: LoginFormProps) {
             <Input
               id="email"
               type="email"
-              placeholder="admin@salon.es"
+              placeholder="admin@turestaurante.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

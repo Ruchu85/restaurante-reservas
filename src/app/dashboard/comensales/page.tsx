@@ -51,7 +51,7 @@ export default async function ComensalesPage({
       <GuestSearch defaultValue={q ?? ""} />
 
       {guests.length === 0 ? (
-        <div className="rounded-2xl bg-white border border-stone-100 px-5 py-14 text-center shadow-sm">
+        <div className="rounded-2xl bg-panel border border-stone-100 px-5 py-14 text-center shadow-sm">
           <Users className="h-8 w-8 text-stone-300 mx-auto mb-3" />
           <p className="text-sm text-stone-400">
             {q ? "Ningún comensal coincide con la búsqueda." : "Aún no hay comensales registrados."}
@@ -63,7 +63,7 @@ export default async function ComensalesPage({
           )}
         </div>
       ) : (
-        <div className="rounded-2xl bg-white border border-stone-100 shadow-sm overflow-hidden divide-y divide-stone-50">
+        <div className="rounded-2xl bg-panel border border-stone-100 shadow-sm overflow-hidden divide-y divide-stone-50">
           {guests.map((guest) => (
             <Link
               key={guest.id}

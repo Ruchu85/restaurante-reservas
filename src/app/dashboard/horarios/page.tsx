@@ -40,7 +40,7 @@ export default async function HorariosPage() {
       <h1 className="text-xl font-bold text-stone-800">Horarios</h1>
 
       {!isAdmin && (
-        <p className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-800">
+        <p className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
           Solo un administrador puede modificar horarios y cierres.
         </p>
       )}

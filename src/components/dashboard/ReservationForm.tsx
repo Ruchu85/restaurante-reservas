@@ -155,14 +155,14 @@ export function ReservationForm({ restaurant, tables, defaultValues, defaultDate
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {linkedGuest && (
-        <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+        <div className="rounded-xl border border-emerald-100 dark:border-emerald-500/25 bg-emerald-50 dark:bg-emerald-500/10 p-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 text-sm font-medium text-emerald-900">
+              <div className="flex items-center gap-1.5 text-sm font-medium text-emerald-900 dark:text-emerald-200">
                 <UserCheck className="h-4 w-4" />
                 Cliente conocido
               </div>
-              <p className="mt-0.5 text-xs text-emerald-800">
+              <p className="mt-0.5 text-xs text-emerald-800 dark:text-emerald-300">
                 {linkedGuest.visits_count} visita(s)
                 {linkedGuest.no_shows_count > 0 && ` · ${linkedGuest.no_shows_count} no-show(s)`}
               </p>
@@ -171,7 +171,7 @@ export function ReservationForm({ restaurant, tables, defaultValues, defaultDate
             <button
               type="button"
               onClick={clearLinkedGuest}
-              className="flex-shrink-0 text-xs text-emerald-700 underline hover:text-emerald-900"
+              className="flex-shrink-0 text-xs text-emerald-700 dark:text-emerald-300 underline hover:text-emerald-900"
             >
               Desvincular
             </button>
@@ -182,7 +182,7 @@ export function ReservationForm({ restaurant, tables, defaultValues, defaultDate
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="relative">
           <label htmlFor="rf-name" className="block text-sm font-medium text-stone-700 mb-1.5">
-            Nombre del cliente <span className="text-red-500">*</span>
+            Nombre del cliente <span className="text-red-500 dark:text-red-400">*</span>
           </label>
           <input
             id="rf-name"
@@ -197,7 +197,7 @@ export function ReservationForm({ restaurant, tables, defaultValues, defaultDate
             required
           />
           {matches.length > 0 && (
-            <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-stone-200 bg-white shadow-lg">
+            <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-stone-200 bg-panel shadow-lg">
               {matches.map((g) => (
                 <li key={g.id}>
                   <button
@@ -220,7 +220,7 @@ export function ReservationForm({ restaurant, tables, defaultValues, defaultDate
         </div>
         <div>
           <label htmlFor="rf-phone" className="block text-sm font-medium text-stone-700 mb-1.5">
-            Teléfono <span className="text-red-500">*</span>
+            Teléfono <span className="text-red-500 dark:text-red-400">*</span>
           </label>
           <input
             id="rf-phone"
@@ -251,7 +251,7 @@ export function ReservationForm({ restaurant, tables, defaultValues, defaultDate
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="rf-date" className="block text-sm font-medium text-stone-700 mb-1.5">
-            Fecha <span className="text-red-500">*</span>
+            Fecha <span className="text-red-500 dark:text-red-400">*</span>
           </label>
           <input
             id="rf-date"
@@ -266,7 +266,7 @@ export function ReservationForm({ restaurant, tables, defaultValues, defaultDate
         </div>
         <div>
           <label htmlFor="rf-time" className="block text-sm font-medium text-stone-700 mb-1.5">
-            Hora <span className="text-red-500">*</span>
+            Hora <span className="text-red-500 dark:text-red-400">*</span>
           </label>
           <input
             id="rf-time"
@@ -283,7 +283,7 @@ export function ReservationForm({ restaurant, tables, defaultValues, defaultDate
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="rf-party" className="block text-sm font-medium text-stone-700 mb-1.5">
-            Comensales <span className="text-red-500">*</span>
+            Comensales <span className="text-red-500 dark:text-red-400">*</span>
           </label>
           <input
             id="rf-party"

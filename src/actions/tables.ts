@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireStaff, requireAdmin, UNAUTHORIZED, FORBIDDEN } from "@/lib/auth";
+import { isDemoReadOnly, READONLY_DEMO } from "@/lib/demoReadonly";
 import { logAudit } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -25,6 +26,7 @@ export type TableInput = z.infer<typeof TableSchema>;
 export async function createTable(input: TableInput) {
   const session = await requireAdmin();
   if (!session) return FORBIDDEN;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   const parsed = TableSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Datos inválidos." };
@@ -52,6 +54,7 @@ export async function createTable(input: TableInput) {
 export async function updateTable(id: string, input: Partial<TableInput>) {
   const session = await requireAdmin();
   if (!session) return FORBIDDEN;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   // `.partial()` sobre un schema con `.refine()` no está permitido en Zod,
   // así que se valida el objeto interior y la coherencia se comprueba aparte.
@@ -88,6 +91,7 @@ export async function updateTable(id: string, input: Partial<TableInput>) {
 export async function toggleTableActive(id: string, active: boolean) {
   const session = await requireStaff();
   if (!session) return UNAUTHORIZED;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   const admin = createAdminClient();
   const { error } = await admin
@@ -111,6 +115,7 @@ export async function toggleTableActive(id: string, active: boolean) {
 export async function deleteTable(id: string) {
   const session = await requireAdmin();
   if (!session) return FORBIDDEN;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   const admin = createAdminClient();
 

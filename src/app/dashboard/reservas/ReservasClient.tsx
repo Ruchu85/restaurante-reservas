@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { Plus, Search, ChevronRight, Calendar, Users, Clock, X, UserRound, Pencil } from "lucide-react";
+import { Plus, Search, ChevronRight, Calendar, Users, Clock, X, UserRound, Pencil, Moon } from "lucide-react";
 import { cn, formatTime, formatShortDate } from "@/lib/utils";
 import { toast } from "sonner";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
@@ -11,7 +11,8 @@ import { GuestSignalBadges } from "@/components/dashboard/GuestSignalBadges";
 import { WhatsAppButton } from "@/components/dashboard/WhatsAppButton";
 import { guestSignals } from "@/lib/guestSignals";
 import { formatPhone, normalizePhone } from "@/lib/phone";
-import type { Reservation, Restaurant, RestaurantTable } from "@/types";
+import { dayOfWeek, addDays } from "@/lib/dates";
+import type { Reservation, Restaurant, RestaurantTable, BusinessHours, BlockedDay } from "@/types";
 import { updateReservationStatus } from "@/actions/reservations";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -23,11 +24,17 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  confirmed: "bg-blue-100 text-blue-800",
-  seated: "bg-green-100 text-green-800",
+  confirmed: "bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300",
+  seated: "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300",
   completed: "bg-stone-100 text-stone-600",
-  no_show: "bg-red-100 text-red-800",
+  no_show: "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300",
   cancelled: "bg-stone-100 text-stone-400",
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  online: "Online",
+  phone: "Teléfono",
+  admin: "Manual",
 };
 
 const STATUS_OPTIONS = [
@@ -52,9 +59,11 @@ interface Props {
   tables: RestaurantTable[];
   initialReservations: Reservation[];
   initialDate: string;
+  businessHours: BusinessHours[];
+  blockedDays: BlockedDay[];
 }
 
-export function ReservasClient({ restaurant, tables, initialReservations, initialDate }: Props) {
+export function ReservasClient({ restaurant, tables, initialReservations, initialDate, businessHours, blockedDays }: Props) {
   const timeZone = restaurant.timezone || "Europe/Madrid";
   const [date, setDate] = useState(initialDate);
   const [reservations, setReservations] = useState<Reservation[]>(initialReservations);
@@ -64,6 +73,23 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
   const [showNew, setShowNew] = useState(false);
   const [selected, setSelected] = useState<Reservation | null>(null);
   const [editing, setEditing] = useState<Reservation | null>(null);
+
+  const bhByDow = useMemo(() => new Map(businessHours.map(h => [h.day_of_week, h])), [businessHours]);
+  const blockedSet = useMemo(() => new Set(blockedDays.map(b => b.date)), [blockedDays]);
+  const isDayClosed = useCallback(
+    (ds: string) => blockedSet.has(ds) || !bhByDow.get(dayOfWeek(ds))?.is_open,
+    [bhByDow, blockedSet],
+  );
+  const dateClosed = isDayClosed(date);
+  const nextOpenDate = useMemo(() => {
+    if (!dateClosed) return null;
+    let cursor = date;
+    for (let i = 0; i < 30; i++) {
+      cursor = addDays(cursor, 1);
+      if (!isDayClosed(cursor)) return cursor;
+    }
+    return null;
+  }, [dateClosed, date, isDayClosed]);
 
   const fetchForDate = useCallback(async (d: string) => {
     setLoading(true);
@@ -126,9 +152,9 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
       </div>
 
       {/* Filters */}
-      <div className="rounded-2xl bg-white border border-stone-100 p-4 space-y-3">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
+      <div className="rounded-2xl bg-panel border border-stone-100 p-4 space-y-3">
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
             <input
               type="text"
@@ -142,39 +168,72 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
             type="date"
             value={date}
             onChange={(e) => handleDateChange(e.target.value)}
-            className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+            className="rounded-lg border border-stone-200 px-3 py-2 text-sm focus:border-amber-400 focus:outline-none sm:flex-shrink-0"
           />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-0.5">
-          {STATUS_OPTIONS.map((s) => (
-            <button
-              key={s.value}
-              onClick={() => setStatusFilter(s.value)}
-              className={cn(
-                "flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                statusFilter === s.value
-                  ? "bg-amber-600 text-white"
-                  : "bg-stone-100 text-stone-600 hover:bg-stone-200",
-              )}
-            >
-              {s.label}
-            </button>
-          ))}
+        <div className="relative -mx-4 px-4">
+          <div className="flex gap-2 overflow-x-auto pb-0.5">
+            {STATUS_OPTIONS.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => setStatusFilter(s.value)}
+                className={cn(
+                  "flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                  statusFilter === s.value
+                    ? "bg-amber-600 text-white"
+                    : "bg-stone-100 text-stone-600 hover:bg-stone-200",
+                )}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0.5 w-8 bg-gradient-to-l from-panel to-transparent" />
         </div>
       </div>
 
-      {/* Summary */}
-      {!loading && (
-        <div className="text-xs text-stone-500">
-          {filtered.length} reserva{filtered.length !== 1 ? "s" : ""} ·{" "}
-          {filtered.filter(r => r.status !== "cancelled").reduce((s, r) => s + r.party_size, 0)} comensales
-        </div>
-      )}
+      {/* Summary — el recuento de "reservas" excluye canceladas, igual que en Inicio y en
+          el total de comensales de aquí al lado: si no, los dos números de esta misma
+          línea contradicen cuánta gente cuenta cada uno. */}
+      {!loading && (() => {
+        const active = filtered.filter(r => r.status !== "cancelled");
+        const cancelledCount = filtered.length - active.length;
+        return (
+          <div className="text-xs text-stone-500">
+            {active.length} reserva{active.length !== 1 ? "s" : ""} ·{" "}
+            {active.reduce((s, r) => s + r.party_size, 0)} comensales
+            {cancelledCount > 0 && ` · ${cancelledCount} cancelada${cancelledCount !== 1 ? "s" : ""}`}
+          </div>
+        );
+      })()}
 
       {/* List */}
-      <div className="rounded-2xl bg-white border border-stone-100 shadow-sm overflow-hidden">
+      <div className="rounded-2xl bg-panel border border-stone-100 shadow-sm overflow-hidden">
         {loading ? (
           <div className="py-12 text-center text-stone-400 text-sm">Cargando…</div>
+        ) : filtered.length === 0 && dateClosed ? (
+          <div className="py-10 text-center">
+            <div className="h-11 w-11 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-3">
+              <Moon className="h-5 w-5 text-stone-400" />
+            </div>
+            <p className="text-stone-600 text-sm font-medium">El restaurante está cerrado ese día</p>
+            {nextOpenDate && (
+              <button
+                onClick={() => handleDateChange(nextOpenDate)}
+                className="mt-3 inline-flex flex-col items-center gap-0.5 rounded-2xl bg-amber-100 hover:bg-amber-200 transition-colors px-4 py-2"
+              >
+                <span className="text-[10px] font-medium uppercase tracking-wide text-amber-700 dark:text-amber-300 opacity-70">
+                  Próximo día con servicio
+                </span>
+                <span className="text-sm font-semibold text-amber-700 dark:text-amber-300 capitalize flex items-center gap-1">
+                  {new Date(nextOpenDate + "T12:00:00").toLocaleDateString("es-ES", {
+                    weekday: "long", day: "numeric", month: "short",
+                  })}
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </span>
+              </button>
+            )}
+          </div>
         ) : filtered.length === 0 ? (
           <div className="py-12 text-center">
             <Calendar className="h-8 w-8 text-stone-300 mx-auto mb-3" />
@@ -225,7 +284,7 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
       <DialogPrimitive.Root open={showNew} onOpenChange={setShowNew}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 bg-black/50 z-50" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl p-6 shadow-xl">
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[90vh] overflow-y-auto bg-panel rounded-2xl p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <DialogPrimitive.Title className="text-lg font-bold text-stone-800">
                 Nueva reserva
@@ -253,7 +312,7 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
       <DialogPrimitive.Root open={Boolean(editing)} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 bg-black/50 z-50" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl p-6 shadow-xl">
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[90vh] overflow-y-auto bg-panel rounded-2xl p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <DialogPrimitive.Title className="text-lg font-bold text-stone-800">
                 Editar reserva
@@ -298,7 +357,7 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
       <DialogPrimitive.Root open={Boolean(selected)} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 bg-black/50 z-50" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl p-6 shadow-xl">
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg max-h-[90vh] overflow-y-auto bg-panel rounded-2xl p-6 shadow-xl">
             {selected && (
               <>
                 <div className="flex items-center justify-between mb-4">
@@ -323,7 +382,7 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
                       setEditing(selected);
                       setSelected(null);
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 dark:text-amber-300 hover:bg-amber-100"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                     Editar
@@ -355,14 +414,14 @@ export function ReservasClient({ restaurant, tables, initialReservations, initia
 
                 <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
                   <div><div className="text-xs text-stone-400">Teléfono</div><div className="font-medium">{formatPhone(selected.guest_phone)}</div></div>
-                  {selected.guest_email && <div><div className="text-xs text-stone-400">Email</div><div className="font-medium truncate">{selected.guest_email}</div></div>}
+                  {selected.guest_email && <div><div className="text-xs text-stone-400">Email</div><div className="font-medium truncate" title={selected.guest_email}>{selected.guest_email}</div></div>}
                   <div><div className="text-xs text-stone-400">Mesa</div><div className="font-medium">{tableLabel(selected)}</div></div>
                   <div><div className="text-xs text-stone-400">Estado</div><div className="mt-0.5"><StatusBadge status={selected.status} /></div></div>
-                  <div><div className="text-xs text-stone-400">Origen</div><div className="font-medium capitalize">{selected.source}</div></div>
+                  <div><div className="text-xs text-stone-400">Origen</div><div className="font-medium">{SOURCE_LABELS[selected.source] ?? selected.source}</div></div>
                 </div>
 
                 {selected.guest?.allergies && (
-                  <div className="mb-3 rounded-lg bg-red-50 border border-red-100 p-3 text-sm text-red-800">
+                  <div className="mb-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/25 p-3 text-sm text-red-800 dark:text-red-300">
                     <div className="text-xs font-semibold uppercase tracking-wide mb-1">Alergias</div>
                     {selected.guest.allergies}
                   </div>

@@ -75,7 +75,7 @@ export default async function GuestDetailPage({
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {stats.map(({ label, value }) => (
-          <div key={label} className="rounded-2xl bg-white border border-stone-100 p-4 shadow-sm">
+          <div key={label} className="rounded-2xl bg-panel border border-stone-100 p-4 shadow-sm">
             <div className="text-2xl font-bold text-stone-800">{value}</div>
             <div className="text-xs text-stone-400 mt-0.5">{label}</div>
           </div>
@@ -84,7 +84,7 @@ export default async function GuestDetailPage({
 
       <GuestProfileForm guest={guest} />
 
-      <div className="rounded-2xl bg-white border border-stone-100 shadow-sm overflow-hidden">
+      <div className="rounded-2xl bg-panel border border-stone-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-stone-50">
           <h2 className="font-semibold text-stone-800">Historial de reservas</h2>
         </div>
@@ -111,10 +111,10 @@ export default async function GuestDetailPage({
                 <span
                   className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                     r.status === "no_show"
-                      ? "bg-red-100 text-red-800"
+                      ? "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300"
                       : r.status === "cancelled"
                         ? "bg-stone-100 text-stone-400"
-                        : "bg-emerald-50 text-emerald-700"
+                        : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
                   }`}
                 >
                   {STATUS_LABELS[r.status] ?? r.status}

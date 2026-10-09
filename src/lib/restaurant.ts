@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createAdminClient, getRestaurantId } from "@/lib/supabase/admin";
 import { getStaffSession, type StaffSession } from "@/lib/auth";
 import type { Restaurant, BusinessHours, BlockedDay, RestaurantTable } from "@/types";
@@ -23,11 +24,15 @@ export async function getCurrentRestaurant(): Promise<{
   return { session, restaurant };
 }
 
-export async function getRestaurantById(id: string): Promise<Restaurant | null> {
+// Cacheada por petición: la piden el layout del panel y varias páginas, y sin
+// esto cada navegación repetía la misma consulta dos o tres veces.
+export const getRestaurantById = cache(async function getRestaurantById(
+  id: string,
+): Promise<Restaurant | null> {
   const admin = createAdminClient();
   const { data } = await admin.from("restaurants").select("*").eq("id", id).maybeSingle();
   return (data as Restaurant | null) ?? null;
-}
+});
 
 /**
  * Restaurante público, resuelto por el slug del entorno.

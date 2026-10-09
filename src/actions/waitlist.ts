@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireStaff, UNAUTHORIZED } from "@/lib/auth";
+import { isDemoReadOnly, READONLY_DEMO } from "@/lib/demoReadonly";
 import { logAudit } from "@/lib/audit";
 import { normalizePhone } from "@/lib/phone";
 import { upsertGuest } from "@/lib/guests";
@@ -28,6 +29,7 @@ export type WaitlistInput = z.infer<typeof WaitlistSchema>;
 export async function addToWaitlist(input: WaitlistInput) {
   const session = await requireStaff();
   if (!session) return UNAUTHORIZED;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   const parsed = WaitlistSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Datos inválidos." };
@@ -69,6 +71,7 @@ export async function updateWaitlistStatus(
 ) {
   const session = await requireStaff();
   if (!session) return UNAUTHORIZED;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   if (!["waiting", "notified", "seated", "removed"].includes(status)) {
     return { error: "Estado inválido." };

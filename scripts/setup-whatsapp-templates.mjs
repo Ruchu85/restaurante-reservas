@@ -27,9 +27,13 @@ const TEMPLATES = [
     components: [
       {
         type: "BODY",
+        // Meta exige texto real (no solo puntuación) después de la última
+        // variable: "{{6}}." con un simple punto detrás lo rechaza igual
+        // que si no hubiera nada. Hace falta una frase, no un carácter.
         text:
           "Hola {{1}}, tu reserva en *{{2}}* está confirmada.\n\n" +
-          "📅 {{3}}\n🕒 {{4}} · {{5}} personas\n\nVer o cancelar: {{6}}",
+          "📅 {{3}}\n🕒 {{4}} · {{5}} personas\n\n" +
+          "Ver o cancelar desde este enlace: {{6}} — gracias por reservar con nosotros.",
         example: {
           body_text: [
             [
@@ -54,7 +58,7 @@ const TEMPLATES = [
         type: "BODY",
         text:
           "Hola {{1}}, hemos cancelado tu reserva en *{{2}}* del {{3}} a las {{4}}.\n\n" +
-          "Puedes hacer una nueva cuando quieras: {{5}}",
+          "Puedes hacer una nueva reserva desde este enlace: {{5}} — esperamos verte pronto.",
         example: {
           body_text: [
             [

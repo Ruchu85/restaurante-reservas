@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
 
 const TONE_CLASSES = {
-  positive: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  warning: "bg-amber-50 text-amber-800 border-amber-100",
-  danger: "bg-red-50 text-red-700 border-red-100",
+  positive: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-500/25",
+  warning: "bg-amber-50 text-amber-800 dark:text-amber-300 border-amber-100",
+  danger: "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300 border-red-100 dark:border-red-500/25",
   neutral: "bg-stone-50 text-stone-600 border-stone-200",
 } as const;
 

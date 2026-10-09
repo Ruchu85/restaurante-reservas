@@ -32,7 +32,7 @@ export function GuestSearch({ defaultValue }: { defaultValue: string }) {
         onChange={(e) => setValue(e.target.value)}
         placeholder="Buscar por nombre, teléfono o email…"
         aria-label="Buscar comensales"
-        className="w-full rounded-xl border border-stone-200 bg-white py-2.5 pl-9 pr-9 text-sm text-stone-800 placeholder:text-stone-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100"
+        className="w-full rounded-xl border border-stone-200 bg-panel py-2.5 pl-9 pr-9 text-sm text-stone-800 placeholder:text-stone-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100"
       />
       {value && (
         <button

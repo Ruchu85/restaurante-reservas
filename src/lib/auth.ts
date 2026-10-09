@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -28,8 +29,14 @@ export const FORBIDDEN = { error: "No tienes permisos para esta acción." } as c
  *
  * Devuelve null si no hay usuario, si no tiene perfil o si el perfil no está
  * asociado a ningún restaurante.
+ *
+ * Va envuelta en `cache()` de React: el layout del panel y la propia página la
+ * llaman por separado, y sin deduplicar cada navegación hacía dos veces la
+ * validación del token contra Supabase —que es una llamada de red, no un
+ * decode local— más dos consultas al perfil. `cache()` las une dentro de la
+ * misma petición sin cambiar nada del lado de quien la usa.
  */
-export async function getStaffSession(): Promise<StaffSession | null> {
+export const getStaffSession = cache(async function getStaffSession(): Promise<StaffSession | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -67,7 +74,7 @@ export async function getStaffSession(): Promise<StaffSession | null> {
     fullName: p.full_name,
     timezone: restaurant?.timezone || "Europe/Madrid",
   };
-}
+});
 
 /** Exige sesión de empleado (staff o admin). */
 export async function requireStaff(): Promise<StaffSession | null> {

@@ -84,12 +84,12 @@ export default async function InformesPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Reservas este mes", value: monthActive.length, icon: Calendar, cls: "text-amber-600 bg-amber-50" },
-          { label: "Comensales hoy", value: todayCovers, icon: Users, cls: "text-blue-600 bg-blue-50" },
-          { label: "Comensales (30 días)", value: last30Covers, icon: TrendingUp, cls: "text-green-600 bg-green-50" },
-          { label: "Tasa no-show", value: noShowRate + "%", icon: TrendingDown, cls: "text-red-500 bg-red-50" },
+          { label: "Reservas activas (mes)", value: monthActive.length, icon: Calendar, cls: "text-amber-600 dark:text-amber-400 bg-amber-50" },
+          { label: "Comensales hoy", value: todayCovers, icon: Users, cls: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
+          { label: "Comensales (30 días)", value: last30Covers, icon: TrendingUp, cls: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10" },
+          { label: "Tasa no-show", value: noShowRate + "%", icon: TrendingDown, cls: "text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/10" },
         ].map(({ label, value, icon: Icon, cls }) => (
-          <div key={label} className="rounded-2xl bg-white border border-stone-100 p-4 shadow-sm">
+          <div key={label} className="rounded-2xl bg-panel border border-stone-100 p-4 shadow-sm">
             <div className={`p-1.5 rounded-lg inline-flex mb-3 ${cls.split(" ")[1]}`}>
               <Icon className={`h-4 w-4 ${cls.split(" ")[0]}`} />
             </div>
@@ -100,14 +100,14 @@ export default async function InformesPage() {
       </div>
 
       {/* Month summary */}
-      <div className="rounded-2xl bg-white border border-stone-100 shadow-sm p-5">
+      <div className="rounded-2xl bg-panel border border-stone-100 shadow-sm p-5">
         <h2 className="font-semibold text-stone-800 mb-4 flex items-center gap-2">
-          <BarChart3 className="h-4 w-4 text-amber-600" />
+          <BarChart3 className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           Resumen del mes · {monthCovers} comensales
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: "Total reservas", value: monthData.length },
+            { label: "Total registradas (incl. canceladas)", value: monthData.length },
             { label: "Confirmadas/completadas", value: monthActive.length },
             { label: "Canceladas", value: monthCancelled },
             { label: "No presentados", value: monthNoShow },
@@ -121,29 +121,35 @@ export default async function InformesPage() {
       </div>
 
       {/* Weekday chart */}
-      <div className="rounded-2xl bg-white border border-stone-100 shadow-sm p-5">
+      <div className="rounded-2xl bg-panel border border-stone-100 shadow-sm p-5">
         <h2 className="font-semibold text-stone-800 mb-4">Reservas por día de la semana (30 días)</h2>
         <div className="flex items-end gap-2 h-24">
           {DAYS.map((name, i) => {
             const count = dowCount[i] ?? 0;
             const pct = maxDow > 0 ? (count / maxDow) * 100 : 0;
             return (
-              <div key={name} className="flex-1 flex flex-col items-center gap-1">
+              <div key={name} className="flex-1 h-full flex flex-col justify-end items-center">
                 <div
                   className="w-full rounded-t-lg bg-amber-400 transition-all"
                   style={{ height: `${Math.max(pct, 4)}%` }}
                 />
-                <div className="text-xs text-stone-400">{name}</div>
-                <div className="text-xs font-medium text-stone-600">{count}</div>
               </div>
             );
           })}
+        </div>
+        <div className="flex gap-2 mt-1.5">
+          {DAYS.map((name, i) => (
+            <div key={name} className="flex-1 text-center">
+              <div className="text-xs text-stone-400">{name}</div>
+              <div className="text-xs font-medium text-stone-600">{dowCount[i] ?? 0}</div>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Source breakdown */}
       {Object.keys(sourceCount).length > 0 && (
-        <div className="rounded-2xl bg-white border border-stone-100 shadow-sm p-5">
+        <div className="rounded-2xl bg-panel border border-stone-100 shadow-sm p-5">
           <h2 className="font-semibold text-stone-800 mb-4">Origen de reservas (30 días)</h2>
           <div className="space-y-3">
             {(["online", "phone", "admin"] as const)

@@ -20,9 +20,9 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  waiting: "bg-amber-100 text-amber-800",
-  notified: "bg-blue-100 text-blue-800",
-  seated: "bg-green-100 text-green-800",
+  waiting: "bg-amber-100 text-amber-800 dark:text-amber-300",
+  notified: "bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300",
+  seated: "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300",
   removed: "bg-stone-100 text-stone-500",
 };
 
@@ -88,7 +88,7 @@ export function ListaEsperaClient({ entries: initialEntries }: { entries: Waitli
         </button>
       </div>
 
-      <div className="rounded-2xl bg-white border border-stone-100 shadow-sm overflow-hidden">
+      <div className="rounded-2xl bg-panel border border-stone-100 shadow-sm overflow-hidden">
         {entries.length === 0 ? (
           <div className="py-14 text-center">
             <ListOrdered className="h-8 w-8 text-stone-300 mx-auto mb-3" />
@@ -98,7 +98,7 @@ export function ListaEsperaClient({ entries: initialEntries }: { entries: Waitli
           <div className="divide-y divide-stone-50">
             {entries.map((e, idx) => (
               <div key={e.id} className="flex items-start gap-4 px-5 py-4">
-                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-xs font-bold text-amber-700">
+                <div className="flex-shrink-0 w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-xs font-bold text-amber-700 dark:text-amber-300">
                   {idx + 1}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -155,7 +155,7 @@ export function ListaEsperaClient({ entries: initialEntries }: { entries: Waitli
       <DialogPrimitive.Root open={showNew} onOpenChange={(o) => !o && setShowNew(false)}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 bg-black/50 z-50" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-2xl p-6 shadow-xl">
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-panel rounded-2xl p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <DialogPrimitive.Title className="text-lg font-bold text-stone-800">
                 Añadir a la lista

@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/*
+  El modo oscuro es SOLO del panel de gestión, no de la web pública del
+  restaurante: esa tiene su propio diseño y es lo que ve el comensal.
+  Por eso la variante no mira `prefers-color-scheme` ni una clase en <html>,
+  sino el contenedor del panel — así el mismo `dark:` de siempre funciona
+  dentro del panel y no existe fuera de él.
+*/
+@custom-variant dark (&:where(.panel-oscuro, .panel-oscuro *));
+
 @theme {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -29,6 +38,14 @@
   */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /*
+    Superficie de tarjeta del panel. Existe porque `bg-white` no se puede
+    invertir: `white` es también el color del texto de los botones ámbar, y
+    cambiarlo dejaría ese texto ilegible. Con un color propio, la tarjeta se
+    oscurece sin tocar el blanco.
+  */
+  --color-panel: #ffffff;
 }
 
 @layer base {
@@ -84,6 +101,67 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Modo oscuro del panel de gestión
+   ══════════════════════════════════════════════════════════════════
+
+   El panel usa la rampa `stone` de forma consistente: los tonos claros
+   siempre como fondo y los oscuros siempre como texto. Eso permite
+   invertir la rampa entera aquí, en vez de escribir `dark:` en las casi
+   600 clases de color que hay repartidas por las 19 pantallas. Tailwind 4
+   compila las utilidades como `var(--color-stone-800)`, así que redefinir
+   esas variables en este contenedor las cambia para todo lo que hay
+   dentro, y ni una sola clase de los componentes cambia.
+
+   Va acotado a `.panel-oscuro` y no a `:root` porque la web pública del
+   restaurante usa la misma rampa (143 veces) y debe quedarse como está.
+
+   El ámbar NO se invierte entero: `amber-600` y `amber-700` son a la vez
+   el fondo de los botones (con texto blanco encima) y el color del texto
+   de acento. Cambiar la variable arreglaría uno y rompería el otro, así
+   que aquí solo se giran los tintes claros —que únicamente se usan como
+   fondo o borde— y el texto de acento lleva su `dark:` en el componente.
+*/
+.panel-oscuro {
+  /*
+    Lo que dibuja el navegador y no el CSS: el desplegable del <select>, el
+    calendario del <input type="date">, la barra de scroll y el cursor de los
+    campos. Sin esto salen en claro sobre el panel oscuro y cantan mucho,
+    sobre todo el calendario, que en este panel se abre a todas horas.
+  */
+  color-scheme: dark;
+
+  /*
+    Color base del panel. Lo que no lleva una clase de texto propia —los
+    valores de los <input>, sobre todo— heredaba el color de <body>, que es
+    oscuro porque la web pública es clara: quedaba texto casi negro sobre un
+    campo casi negro.
+  */
+  color: var(--color-stone-800);
+
+  /* Neutros, en espejo: el 50 pasa a ser lo más oscuro y el 800 el texto. */
+  --color-stone-50: #0c0a09;   /* fondo de la página */
+  --color-stone-100: #1f1c1a;  /* fondos sutiles, separadores */
+  --color-stone-200: #2c2724;  /* bordes */
+  --color-stone-300: #57534e;  /* iconos apagados */
+  --color-stone-400: #a8a29e;  /* texto secundario */
+  --color-stone-500: #b9b2ac;
+  --color-stone-600: #d2ccc7;
+  --color-stone-700: #e6e2df;
+  --color-stone-800: #f5f2f0;  /* texto principal */
+  --color-stone-900: #fafaf9;
+  --color-stone-950: #ffffff;
+
+  /* Tarjetas: un punto por encima del fondo, que es como se lee la
+     elevación en oscuro (en claro es al revés, con sombra). */
+  --color-panel: #1a1714;
+
+  /* Tintes de acento: solo fondo y borde, nunca texto. */
+  --color-amber-50: #2a1e08;
+  --color-amber-100: #3b2a0b;
+  --color-amber-200: #4d370e;
 }
 
 /* ══════════════════════════════════════════════════════════════════

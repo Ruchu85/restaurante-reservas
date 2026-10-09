@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireStaff, UNAUTHORIZED } from "@/lib/auth";
+import { isDemoReadOnly, READONLY_DEMO } from "@/lib/demoReadonly";
 import { getRestaurantConfig, validateReservation } from "@/lib/reservationRules";
 import {
   getReservationsForServiceDay,
@@ -61,6 +62,7 @@ export type UpdateReservationInput = z.infer<typeof UpdateReservationSchema>;
 export async function createReservation(input: CreateReservationInput) {
   const session = await requireStaff();
   if (!session) return UNAUTHORIZED;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   const parsed = CreateReservationSchema.safeParse(input);
   if (!parsed.success) return { error: "Datos inválidos: " + parsed.error.errors[0]?.message };
@@ -156,6 +158,7 @@ export async function createReservation(input: CreateReservationInput) {
 export async function updateReservation(id: string, input: UpdateReservationInput) {
   const session = await requireStaff();
   if (!session) return UNAUTHORIZED;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   const parsed = UpdateReservationSchema.safeParse(input);
   if (!parsed.success) return { error: "Datos inválidos: " + parsed.error.errors[0]?.message };
@@ -339,6 +342,7 @@ export async function updateReservation(id: string, input: UpdateReservationInpu
 export async function updateReservationStatus(id: string, status: Reservation["status"]) {
   const session = await requireStaff();
   if (!session) return UNAUTHORIZED;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   const allowed = ["confirmed", "seated", "completed", "no_show", "cancelled"] as const;
   if (!allowed.includes(status)) return { error: "Estado inválido." };

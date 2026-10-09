@@ -63,7 +63,7 @@ export function SettingsClient({ restaurant }: { restaurant: Restaurant | null }
 
   return (
     <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
-      <div className="rounded-2xl bg-white border border-stone-100 p-5 shadow-sm space-y-4">
+      <div className="rounded-2xl bg-panel border border-stone-100 p-5 shadow-sm space-y-4">
         <h2 className="text-sm font-semibold text-stone-700">Información del restaurante</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -100,7 +100,7 @@ export function SettingsClient({ restaurant }: { restaurant: Restaurant | null }
         </div>
       </div>
 
-      <div className="rounded-2xl bg-white border border-stone-100 p-5 shadow-sm space-y-4">
+      <div className="rounded-2xl bg-panel border border-stone-100 p-5 shadow-sm space-y-4">
         <h2 className="text-sm font-semibold text-stone-700">Configuración de reservas</h2>
 
         <div className="grid grid-cols-2 gap-4">
@@ -121,7 +121,7 @@ export function SettingsClient({ restaurant }: { restaurant: Restaurant | null }
         </div>
       </div>
 
-      <div className="rounded-2xl bg-white border border-stone-100 p-5 shadow-sm space-y-4">
+      <div className="rounded-2xl bg-panel border border-stone-100 p-5 shadow-sm space-y-4">
         <div>
           <h2 className="text-sm font-semibold text-stone-700">Gestión de sala</h2>
           <p className="mt-0.5 text-xs text-stone-400">

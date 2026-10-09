@@ -18,18 +18,36 @@ export const RESTAURANT_TIMEZONE = "Europe/Madrid";
  * Desplazamiento UTC (en minutos) de la zona horaria dada en un instante dado.
  * Positivo al este de Greenwich (Madrid en verano = +120).
  */
+/**
+ * Formateadores reutilizados por zona horaria.
+ *
+ * Construir un `Intl.DateTimeFormat` es caro y esta función se llama una vez
+ * por reserva: el calendario, que carga cuatro meses, lo hacía miles de veces
+ * por render y se le iban ahí más de dos segundos de CPU en el navegador.
+ * Guardarlos en un Map deja la construcción en una sola vez por zona.
+ */
+const formateadoresOffset = new Map<string, Intl.DateTimeFormat>();
+
+function formateadorOffset(timeZone: string): Intl.DateTimeFormat {
+  let dtf = formateadoresOffset.get(timeZone);
+  if (!dtf) {
+    dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+    formateadoresOffset.set(timeZone, dtf);
+  }
+  return dtf;
+}
+
 export function timezoneOffsetMinutes(at: Date, timeZone = RESTAURANT_TIMEZONE): number {
-  const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-  const parts = dtf.formatToParts(at);
+  const parts = formateadorOffset(timeZone).formatToParts(at);
   const get = (type: string) => Number(parts.find((p) => p.type === type)!.value);
   // `hour` puede venir como 24 para medianoche en algunos runtimes.
   const hour = get("hour") % 24;
@@ -111,6 +129,33 @@ export function addDays(date: string, days: number): string {
   const dt = new Date(Date.UTC(y, m - 1, d));
   dt.setUTCDate(dt.getUTCDate() + days);
   return dt.toISOString().slice(0, 10);
+}
+
+/**
+ * Rango de días que hay que cargar para pintar el mes al que pertenece `fecha`.
+ *
+ * El calendario cargaba cuatro meses de golpe para poder cambiar de mes sin
+ * esperar, y eso eran mil reservas y casi medio mega por carga. Ahora se trae
+ * solo el mes visible y el cliente pide el siguiente cuando hace falta.
+ *
+ * Los siete días de margen a cada lado no son por si acaso: una reserva de las
+ * 00:30 del día 1 pertenece al servicio del último día del mes anterior, así
+ * que sin margen desaparecería de los dos meses.
+ *
+ * Lo usan la página y el cliente, y tienen que coincidir: si pidieran rangos
+ * distintos, el cliente creería que le falta un mes que ya tiene y lo pediría
+ * en bucle.
+ */
+export function rangoDelMes(fecha: string): { desde: string; hasta: string } {
+  const [y, m] = fecha.split("-").map(Number);
+  const primero = `${y}-${String(m).padStart(2, "0")}-01`;
+  const ultimo = new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
+  return { desde: addDays(primero, -7), hasta: addDays(ultimo, 7) };
+}
+
+/** Clave "YYYY-MM" del mes de una fecha, para saber qué meses ya están cargados. */
+export function claveMes(fecha: string): string {
+  return fecha.slice(0, 7);
 }
 
 /** Devuelve "YYYY-MM-DD" del instante dado en la zona del restaurante. */

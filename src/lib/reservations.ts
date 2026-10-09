@@ -122,6 +122,71 @@ export async function getOverlappingReservations(
   return attachTableIds(admin, (data ?? []) as Reservation[]);
 }
 
+/**
+ * Reservas de un rango largo para pintar el calendario.
+ *
+ * Existe aparte de `getReservationsForRange` porque el calendario carga cuatro
+ * meses de golpe y esa función traía demasiado por cada fila:
+ *
+ *  - `select("*")` mandaba al navegador `internal_notes`, el teléfono, el email
+ *    y el `confirmation_token` —el que permite cancelar— de cada reserva. El
+ *    calendario no usa ninguno de esos campos.
+ *  - La ficha del comensal se embebía entera sin que el calendario la mire.
+ *  - `attachTableIds` hacía una segunda consulta con un `IN` de mil ids: una
+ *    URL de 37 KB por página cargada.
+ *
+ * Entre todo, la página pesaba 1 MB y tardaba 2,1 s frente a los 0,4 s del
+ * resto del panel. Aquí se piden solo los nueve campos que el componente usa y
+ * las mesas van embebidas en la misma consulta.
+ *
+ * La paginación no es opcional: la API corta en 1000 filas por respuesta, y en
+ * este rango ya había 1071. Sin ella el calendario perdía reservas sin avisar.
+ */
+export async function getReservationsForCalendar(
+  admin: Admin,
+  restaurantId: string,
+  fromDate: string,
+  toDate: string,
+  timeZone?: string,
+): Promise<Reservation[]> {
+  const { from, to } = madridRangeUtc(fromDate, toDate, timeZone);
+  const PAGINA = 1000;
+  const filas: Record<string, unknown>[] = [];
+
+  for (let desde = 0; ; desde += PAGINA) {
+    const { data } = await admin
+      .from("reservations")
+      .select(
+        `id, starts_at, ends_at, party_size, status, guest_name, table_id,
+         ${TABLE_EMBED}(id, name), reservation_tables(table_id)`,
+      )
+      .eq("restaurant_id", restaurantId)
+      .gte("starts_at", from)
+      .lt("starts_at", to)
+      .order("starts_at")
+      .range(desde, desde + PAGINA - 1);
+
+    const lote = (data ?? []) as unknown as Record<string, unknown>[];
+    filas.push(...lote);
+    if (lote.length < PAGINA) break;
+  }
+
+  return filas.map((r) => {
+    const enlaces = (r.reservation_tables ?? []) as { table_id: string }[];
+    const fila = { ...r };
+    // La tabla de enlace no viaja al cliente: ya está resumida en table_ids.
+    delete fila.reservation_tables;
+    return {
+      ...fila,
+      table_ids: enlaces.length
+        ? enlaces.map((e) => e.table_id)
+        : r.table_id
+          ? [r.table_id as string]
+          : [],
+    } as unknown as Reservation;
+  });
+}
+
 /** Reservas de un rango inclusivo de días naturales del restaurante. */
 export async function getReservationsForRange(
   admin: Admin,

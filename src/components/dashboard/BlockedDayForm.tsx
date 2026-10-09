@@ -105,7 +105,7 @@ export function BlockedDayForm({
           {blockedDays.map((day) => (
             <div
               key={day.id}
-              className="flex items-center justify-between rounded-xl border border-stone-100 px-4 py-3 bg-white"
+              className="flex items-center justify-between rounded-xl border border-stone-100 px-4 py-3 bg-panel"
             >
               <div>
                 <span className="text-sm font-medium text-stone-800">

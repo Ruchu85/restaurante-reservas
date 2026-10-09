@@ -3,12 +3,13 @@ import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStaffSession } from "@/lib/auth";
 import { getReservationsForServiceDay } from "@/lib/reservations";
-import { toLocalDate } from "@/lib/dates";
+import { getBusinessHours, getBlockedDays } from "@/lib/restaurant";
+import { toLocalDate, dayOfWeek, addDays } from "@/lib/dates";
 import { formatTime } from "@/lib/utils";
 import { guestSignals } from "@/lib/guestSignals";
 import { GuestSignalBadges } from "@/components/dashboard/GuestSignalBadges";
 import { WhatsAppButton } from "@/components/dashboard/WhatsAppButton";
-import { Calendar, ChevronRight, Clock, TrendingUp, Users, UtensilsCrossed } from "lucide-react";
+import { Calendar, ChevronRight, Clock, Moon, TrendingUp, Users, UtensilsCrossed } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
   confirmed: "Confirmada",
@@ -19,10 +20,10 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  confirmed: "bg-blue-100 text-blue-800",
-  seated: "bg-green-100 text-green-800",
+  confirmed: "bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300",
+  seated: "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300",
   completed: "bg-stone-100 text-stone-600",
-  no_show: "bg-red-100 text-red-800",
+  no_show: "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300",
   cancelled: "bg-stone-100 text-stone-400",
 };
 
@@ -41,10 +42,10 @@ function StatusBadge({ status }: { status: string }) {
 // Las clases de Tailwind deben ser literales completos: `bg-${color}-50` no se
 // detecta en compilación y se queda sin estilo.
 const STAT_STYLES = {
-  amber: { icon: "text-amber-600", bg: "bg-amber-50" },
-  blue: { icon: "text-blue-600", bg: "bg-blue-50" },
-  green: { icon: "text-green-600", bg: "bg-green-50" },
-  red: { icon: "text-red-600", bg: "bg-red-50" },
+  amber: { icon: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50" },
+  blue: { icon: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" },
+  green: { icon: "text-green-600 dark:text-green-400", bg: "bg-green-50 dark:bg-green-500/10" },
+  red: { icon: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-500/10" },
 } as const;
 
 export default async function DashboardPage() {
@@ -53,10 +54,37 @@ export default async function DashboardPage() {
 
   const admin = createAdminClient();
   const today = toLocalDate(new Date(), session.timezone);
-  const todayList = await getReservationsForServiceDay(admin, session.restaurantId, today, {
-    withRelations: true,
-    timeZone: session.timezone,
-  });
+  const [todayList, businessHours, blockedDays] = await Promise.all([
+    getReservationsForServiceDay(admin, session.restaurantId, today, {
+      withRelations: true,
+      timeZone: session.timezone,
+    }),
+    getBusinessHours(admin, session.restaurantId),
+    getBlockedDays(admin, session.restaurantId, today, addDays(today, 14)),
+  ]);
+
+  const bhByDow = new Map(businessHours.map((h) => [h.day_of_week, h]));
+  const blockedSet = new Set(blockedDays.map((b) => b.date));
+  const isDayClosed = (ds: string) => blockedSet.has(ds) || !bhByDow.get(dayOfWeek(ds))?.is_open;
+  const todayClosed = isDayClosed(today);
+
+  // Si hoy no hay servicio, buscamos el próximo día abierto para no dejar el
+  // resumen en una pantalla de ceros sin ninguna pista de qué hacer.
+  let nextService: { date: string; count: number; covers: number } | null = null;
+  if (todayClosed) {
+    let cursor = today;
+    for (let i = 0; i < 14; i++) {
+      cursor = addDays(cursor, 1);
+      if (!isDayClosed(cursor)) {
+        const list = await getReservationsForServiceDay(admin, session.restaurantId, cursor, {
+          timeZone: session.timezone,
+        });
+        const active = list.filter((r) => r.status !== "cancelled");
+        nextService = { date: cursor, count: active.length, covers: active.reduce((s, r) => s + r.party_size, 0) };
+        break;
+      }
+    }
+  }
 
   const activeToday = todayList.filter((r) => r.status !== "cancelled");
   const totalCovers = activeToday.reduce((sum, r) => sum + r.party_size, 0);
@@ -88,7 +116,14 @@ export default async function DashboardPage() {
               timeZone: "UTC",
             })}
           </h1>
-          <p className="text-sm text-stone-500 mt-0.5">Resumen del servicio</p>
+          <p className="text-sm text-stone-500 mt-0.5 flex items-center gap-1.5">
+            {todayClosed && (
+              <span className="inline-flex items-center gap-1 text-stone-400">
+                <Moon className="h-3 w-3" /> Cerrado ·
+              </span>
+            )}
+            Resumen del servicio
+          </p>
         </div>
         <Link
           href="/dashboard/reservas"
@@ -100,7 +135,7 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {stats.map(({ label, value, icon: Icon, tone }) => (
-          <div key={label} className="rounded-2xl bg-white border border-stone-100 p-4 shadow-sm">
+          <div key={label} className="rounded-2xl bg-panel border border-stone-100 p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <div className={`p-1.5 rounded-lg ${STAT_STYLES[tone].bg}`}>
                 <Icon className={`h-4 w-4 ${STAT_STYLES[tone].icon}`} />
@@ -114,7 +149,7 @@ export default async function DashboardPage() {
 
       {(confirmed > 0 || seated > 0) && (
         <div className="rounded-2xl bg-amber-50 border border-amber-100 p-4">
-          <p className="text-sm text-amber-800 font-medium">
+          <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
             {seated > 0 && `${seated} mesa${seated !== 1 ? "s" : ""} ocupada${seated !== 1 ? "s" : ""}`}
             {seated > 0 && confirmed > 0 && " · "}
             {confirmed > 0 &&
@@ -123,24 +158,50 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div className="rounded-2xl bg-white border border-stone-100 shadow-sm overflow-hidden">
+      <div className="rounded-2xl bg-panel border border-stone-100 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-stone-50">
           <h2 className="font-semibold text-stone-800">Reservas de hoy</h2>
           <Link
             href="/dashboard/reservas"
-            className="text-xs text-amber-600 hover:text-amber-700 flex items-center gap-1"
+            className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 flex items-center gap-1"
           >
             Ver todas <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
 
-        {todayList.length === 0 ? (
+        {todayList.length === 0 && todayClosed ? (
+          <div className="px-5 py-10 text-center">
+            <div className="h-11 w-11 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-3">
+              <Moon className="h-5 w-5 text-stone-400" />
+            </div>
+            <p className="text-stone-600 text-sm font-medium">Hoy el restaurante está cerrado</p>
+            {nextService && (
+              <Link
+                href={`/dashboard/reservas?date=${nextService.date}`}
+                className="mt-3 inline-flex flex-col items-center gap-0.5 rounded-2xl bg-amber-100 hover:bg-amber-200 transition-colors px-4 py-2"
+              >
+                <span className="text-[10px] font-medium uppercase tracking-wide text-amber-700 dark:text-amber-300 opacity-70">
+                  Próximo servicio
+                </span>
+                <span className="text-sm font-semibold text-amber-700 dark:text-amber-300 capitalize flex items-center gap-1">
+                  {new Date(nextService.date + "T12:00:00").toLocaleDateString("es-ES", {
+                    weekday: "long", day: "numeric", month: "short",
+                  })}
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-xs text-amber-700 dark:text-amber-300 opacity-80">
+                  {nextService.count} reserva{nextService.count !== 1 ? "s" : ""} · {nextService.covers} comensales
+                </span>
+              </Link>
+            )}
+          </div>
+        ) : todayList.length === 0 ? (
           <div className="px-5 py-12 text-center">
             <Calendar className="h-8 w-8 text-stone-300 mx-auto mb-3" />
             <p className="text-stone-400 text-sm">Sin reservas para hoy</p>
             <Link
               href="/dashboard/reservas"
-              className="mt-3 inline-block text-sm text-amber-600 hover:text-amber-700"
+              className="mt-3 inline-block text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
             >
               Añadir reserva
             </Link>
@@ -183,7 +244,7 @@ export default async function DashboardPage() {
       </div>
 
       {upcoming.length > 0 && (
-        <div className="rounded-2xl bg-white border border-stone-100 shadow-sm overflow-hidden">
+        <div className="rounded-2xl bg-panel border border-stone-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-stone-50">
             <h2 className="font-semibold text-stone-800">Próximas llegadas</h2>
           </div>
@@ -200,7 +261,7 @@ export default async function DashboardPage() {
                       {r.party_size} personas · {formatTime(r.starts_at, session.timezone)}
                     </div>
                   </div>
-                  <div className="text-xs font-medium text-amber-700 bg-amber-50 rounded-full px-2.5 py-1">
+                  <div className="text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-50 rounded-full px-2.5 py-1">
                     en {minutesUntil < 60 ? `${minutesUntil} min` : `${Math.round(minutesUntil / 60)}h`}
                   </div>
                 </div>

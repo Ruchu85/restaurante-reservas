@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireStaff, UNAUTHORIZED } from "@/lib/auth";
+import { isDemoReadOnly, READONLY_DEMO } from "@/lib/demoReadonly";
 import { searchGuests as searchGuestsLib, countGuests } from "@/lib/guests";
 import { attachTableIds, RESERVATION_SELECT } from "@/lib/reservations";
 import { logAudit } from "@/lib/audit";
@@ -94,6 +95,7 @@ export async function getGuestWithHistory(
 export async function updateGuest(guestId: string, input: UpdateGuestInput) {
   const session = await requireStaff();
   if (!session) return UNAUTHORIZED;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   const parsed = UpdateGuestSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Datos inválidos." };

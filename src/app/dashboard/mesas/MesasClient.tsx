@@ -18,9 +18,9 @@ const SECTION_LABELS: Record<TableSection, string> = {
 };
 
 const SECTION_COLORS: Record<TableSection, string> = {
-  interior: "bg-blue-50 text-blue-700 border-blue-200",
-  terraza: "bg-green-50 text-green-700 border-green-200",
-  barra: "bg-amber-50 text-amber-700 border-amber-200",
+  interior: "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/25",
+  terraza: "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/25",
+  barra: "bg-amber-50 text-amber-700 dark:text-amber-300 border-amber-200",
   privado: "bg-purple-50 text-purple-700 border-purple-200",
   sala_vip: "bg-rose-50 text-rose-700 border-rose-200",
 };
@@ -128,7 +128,7 @@ export function MesasClient({
       </div>
 
       {!canEdit && (
-        <p className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-800">
+        <p className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
           Solo un administrador puede crear o editar mesas. Sí puedes activarlas y desactivarlas.
         </p>
       )}
@@ -140,7 +140,7 @@ export function MesasClient({
           { label: "Activas", value: tables.filter(t => t.active).length },
           { label: "Capacidad total", value: tables.filter(t => t.active).reduce((s, t) => s + t.capacity, 0) },
         ].map(({ label, value }) => (
-          <div key={label} className="rounded-2xl bg-white border border-stone-100 p-4 shadow-sm text-center">
+          <div key={label} className="rounded-2xl bg-panel border border-stone-100 p-4 shadow-sm text-center">
             <div className="text-2xl font-bold text-stone-800">{value}</div>
             <div className="text-xs text-stone-400 mt-0.5">{label}</div>
           </div>
@@ -149,18 +149,18 @@ export function MesasClient({
 
       {/* Tables by section */}
       {tables.length === 0 ? (
-        <div className="rounded-2xl bg-white border border-stone-100 p-12 text-center shadow-sm">
+        <div className="rounded-2xl bg-panel border border-stone-100 p-12 text-center shadow-sm">
           <TableProperties className="h-10 w-10 text-stone-300 mx-auto mb-3" />
           <p className="text-stone-400">Aún no hay mesas configuradas</p>
           {canEdit && (
-            <button onClick={openNew} className="mt-3 text-sm text-amber-600 hover:text-amber-700">
+            <button onClick={openNew} className="mt-3 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300">
               Añadir la primera mesa
             </button>
           )}
         </div>
       ) : (
         groupedBySection.map(({ section, tables: sectionTables }) => (
-          <div key={section} className="rounded-2xl bg-white border border-stone-100 shadow-sm overflow-hidden">
+          <div key={section} className="rounded-2xl bg-panel border border-stone-100 shadow-sm overflow-hidden">
             <div className="px-5 py-3 border-b border-stone-50 flex items-center gap-2">
               <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium border", SECTION_COLORS[section])}>
                 {SECTION_LABELS[section]}
@@ -185,7 +185,7 @@ export function MesasClient({
                     className={cn(
                       "text-xs rounded-full px-2.5 py-1 font-medium transition-colors",
                       t.active
-                        ? "bg-green-100 text-green-700 hover:bg-green-200"
+                        ? "bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300 hover:bg-green-200"
                         : "bg-stone-100 text-stone-500 hover:bg-stone-200",
                     )}
                   >
@@ -220,7 +220,7 @@ export function MesasClient({
       <DialogPrimitive.Root open={showForm} onOpenChange={(o) => !o && setShowForm(false)}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 bg-black/50 z-50" />
-          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-2xl p-6 shadow-xl">
+          <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-panel rounded-2xl p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <DialogPrimitive.Title className="text-lg font-bold text-stone-800">
                 {editTarget ? "Editar mesa" : "Nueva mesa"}

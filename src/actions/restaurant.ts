@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, FORBIDDEN } from "@/lib/auth";
+import { isDemoReadOnly, READONLY_DEMO } from "@/lib/demoReadonly";
 import { logAudit } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -30,6 +31,7 @@ export type UpdateRestaurantInput = z.infer<typeof UpdateRestaurantSchema>;
 export async function updateRestaurant(input: UpdateRestaurantInput) {
   const session = await requireAdmin();
   if (!session) return FORBIDDEN;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   const parsed = UpdateRestaurantSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Datos inválidos." };

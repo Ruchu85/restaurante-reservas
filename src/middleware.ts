@@ -46,8 +46,18 @@ export async function middleware(request: NextRequest) {
   return supabaseResponse;
 }
 
+/**
+ * Solo las rutas con sesión.
+ *
+ * El patrón anterior cubría el sitio entero, así que cada visita a la web
+ * pública del restaurante —la carta, la galería, el formulario de reserva—
+ * pagaba una validación del token contra Supabase por red antes de responder,
+ * para un visitante que nunca tiene sesión. Y con las peticiones internas del
+ * router de Next, la misma llamada se repetía en cada navegación del panel.
+ *
+ * `/dashboard` es lo que hay que proteger; `/login` entra para que el
+ * middleware siga refrescando la cookie de sesión al entrar y al salir.
+ */
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/dashboard/:path*", "/login"],
 };

@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, FORBIDDEN } from "@/lib/auth";
+import { isDemoReadOnly, READONLY_DEMO } from "@/lib/demoReadonly";
 import { logAudit } from "@/lib/audit";
 import { madridDayRangeUtc } from "@/lib/dates";
 import { revalidatePath } from "next/cache";
@@ -39,6 +40,7 @@ export type BusinessHoursInput = z.infer<typeof BusinessHoursSchema>;
 export async function upsertBusinessHours(input: BusinessHoursInput) {
   const session = await requireAdmin();
   if (!session) return FORBIDDEN;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   const parsed = BusinessHoursSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Datos inválidos." };
@@ -90,6 +92,7 @@ export async function upsertBusinessHours(input: BusinessHoursInput) {
 export async function addBlockedDay(input: z.infer<typeof BlockedDaySchema>) {
   const session = await requireAdmin();
   if (!session) return FORBIDDEN;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   const parsed = BlockedDaySchema.safeParse(input);
   if (!parsed.success) return { error: "Datos inválidos." };
@@ -139,6 +142,7 @@ export async function addBlockedDay(input: z.infer<typeof BlockedDaySchema>) {
 export async function removeBlockedDay(id: string) {
   const session = await requireAdmin();
   if (!session) return FORBIDDEN;
+  if (await isDemoReadOnly()) return READONLY_DEMO;
 
   const admin = createAdminClient();
   const { error } = await admin

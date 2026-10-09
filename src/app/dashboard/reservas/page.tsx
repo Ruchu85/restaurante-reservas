@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getCurrentRestaurant, getActiveTables } from "@/lib/restaurant";
+import { getCurrentRestaurant, getActiveTables, getBusinessHours, getBlockedDays } from "@/lib/restaurant";
 import { getReservationsForServiceDay } from "@/lib/reservations";
 import { toLocalDate } from "@/lib/dates";
 import { ReservasClient } from "./ReservasClient";
@@ -17,12 +17,14 @@ export default async function ReservasPage({
   const today = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : toLocalDate(new Date(), context.session.timezone);
 
   const admin = createAdminClient();
-  const [tables, reservations] = await Promise.all([
+  const [tables, reservations, businessHours, blockedDays] = await Promise.all([
     getActiveTables(admin, context.restaurant.id),
     getReservationsForServiceDay(admin, context.restaurant.id, today, {
       withRelations: true,
       timeZone: context.session.timezone,
     }),
+    getBusinessHours(admin, context.restaurant.id),
+    getBlockedDays(admin, context.restaurant.id),
   ]);
 
   return (
@@ -31,6 +33,8 @@ export default async function ReservasPage({
       tables={tables}
       initialReservations={reservations}
       initialDate={today}
+      businessHours={businessHours}
+      blockedDays={blockedDays}
     />
   );
 }

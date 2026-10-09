@@ -67,7 +67,7 @@ export function WhatsAppButton({
       title={`Escribir a ${guestName} por WhatsApp`}
       aria-label={`Escribir a ${guestName} por WhatsApp`}
       className={cn(
-        "inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100",
+        "inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border border-emerald-200 dark:border-emerald-500/25 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300 transition-colors hover:bg-emerald-100",
         className,
       )}
     >
