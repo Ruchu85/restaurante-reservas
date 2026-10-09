@@ -30,6 +30,7 @@ from src.enrichment.phone_finder import find_phone, normalize_phone
 from src.enrichment.web_analyzer import analyze_website
 from src.export.csv_exporter import export_to_csv
 from src.models.lead import LeadStatus
+from src.outreach.email_exporter import export_email_review_html
 from src.outreach.generator import generate_draft
 from src.outreach.sender import EmailSender
 from src.scoring.scorer import score_lead
@@ -348,6 +349,110 @@ def emails_review(
                 break
 
     console.print(f"\n[bold green]✓ {approved} aprobados, {skipped} saltados.[/bold green]")
+
+
+# ──────────────────────────────────────────────────────────
+# emails export
+# ──────────────────────────────────────────────────────────
+
+@emails_app.command("export")
+def emails_export(
+    output: str = typer.Option("data/emails_por_provincias.html", help="Ruta del HTML"),
+    status: str = typer.Option("draft", help="Estado a exportar (draft, approved, ...)"),
+    province: Optional[str] = typer.Option(None, help="Exportar solo una provincia"),
+):
+    """
+    Exporta los borradores de email como página HTML agrupada por provincia,
+    para revisarlos y aprobarlos/descartarlos desde el navegador en vez de
+    uno a uno por terminal.
+    """
+    _bootstrap()
+
+    with get_session() as session:
+        draft_repo = EmailDraftRepository(session)
+        lead_repo = LeadRepository(session)
+
+        drafts = draft_repo.list_by_status(status, limit=10_000)
+        if not drafts:
+            console.print(f"[yellow]No hay borradores con estado '{status}'.[/yellow]")
+            return
+
+        leads_by_id = lead_repo.get_many([d.lead_id for d in drafts])
+
+        items = []
+        for draft in drafts:
+            lead = leads_by_id.get(draft.lead_id)
+            if not lead:
+                continue
+            if province and (lead.province or "").lower() != province.lower():
+                continue
+            items.append({"draft": draft, "lead": lead})
+
+    if not items:
+        console.print(f"[yellow]Ningún borrador para la provincia '{province}'.[/yellow]")
+        return
+
+    total = export_email_review_html(items, output)
+
+    console.print(f"\n[bold green]✓ {total} borradores exportados.[/bold green]")
+    console.print(f"  HTML → [cyan]{output}[/cyan]")
+    console.print("\n[bold]Cómo usarlo:[/bold]")
+    console.print("  1. Abre el HTML en el navegador")
+    console.print("  2. Pulsa [green]'Aprobar'[/green] o [red]'Descartar'[/red] en cada tarjeta")
+    console.print("  3. Copia los IDs con los botones y sincroniza:")
+    console.print("     [cyan]emails approve --ids …[/cyan]  /  [cyan]emails discard --ids …[/cyan]")
+
+
+@emails_app.command("approve")
+def emails_approve(
+    ids: str = typer.Option(..., help="IDs separados por comas (los copia el HTML)"),
+):
+    """Marca como aprobados los borradores cuyos IDs copiaste desde el HTML."""
+    _bootstrap()
+
+    wanted = [i.strip() for i in ids.split(",") if i.strip()]
+    if not wanted:
+        console.print("[yellow]No has indicado ningún ID.[/yellow]")
+        return
+
+    marked = missing = 0
+    with get_session() as session:
+        draft_repo = EmailDraftRepository(session)
+        for draft_id in wanted:
+            if draft_repo.update_status(draft_id, "approved"):
+                marked += 1
+            else:
+                missing += 1
+
+    console.print(f"[bold green]✓ {marked} borrador(es) marcados como aprobados.[/bold green]")
+    if missing:
+        console.print(f"[yellow]  {missing} ID(s) no encontrados.[/yellow]")
+
+
+@emails_app.command("discard")
+def emails_discard(
+    ids: str = typer.Option(..., help="IDs separados por comas (los copia el HTML)"),
+):
+    """Marca como descartados los borradores cuyos IDs copiaste desde el HTML."""
+    _bootstrap()
+
+    wanted = [i.strip() for i in ids.split(",") if i.strip()]
+    if not wanted:
+        console.print("[yellow]No has indicado ningún ID.[/yellow]")
+        return
+
+    marked = missing = 0
+    with get_session() as session:
+        draft_repo = EmailDraftRepository(session)
+        for draft_id in wanted:
+            if draft_repo.update_status(draft_id, "discarded"):
+                marked += 1
+            else:
+                missing += 1
+
+    console.print(f"[bold green]✓ {marked} borrador(es) marcados como descartados.[/bold green]")
+    if missing:
+        console.print(f"[yellow]  {missing} ID(s) no encontrados.[/yellow]")
 
 
 # ──────────────────────────────────────────────────────────

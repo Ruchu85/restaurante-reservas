@@ -11,7 +11,9 @@ Supports two backends (auto-detected from .env):
 from __future__ import annotations
 
 import json
+import random
 import smtplib
+import time
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -80,6 +82,10 @@ class EmailSender:
                     lead_repo.update(lead.id, status="email_sent", email_sent_at=datetime.utcnow(), email_status="sent")
                     logger.success(f"[Sender] Enviado a {lead.name} <{lead.email}>")
                     sent += 1
+                    # Pausa entre envíos: un dominio recién estrenado que manda
+                    # una ráfaga de correos en segundos parece un envío masivo.
+                    if draft is not drafts[-1]:
+                        time.sleep(random.uniform(25, 70))
                 except Exception as exc:
                     logger.error(f"[Sender] Error enviando a {lead.email}: {exc}")
                     draft_repo.update_status(draft.id, "error", error_message=str(exc))
@@ -114,6 +120,9 @@ class EmailSender:
         msg["From"] = f"{settings.sender_name} <{settings.sender_email}>"
         msg["To"] = to_email
         msg["Reply-To"] = settings.sender_reply_to or settings.sender_email
+        # Cabecera de baja: los clientes de correo muestran «cancelar suscripción»
+        # y es una señal de remitente legítimo para los filtros de spam.
+        msg["List-Unsubscribe"] = f"<mailto:{settings.sender_reply_to or settings.sender_email}?subject=No%20quiero%20recibir%20mas%20correos>"
         # En multipart/alternative el último adjunto es el preferido:
         # texto plano primero (fallback) y HTML después.
         msg.attach(MIMEText(draft.body_text, "plain", "utf-8"))

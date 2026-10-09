@@ -13,3 +13,11 @@ data/*.csv
 
 # Logs
 logs/*.log
+
+# Exportaciones de leads: llevan nombres, teléfonos y correos de personas reales.
+# El repositorio es público, así que NO se versionan (ver data/.gitkeep).
+data/*.html
+data/*.json
+data/*.txt
+data/*.xlsx
+logs/*.log

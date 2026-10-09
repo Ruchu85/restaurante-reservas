@@ -31,9 +31,22 @@ class Settings(BaseSettings):
     sender_name: str = Field(default="Tu Nombre")
     sender_email: str = Field(default="")
     sender_reply_to: str = Field(default="")
+    # Con guion: es como se escribe la marca en el dominio, en el logo, en la
+    # firma del email y en el vídeo. Sin él, el mensaje de captación era el
+    # único sitio donde el producto se llamaba de otra forma.
+    product_name: str = Field(default="Cita-Lista")
 
-    # WhatsApp outreach — landing que se enlaza en el mensaje
-    landing_url: str = Field(default="https://reservas-restaurante-demo.vercel.app")
+    # Outreach — enlaces que se citan en el mensaje
+    # Al dominio de marca, no al de Vercel: los dos sirven exactamente lo mismo
+    # (comprobado, mismo hash), pero un mensaje en frío con tres dominios
+    # distintos —dos de ellos subdominios de hosting gratuito— parece un apaño.
+    landing_url: str = Field(default="https://cita-lista.es")
+    demo_app_url: str = Field(default="https://cita-lista.es/demo")
+    product_website: str = Field(default="cita-lista.es")
+    # La página de producto (con el vídeo) vive en www, y la app —la web del
+    # restaurante de ejemplo y el panel— en el dominio a secas. Así el mensaje
+    # de captación no menciona ningún subdominio de Vercel.
+    video_url: str = Field(default="https://cita-lista.es")
 
     # Behavior
     # IMPORTANT: dry_run=True is the hardcoded default.

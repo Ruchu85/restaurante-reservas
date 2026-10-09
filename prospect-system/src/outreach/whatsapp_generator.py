@@ -46,7 +46,14 @@ def generate_whatsapp_draft(
         env.get_template("whatsapp_message.j2")
         .render(
             lead=lead,
-            sender={"name": settings.sender_name, "landing_url": settings.landing_url},
+            sender={
+                "name": settings.sender_name,
+                "product_name": settings.product_name,
+                "landing_url": settings.landing_url,
+                "demo_app_url": settings.demo_app_url,
+                "video_url": settings.video_url,
+                "product_website": settings.product_website,
+            },
         )
         .strip()
     )

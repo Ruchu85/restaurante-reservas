@@ -201,15 +201,16 @@ class EmailDraftRepository:
         )
         return [EmailDraftRead.model_validate(d) for d in drafts]
 
-    def update_status(self, draft_id: str, status: str, **extra) -> None:
+    def update_status(self, draft_id: str, status: str, **extra) -> bool:
         draft = self._session.get(EmailDraft, draft_id)
         if not draft:
-            return
+            return False
         draft.status = status
         for k, v in extra.items():
             if hasattr(draft, k):
                 setattr(draft, k, v)
         self._session.commit()
+        return True
 
 
 class WhatsAppMessageRepository:

@@ -119,11 +119,24 @@ def export_whatsapp_html(
         for index, item in enumerate(items, 1):
             draft, lead = item["draft"], item["lead"]
             is_sent = draft.whatsapp_status == "sent"
+            # Aviso de doble canal: si a este negocio también se le puede
+            # escribir por email, mandarle los dos mensajes —que además dicen
+            # exactamente lo mismo— delata que es un envío automático y sube
+            # las probabilidades de que reporte el número.
+            tiene_email = bool((lead.email or "").strip())
+            clases = " ".join(c for c in ("is-sent" if is_sent else "", "tiene-email" if tiene_email else "") if c)
+            aviso = (
+                f'<span class="aviso-email" title="{html.escape(lead.email or "")}">'
+                f"también por email</span>"
+                if tiene_email
+                else ""
+            )
             parts.append(
                 f'<tr data-id="{html.escape(draft.id)}" data-province="{slug}"'
-                f'{" class=\"is-sent\"" if is_sent else ""}>'
+                f'{f" class=\"{clases}\"" if clases else ""}'
+                f'{" data-email=\"1\"" if tiene_email else ""}>'
                 f'<td class="num">{index}</td>'
-                f'<td class="name">{html.escape(lead.name or "—")}</td>'
+                f'<td class="name">{html.escape(lead.name or "—")}{aviso}</td>'
                 f'<td class="city">{html.escape(lead.city or "—")}</td>'
                 f'<td class="phone">{html.escape(_format_phone(draft.phone))}</td>'
                 f'<td><a class="btn-wa" href="{html.escape(draft.wa_link or "")}" '
@@ -249,6 +262,13 @@ def _head(title: str, count: int) -> str:
   tr:last-child td{{border-bottom:none;}}
   tr:hover td{{background:#fafcff;}}
   tr.is-sent{{opacity:.45;}}
+  /* Doble canal: el aviso va pegado al nombre, no en una columna aparte, para
+     que se vea justo donde está mirando quien va fila a fila. */
+  .aviso-email{{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;
+    background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;vertical-align:middle;}}
+  tr.tiene-email{{background:#fffbeb;}}
+  tr.tiene-email td{{border-bottom-color:#fde68a;}}
+  body.ocultar-email tr.tiene-email{{display:none;}}
   .num{{color:#888;font-size:.78rem;}}
   .name{{font-weight:600;}}
   .city{{color:#666;font-size:.8rem;}}
@@ -277,6 +297,7 @@ def _toolbar() -> str:
     return """<div class="toolbar">
   <button type="button" id="copy-sent">📋 Copiar IDs enviados</button>
   <button type="button" id="reset-sent">↺ Reiniciar marcas</button>
+  <button type="button" id="toggle-email">🙈 Ocultar los que tienen email</button>
   <span class="progress" id="progress">0 / 0 enviados</span>
 </div>"""
 
@@ -323,6 +344,23 @@ def _script() -> str:
       render();
     });
   });
+
+  // Ocultar los de doble canal, para recorrer la lista sin tener que ir
+  // esquivándolos a ojo. La preferencia se recuerda en este navegador.
+  var btnEmail = document.getElementById('toggle-email');
+  function pintarFiltro() {
+    var oculto = localStorage.getItem('wa-ocultar-email') === '1';
+    document.body.classList.toggle('ocultar-email', oculto);
+    btnEmail.textContent = oculto
+      ? '👁 Mostrar los que tienen email'
+      : '🙈 Ocultar los que tienen email';
+  }
+  btnEmail.addEventListener('click', function () {
+    var oculto = localStorage.getItem('wa-ocultar-email') === '1';
+    localStorage.setItem('wa-ocultar-email', oculto ? '0' : '1');
+    pintarFiltro();
+  });
+  pintarFiltro();
 
   document.getElementById('copy-sent').addEventListener('click', function () {
     var ids = Array.from(stored).join(',');

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import quote
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -20,6 +21,23 @@ def _get_env() -> Environment:
     )
 
 
+def enlaces_personalizados(lead: LeadRead, base: str) -> dict[str, str]:
+    """Enlaces a la web con el nombre del restaurante y la campaña en la URL.
+
+    `?r=` hace que la portada diga «Preparado para <restaurante>» y precarga el
+    formulario; `utm_*` viaja hasta el aviso que llega al enviar el formulario,
+    así se sabe qué correo funcionó. El nombre se limita a 60 caracteres porque
+    es lo que admite la web.
+    """
+    etiqueta = "utm_source=email&utm_medium=frio&utm_campaign=oct26"
+    nombre = quote(lead.name.strip()[:60], safe="")
+    base = base.rstrip("/")
+    return {
+        "personal": f"{base}/?r={nombre}&{etiqueta}",
+        "calc": f"{base}/calculadora?r={nombre}&{etiqueta}",
+    }
+
+
 def generate_draft(lead: LeadRead) -> EmailDraftCreate | None:
     """Generate a personalized email draft for a lead. Returns None if no email address."""
     if not lead.email:
@@ -30,9 +48,15 @@ def generate_draft(lead: LeadRead) -> EmailDraftCreate | None:
 
     ctx = {
         "lead": lead,
+        "links": enlaces_personalizados(lead, settings.landing_url),
         "sender": {
             "name": settings.sender_name,
             "email": settings.sender_email,
+            "product_name": settings.product_name,
+            "landing_url": settings.landing_url,
+            "demo_app_url": settings.demo_app_url,
+            "video_url": settings.video_url,
+            "product_website": settings.product_website,
         },
     }
 
