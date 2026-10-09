@@ -3,3 +3,7 @@
 
 # Capturas/recortes que dejan los agentes de auditoría al analizar el vídeo
 .audit*/
+
+# Caché del motor de voz Chatterbox y vídeos de prueba
+.voz-chatterbox/
+salida-voz/
