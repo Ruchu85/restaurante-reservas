@@ -104,6 +104,8 @@ class EmailSender:
         }
         if draft.body_html:
             payload["htmlContent"] = draft.body_html
+        if settings.sender_bcc:
+            payload["bcc"] = [{"email": settings.sender_bcc}]
         with httpx.Client(timeout=15.0) as client:
             response = client.post(
                 _BREVO_SEND_URL,
@@ -133,7 +135,10 @@ class EmailSender:
             server.ehlo()
             server.starttls()
             server.login(settings.smtp_user, settings.smtp_password)
-            server.sendmail(settings.sender_email, to_email, msg.as_string())
+            # La copia oculta va solo en el sobre SMTP: no aparece en ninguna cabecera,
+            # así que el destinatario no ve que existe.
+            destinos = [to_email] + ([settings.sender_bcc] if settings.sender_bcc else [])
+            server.sendmail(settings.sender_email, destinos, msg.as_string())
 
 
 def _log_dry_run_email(draft: EmailDraftRead, lead) -> None:

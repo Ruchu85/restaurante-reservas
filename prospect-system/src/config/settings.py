@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     sender_name: str = Field(default="Tu Nombre")
     sender_email: str = Field(default="")
     sender_reply_to: str = Field(default="")
+    # Copia oculta de cada correo de captación. Los envíos salen por Resend, no
+    # por Zoho, así que sin esto no quedaba copia en el buzón donde llegan las respuestas.
+    sender_bcc: str = Field(default="")
     # Con guion: es como se escribe la marca en el dominio, en el logo, en la
     # firma del email y en el vídeo. Sin él, el mensaje de captación era el
     # único sitio donde el producto se llamaba de otra forma.
